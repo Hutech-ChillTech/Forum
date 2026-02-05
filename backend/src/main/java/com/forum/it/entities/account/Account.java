@@ -1,4 +1,6 @@
-package com.forum.it.entities.user;
+package com.forum.it.entities.account;
+
+import com.forum.it.entities.user.User;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -28,7 +30,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"user"})
+@JsonIgnoreProperties({ "user" })
 public class Account {
 
     @Id
@@ -62,7 +64,6 @@ public class Account {
 
     @UpdateTimestamp
     private LocalDateTime updateAt;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)

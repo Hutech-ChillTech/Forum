@@ -7,12 +7,12 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Turbo: Check imports
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.forum.it.entities.user.AccountStatus;
+import com.forum.it.entities.account.AccountStatus;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
 import com.forum.it.models.request.CreateUserRequest;
@@ -111,16 +111,16 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         if (request.getUserName() != null && !request.getUserName().isEmpty()) {
-            if (!user.getUserName().equals(request.getUserName()) 
-                && userRepository.existsByUserName(request.getUserName())) {
+            if (!user.getUserName().equals(request.getUserName())
+                    && userRepository.existsByUserName(request.getUserName())) {
                 throw new RuntimeException("Username already exists: " + request.getUserName());
             }
             user.setUserName(request.getUserName());
         }
 
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            if (!user.getEmail().equals(request.getEmail()) 
-                && userRepository.existsByEmail(request.getEmail())) {
+            if (!user.getEmail().equals(request.getEmail())
+                    && userRepository.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email already exists: " + request.getEmail());
             }
             user.setEmail(request.getEmail());
@@ -153,7 +153,7 @@ public class UserService {
     public UserResponse updateUserStatus(UUID userId, AccountStatus status) {
         User user = userRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        
+
         user.setStatus(status);
         User updatedUser = userRepository.save(user);
         return new UserResponse(updatedUser);
@@ -177,7 +177,7 @@ public class UserService {
     public UserResponse softDeleteUser(UUID userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        
+
         user.setVerifyStatus(UserStatus.DELETED);
         User updatedUser = userRepository.save(user);
         return new UserResponse(updatedUser);

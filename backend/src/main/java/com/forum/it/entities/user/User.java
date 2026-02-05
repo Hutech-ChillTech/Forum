@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.forum.it.entities.account.AccountStatus;
 import com.forum.it.entities.post.Comment;
 import com.forum.it.entities.post.Post;
 
@@ -28,64 +29,61 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(
-        name = "users",
-        indexes = {
+@Table(name = "users", indexes = {
                 @Index(name = "idx_user_email", columnList = "email"),
                 @Index(name = "idx_user_username", columnList = "userName"),
                 @Index(name = "idx_user_status", columnList = "status")
-        }
-)
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"posts", "comments"})
+@JsonIgnoreProperties({ "posts", "comments" })
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID userId;
+        @Id
+        @GeneratedValue(strategy = GenerationType.UUID)
+        private UUID userId;
 
-    @Column(nullable = false, length = 100)
-    private String userName;
+        @Column(nullable = false, length = 100)
+        private String userName;
 
-    @Column(length = 255)
-    private String fullName;
+        @Column(length = 255)
+        private String fullName;
 
-    @Column(nullable = false, length = 255)
-    private String password;
+        @Column(nullable = false, length = 255)
+        private String password;
 
-    @Column(nullable = false, unique = true, length = 255)
-    private String email;
+        @Column(nullable = false, unique = true, length = 255)
+        private String email;
 
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+        @Enumerated(EnumType.STRING)
+        private Gender gender;
 
-    @Column(length = 255)
-    private String avatarURL;
+        @Column(length = 255)
+        private String avatarURL;
 
-    @Column(length = 20)
-    private String phone;
+        @Column(length = 20)
+        private String phone;
 
-    private LocalDateTime dateOfBirth;
+        private LocalDateTime dateOfBirth;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus verifyStatus = UserStatus.ACTIVE;
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false)
+        private UserStatus verifyStatus = UserStatus.ACTIVE;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private AccountStatus status = AccountStatus.OFFLINE;
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false)
+        private AccountStatus status = AccountStatus.OFFLINE;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+        @CreationTimestamp
+        private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+        @UpdateTimestamp
+        private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Post> posts;
+        @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+        private List<Post> posts;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Comment> comments;
+        @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+        private List<Comment> comments;
 }

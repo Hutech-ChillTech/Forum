@@ -3,7 +3,7 @@ package com.forum.it.models.response;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.forum.it.entities.user.AccountStatus;
+import com.forum.it.entities.account.AccountStatus;
 import com.forum.it.entities.user.Gender;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
