@@ -11,21 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.forum.it.entities.user.AccountStatus;
-import com.forum.it.models.request.CreateUserRequest;
-import com.forum.it.models.request.UpdateUserRequest;
-import com.forum.it.models.response.UserResponse;
+import com.forum.it.dtos.request.CreateUserRequest;
+import com.forum.it.dtos.request.UpdateUserRequest;
+import com.forum.it.dtos.response.UserResponse;
+import com.forum.it.entities.account.AccountStatus;
 import com.forum.it.services.UserService;
 
 import jakarta.validation.Valid;
@@ -50,13 +41,12 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort
-    ) {
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
         String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc") 
-            ? Sort.Direction.ASC 
-            : Sort.Direction.DESC;
-        
+        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
         Page<UserResponse> usersPage = userService.getAllUsers(pageable);
 
@@ -97,8 +87,7 @@ public class UserController {
     @GetMapping("/active")
     public ResponseEntity<Map<String, Object>> getActiveUsers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<UserResponse> usersPage = userService.getActiveUsers(pageable);
 
@@ -114,8 +103,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateUserRequest request
-    ) {
+            @Valid @RequestBody UpdateUserRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return ResponseEntity.ok(response);
     }
@@ -123,8 +111,7 @@ public class UserController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<UserResponse> updateUserStatus(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> request
-    ) {
+            @RequestBody Map<String, String> request) {
         AccountStatus status = AccountStatus.valueOf(request.get("status"));
         UserResponse response = userService.updateUserStatus(id, status);
         return ResponseEntity.ok(response);

@@ -1,4 +1,6 @@
-package com.forum.it.entities.user;
+package com.forum.it.entities.account;
+
+import com.forum.it.entities.user.Role;
 
 import java.util.UUID;
 import jakarta.persistence.*;
@@ -7,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "account_roles", uniqueConstraints = {@UniqueConstraint(columnNames = {"accountId", "roleId"})})
+@Table(name = "account_roles", uniqueConstraints = { @UniqueConstraint(columnNames = { "accountId", "roleId" }) })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

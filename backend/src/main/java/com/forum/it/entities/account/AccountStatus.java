@@ -1,4 +1,4 @@
-package com.forum.it.entities.user;
+package com.forum.it.entities.account;
 
 public enum AccountStatus {
     ONLINE,
