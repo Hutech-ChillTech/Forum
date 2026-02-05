@@ -1,4 +1,4 @@
-package com.forum.it.models;
+package com.forum.it.dtos;
 
 import lombok.Builder;
 import lombok.Data;

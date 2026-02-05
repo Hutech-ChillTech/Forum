@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.forum.it.entities.user.AccountStatus;
-import com.forum.it.models.request.CreateUserRequest;
-import com.forum.it.models.request.UpdateUserRequest;
-import com.forum.it.models.response.UserResponse;
+import com.forum.it.dtos.request.CreateUserRequest;
+import com.forum.it.dtos.request.UpdateUserRequest;
+import com.forum.it.dtos.response.UserResponse;
 import com.forum.it.services.UserService;
 
 import jakarta.validation.Valid;

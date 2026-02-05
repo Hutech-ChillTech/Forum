@@ -12,12 +12,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.forum.it.dtos.request.CreateUserRequest;
+import com.forum.it.dtos.request.UpdateUserRequest;
+import com.forum.it.dtos.response.UserResponse;
 import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
-import com.forum.it.models.request.CreateUserRequest;
-import com.forum.it.models.request.UpdateUserRequest;
-import com.forum.it.models.response.UserResponse;
 import com.forum.it.repositories.UserRepository;
 
 @Service
