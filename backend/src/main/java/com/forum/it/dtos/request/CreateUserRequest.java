@@ -1,4 +1,4 @@
-package com.forum.it.models.request;
+package com.forum.it.dtos.request;
 
 import java.time.LocalDateTime;
 

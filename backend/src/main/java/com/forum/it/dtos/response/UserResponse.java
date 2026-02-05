@@ -1,4 +1,4 @@
-package com.forum.it.models.response;
+package com.forum.it.dtos.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
