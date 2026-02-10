@@ -1,0 +1,266 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e3e6e8;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #232629;
+    letter-spacing: 0.5px;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6a737c;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #f1f2f3;
+    color: #232629;
+}
+
+/* Post Form */
+.post-form {
+    padding: 24px;
+}
+
+.post-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f48225 0%, #ff7043 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.post-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-avatar-initials {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.post-username {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c0d0e;
+    flex: 1;
+}
+
+.btn-add-image {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid #7aa7c7;
+    background: transparent;
+    color: #39739d;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-add-image::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(57, 115, 157, 0.2) 0%, rgba(57, 115, 157, 0.1) 50%, transparent 100%);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease-out, height 0.5s ease-out;
+}
+
+.btn-add-image:hover::before {
+    width: 250px;
+    height: 250px;
+}
+
+.btn-add-image:hover {
+    background: #e1ecf4;
+    border-color: #5b8db8;
+}
+
+.btn-add-image svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Textarea */
+.post-content-wrapper {
+    margin-bottom: 20px;
+}
+
+.post-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 16px;
+    border: 1px solid #d6d9dc;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    color: #0c0d0e;
+    background: #f8f9f9;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.post-textarea:focus {
+    outline: none;
+    border-color: #6cbbff;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.1);
+}
+
+.post-textarea::placeholder {
+    color: #9fa6ad;
+}
+
+/* Submit Button */
+.btn-submit-post {
+    width: 100%;
+    padding: 12px 24px;
+    border: none;
+    background: #0a95ff;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit-post::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease-out, height 0.5s ease-out;
+}
+
+.btn-submit-post:hover::before {
+    width: 400px;
+    height: 400px;
+}
+
+.btn-submit-post:hover:not(:disabled) {
+    background: #0074cc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(10, 149, 255, 0.4);
+}
+
+.btn-submit-post:disabled {
+    background: #c8cccf;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+    }
+
+    .post-form {
+        padding: 20px;
+    }
+
+    .post-textarea {
+        min-height: 150px;
+    }
+}

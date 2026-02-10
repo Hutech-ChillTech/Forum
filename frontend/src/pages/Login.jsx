@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
 import Header from '../components/Header';
 
 const Login = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -105,8 +106,7 @@ const Login = () => {
 
             // Redirect after success
             setTimeout(() => {
-                console.log('Redirect to dashboard');
-                // TODO: Navigate to dashboard
+                navigate('/');
             }, 1500);
 
         } catch (error) {
@@ -121,7 +121,7 @@ const Login = () => {
 
     return (
         <>
-            <Header />
+            <Header hideAuth />
             <div className="login-container">
                 <div className="login-content">
                     {/* Left side - Branding */}

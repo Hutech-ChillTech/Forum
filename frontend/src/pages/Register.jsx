@@ -190,7 +190,7 @@ const Register = () => {
 
     return (
         <>
-            <Header />
+            <Header hideAuth />
             <div className="register-container">
                 <div className="register-content">
                     {/* Left side - Branding */}

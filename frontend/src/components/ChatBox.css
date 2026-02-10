@@ -1,0 +1,212 @@
+.chatbox-container {
+    position: fixed;
+    bottom: 100px;
+    right: 32px;
+    width: 360px;
+    height: 500px;
+    background: white;
+    border: 1px solid #d6d9dc;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 999;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Header */
+.chatbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px 12px 0 0;
+}
+
+.chatbox-title {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chatbox-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.chatbox-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Messages */
+.chatbox-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9f9;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chatbox-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chatbox-messages::-webkit-scrollbar-track {
+    background: #f1f2f3;
+}
+
+.chatbox-messages::-webkit-scrollbar-thumb {
+    background: #c8cccf;
+    border-radius: 3px;
+}
+
+.chatbox-messages::-webkit-scrollbar-thumb:hover {
+    background: #9fa6ad;
+}
+
+.chat-message {
+    display: flex;
+    max-width: 80%;
+}
+
+.user-message {
+    align-self: flex-end;
+}
+
+.bot-message {
+    align-self: flex-start;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-message .message-bubble {
+    background: linear-gradient(135deg, #0a95ff 0%, #0074cc 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.bot-message .message-bubble {
+    background: #e3e6e8;
+    color: #232629;
+    border-bottom-left-radius: 4px;
+}
+
+/* Input Form */
+.chatbox-input-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: white;
+    border-top: 1px solid #e3e6e8;
+    border-radius: 0 0 12px 12px;
+}
+
+.chatbox-input {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid #d6d9dc;
+    border-radius: 20px;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    color: #0c0d0e;
+    transition: all 0.2s ease;
+}
+
+.chatbox-input:focus {
+    outline: none;
+    border-color: #6cbbff;
+    box-shadow: 0 0 0 3px rgba(0, 116, 204, 0.1);
+}
+
+.chatbox-input::placeholder {
+    color: #9fa6ad;
+}
+
+.chatbox-send-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: linear-gradient(135deg, #0a95ff 0%, #0074cc 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.chatbox-send-btn:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(10, 149, 255, 0.4);
+}
+
+.chatbox-send-btn:disabled {
+    background: #c8cccf;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.chatbox-send-btn svg {
+    width: 18px;
+    height: 18px;
+    transform: rotate(45deg);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .chatbox-container {
+        bottom: 80px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        max-height: 70vh;
+    }
+}
