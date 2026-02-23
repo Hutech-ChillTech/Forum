@@ -1,6 +1,6 @@
 package com.forum.it.entities.post;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -25,11 +25,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "reactions", uniqueConstraints = {@UniqueConstraint(columnNames = {"userId", "postId"})})
+@Table(name = "reactions", uniqueConstraints = { @UniqueConstraint(columnNames = { "userId", "postId" }) })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"post", "user"})
+@JsonIgnoreProperties({ "post", "user" })
 public class Reaction {
 
     @Id
@@ -49,5 +49,5 @@ public class Reaction {
     private ReactionType react;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }

@@ -1,6 +1,6 @@
 package com.forum.it.entities.post;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"post", "user"})
+@JsonIgnoreProperties({ "post", "user" })
 public class Share {
 
     @Id
@@ -48,5 +48,5 @@ public class Share {
     private SharePlatform platform;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }

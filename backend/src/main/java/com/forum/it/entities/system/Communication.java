@@ -1,6 +1,6 @@
 package com.forum.it.entities.system;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -17,7 +17,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"sender", "receiver"})
+@JsonIgnoreProperties({ "sender", "receiver" })
 public class Communication {
 
     @Id
@@ -36,5 +36,5 @@ public class Communication {
     private String message;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }

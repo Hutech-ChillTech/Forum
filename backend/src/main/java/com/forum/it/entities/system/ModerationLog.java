@@ -1,6 +1,6 @@
 package com.forum.it.entities.system;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -37,5 +37,5 @@ public class ModerationLog {
     private String reason;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }

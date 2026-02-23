@@ -1,6 +1,6 @@
 package com.forum.it.repositories;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,9 +38,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByEmailContaining(String keyword);
 
     @Query("SELECT u FROM User u WHERE " +
-           "LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<User> searchUsers(@Param("keyword") String keyword);
 
     @Query("SELECT u FROM User u WHERE u.verifyStatus = 'ACTIVE' AND u.status != 'BANNED'")
@@ -51,9 +51,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE u.createdAt BETWEEN :startDate AND :endDate")
     List<User> findUsersByDateRange(
-        @Param("startDate") LocalDateTime startDate,
-        @Param("endDate") LocalDateTime endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
     void deleteByEmail(String email);
 
