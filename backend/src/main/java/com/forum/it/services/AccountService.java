@@ -1,15 +1,16 @@
 package com.forum.it.services;
 
-import java.util.List;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.LoginRequest;
+import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.entities.user.Account;
 import com.forum.it.entities.user.AccountStatus;
@@ -119,10 +120,65 @@ public class AccountService {
                     .map(accountRole -> accountRole.getRole().getName())
                     .orElse("USER");
 
-            String token = jwtTokenProvider.generateToken(account, roleName);
+            String accessToken = jwtTokenProvider.generateToken(account, roleName);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(account);
+
+            account.setRefreshToken(refreshToken);
+            accountRepository.save(account);
 
             return AuthResponse.builder()
-                    .accessToken(token)
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .authenticated(true)
+                    .build();
+
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
+    @Transactional
+    public void logout() {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof UserDetails) {
+                String email = ((UserDetails) principal).getUsername();
+                Account account = accountRepository.findByEmail(email);
+
+                if (account != null) {
+                    account.setRefreshToken(null);
+                    accountRepository.save(account);
+                }
+            } else {
+                throw new AppException(ErrorCode.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        try {
+            String token = request.getRefreshToken();
+            String userEmail = jwtTokenProvider.extractUsername(token);
+            Account account = accountRepository.findByEmail(userEmail);
+
+            if (account == null || account.getRefreshToken() == null || !account.getRefreshToken().equals(token)
+                    || !jwtTokenProvider.isTokenValid(token, userEmail))
+                throw new AppException(ErrorCode.UNAUTHORIZED);
+
+            String roleName = accountRoleRepository.findByAccount_AccountId(account.getAccountId()).stream().findFirst()
+                    .map(accountRole -> accountRole.getRole().getName()).orElse("USER");
+
+            String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
+            String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
+
+            account.setRefreshToken(newRefreshToken);
+            accountRepository.save(account);
+
+            return AuthResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
                     .authenticated(true)
                     .build();
 

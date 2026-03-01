@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.forum.it.contants.Routes;
 import com.forum.it.dtos.request.CreateUserRequest;
+import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.request.LoginRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.AuthResponse;
@@ -33,5 +34,16 @@ public class AccountController {
     @PostMapping(Routes.Auth.LOGIN)
     public ApiResponses<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
         return ApiResponses.success(accountService.login(request), null);
+    }
+
+    @PostMapping(Routes.Auth.LOGOUT)
+    public ApiResponses<String> logout() {
+        accountService.logout();
+        return ApiResponses.success("Logout success", null);
+    }
+
+    @PostMapping(Routes.Auth.REFRESH)
+    public ApiResponses<AuthResponse> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        return ApiResponses.success(accountService.refreshToken(request), null);
     }
 }

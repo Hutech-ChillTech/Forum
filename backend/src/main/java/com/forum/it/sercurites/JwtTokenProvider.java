@@ -24,11 +24,14 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.access-token.expiration}")
+    private long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private long refreshTokenExpiration;
 
     public String generateToken(Account account) {
-        return buildToken(new HashMap<>(), account, jwtExpiration);
+        return buildToken(new HashMap<>(), account, accessTokenExpiration);
     }
 
     public String generateToken(Account account, String roleName) {
@@ -48,9 +51,13 @@ public class JwtTokenProvider {
                 .setSubject(account.getEmail())
                 .addClaims(claims)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String generateRefreshToken(Account account) {
+        return buildToken(new HashMap<>(), account, refreshTokenExpiration);
     }
 
     private String buildToken(Map<String, Object> extraClaims, Account account, long expiration) {

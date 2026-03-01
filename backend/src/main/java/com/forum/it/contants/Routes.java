@@ -8,8 +8,9 @@ public class Routes {
     public static class Auth {
         public static final String BASE = API_V1 + "/auth";
         public static final String LOGIN = "/login";
+        public static final String LOGOUT = "/logout";
         public static final String REGISTER = "/register";
-        public static final String REFRESH = "/refresh";
+        public static final String REFRESH = "/refresh-token";
     }
 
     // API USER
