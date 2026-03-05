@@ -244,6 +244,60 @@ GET /api/users/check-email/{email}
 GET /api/users/check-username/{userName}
 ```
 
+### Tag Management Endpoints
+
+#### Create Tag
+
+```http
+POST /api/v1/tags
+Content-Type: application/json
+
+{
+  "name": "Spring Boot",
+  "slug": "spring-boot",
+  "description": "Bài viết liên quan đến Spring Boot framework",
+  "isActive": true
+}
+```
+
+#### Get All Tags (Paginated)
+
+```http
+GET /api/v1/tags?page=0&size=20&sort=createdAt,desc
+```
+
+#### Get Tag by ID
+
+```http
+GET /api/v1/tags/{tagId}
+```
+
+#### Get Tag by Slug
+
+```http
+GET /api/v1/tags/slug/{slug}
+```
+
+#### Update Tag
+
+```http
+PUT /api/v1/tags/{tagId}
+Content-Type: application/json
+
+{
+  "name": "Spring Framework",
+  "slug": "spring-framework",
+  "description": "Updated description",
+  "isActive": true
+}
+```
+
+#### Delete Tag
+
+```http
+DELETE /api/v1/tags/{tagId}
+```
+
 ### Response Format
 
 #### Success Response (200 OK)
