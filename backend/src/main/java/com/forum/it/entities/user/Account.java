@@ -1,6 +1,6 @@
 package com.forum.it.entities.user;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"user"})
+@JsonIgnoreProperties({ "user" })
 public class Account {
 
     @Id
@@ -58,11 +58,10 @@ public class Account {
     private AccountVerifyCheck isVerify;
 
     @CreationTimestamp
-    private LocalDateTime createAt;
+    private LocalDate createAt;
 
     @UpdateTimestamp
-    private LocalDateTime updateAt;
-
+    private LocalDate updateAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)

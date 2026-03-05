@@ -1,3 +1,5 @@
+// File: src/main/java/com/forum/it/exceptions/GlobalExceptinHandler.java
+
 package com.forum.it.exceptions;
 
 import com.forum.it.dtos.response.ApiResponses;
@@ -7,11 +9,18 @@ import org.springframework.web.bind.annotation.*;
 
 @RestControllerAdvice
 public class GlobalExceptinHandler {
+
     @ExceptionHandler(value = Exception.class)
-    public ResponseEntity<ApiResponses<Object>> handlingRuntimeException(RuntimeException exception) {
+    public ResponseEntity<ApiResponses<Object>> handlingRuntimeException(Exception exception) {
+        // In toàn bộ stack trace của lỗi ra Terminal để debug
+        exception.printStackTrace();
+
         ApiResponses<Object> apiResponses = new ApiResponses<>();
         apiResponses.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponses.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+        // Lấy chính xác thông điệp lỗi gốc đẩy ra Postman thay vì gộp lại thành
+        // Uncategorized
+        apiResponses.setMessage(exception.getMessage());
+
         return ResponseEntity.badRequest().body(apiResponses);
     }
 

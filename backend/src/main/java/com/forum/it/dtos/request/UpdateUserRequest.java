@@ -1,6 +1,6 @@
 package com.forum.it.dtos.request;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import com.forum.it.entities.user.Gender;
 
@@ -21,7 +21,7 @@ public class UpdateUserRequest {
 
     private String phone;
 
-    private LocalDateTime dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private String avatarURL;
 
@@ -68,11 +68,11 @@ public class UpdateUserRequest {
         this.phone = phone;
     }
 
-    public LocalDateTime getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public void setDateOfBirth(LocalDateTime dateOfBirth) {
+    public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 

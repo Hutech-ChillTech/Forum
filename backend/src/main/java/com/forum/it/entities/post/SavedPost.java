@@ -1,6 +1,6 @@
 package com.forum.it.entities.post;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "saved_posts", uniqueConstraints = {@UniqueConstraint(columnNames = {"userId", "postId"})})
+@Table(name = "saved_posts", uniqueConstraints = { @UniqueConstraint(columnNames = { "userId", "postId" }) })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"user", "post"})
+@JsonIgnoreProperties({ "user", "post" })
 public class SavedPost {
 
     @Id
@@ -33,5 +33,5 @@ public class SavedPost {
     private Post post;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }

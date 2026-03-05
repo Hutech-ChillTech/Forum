@@ -1,6 +1,6 @@
 package com.forum.it.entities.post;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,14 +30,13 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "posts", indexes = {
-                @Index(name = "idx_post_user", columnList = "userId"),
-                @Index(name = "idx_post_created", columnList = "createdAt")
-        }
-)
+        @Index(name = "idx_post_user", columnList = "userId"),
+        @Index(name = "idx_post_created", columnList = "createdAt")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"user", "comments"})
+@JsonIgnoreProperties({ "user", "comments" })
 public class Post {
 
     @Id
@@ -58,10 +57,10 @@ public class Post {
     private PostStatus status;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)

@@ -1,6 +1,6 @@
 package com.forum.it.entities.system;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"user", "post"})
+@JsonIgnoreProperties({ "user", "post" })
 public class Notification {
 
     @Id
@@ -56,5 +56,5 @@ public class Notification {
     private NotificationStatus status;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }
