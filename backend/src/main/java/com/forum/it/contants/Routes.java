@@ -29,7 +29,11 @@ public class Routes {
     // API POST
     public static class Post {
         public static final String BASE = API_V1 + "/posts";
-
+        public static final String GET_ALL = "/";
+        public static final String GET_BY_ID = "/{id}";
+        public static final String CREATE = "/";
+        public static final String UPDATE = "/{id}";
+        public static final String DELETE = "/{id}";
     }
 
     private Routes() {

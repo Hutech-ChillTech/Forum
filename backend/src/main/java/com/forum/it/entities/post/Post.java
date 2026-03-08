@@ -56,6 +56,12 @@ public class Post {
     @Column(nullable = false)
     private PostStatus status;
 
+    @Column(nullable = false)
+    private Integer like_count;
+
+    @Column(nullable = false)
+    private Integer comment_count;
+
     @CreationTimestamp
     private LocalDate createdAt;
 
