@@ -17,6 +17,39 @@ const Home = () => {
     const [followedUsers, setFollowedUsers] = useState({});
     const [globalCommentSortOrder, setGlobalCommentSortOrder] = useState('newest');
 
+    // State for user data synced with localStorage
+    const [userData, setUserData] = useState(() => {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+            try {
+                const parsed = JSON.parse(savedProfile);
+                return {
+                    name: parsed.fullName || parsed.displayName || "Bạn",
+                    avatar: parsed.avatar || null
+                };
+            } catch (e) {
+                console.error('Error parsing user profile in Home:', e);
+            }
+        }
+        return {
+            name: "Bạn",
+            avatar: null
+        };
+    });
+
+    useEffect(() => {
+        const handleProfileUpdate = (e) => {
+            const profile = e.detail;
+            setUserData({
+                name: profile.fullName || profile.displayName,
+                avatar: profile.avatar || null
+            });
+        };
+
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+    }, []);
+
     const toggleLike = (id) => setLikedPosts(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleSave = (id) => setSavedPosts(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleFollow = (author) => setFollowedUsers(prev => ({ ...prev, [author]: !prev[author] }));
@@ -131,7 +164,9 @@ const Home = () => {
                             </svg>
                         </div>
                         <div className="greeting-input-mock">
-                            <h2 className="greeting-text">Xin chào, chia sẻ gì đó nhé!</h2>
+                            <h2 className="greeting-text">
+                                Xin chào {userData.name.split(' ').pop()}, chia sẻ gì đó nhé!
+                            </h2>
                         </div>
                     </div>
 
@@ -162,9 +197,9 @@ const Home = () => {
                                 </div>
                                 <div className="question-content" style={{ flexGrow: 1 }}>
                                     <h3 className="question-title" style={{ margin: '0 0 5px 0', fontSize: '17px', fontWeight: '400', lineHeight: '1.3' }}>
-                                        <a href={`/posts/${post.id}`} style={{ color: '#0052cc', textDecoration: 'none' }}>{post.title}</a>
+                                        <a href={`/posts/${post.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>{post.title}</a>
                                     </h3>
-                                    <p className="question-excerpt" style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#3b4045', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.excerpt}</p>
+                                    <p className="question-excerpt" style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.excerpt}</p>
 
                                     {post.images && post.images.length > 0 && (
                                         <a href={`/posts/${post.id}`} style={{ display: 'block', textDecoration: 'none' }}>
@@ -187,13 +222,13 @@ const Home = () => {
                                     <div className="question-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', flexWrap: 'wrap', gap: '8px' }}>
                                         <div className="question-tags" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                             {post.tags.map((tag, index) => (
-                                                <span key={index} className="tag" style={{ fontSize: '12px', color: '#0052cc', backgroundColor: '#e6f0ff', padding: '6px 12px', borderRadius: '20px' }}>{tag}</span>
+                                                <span key={index} className="tag" style={{ fontSize: '12px', color: 'var(--primary-color)', backgroundColor: 'var(--secondary-bg)', padding: '6px 12px', borderRadius: '20px' }}>{tag}</span>
                                             ))}
                                         </div>
                                     </div>
 
                                     <div className="post-actions" style={{ marginTop: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                        <button className="post-action-btn" onClick={() => toggleLike('featured_' + post.id)} style={{ color: likedPosts['featured_' + post.id] ? '#0066FF' : 'inherit' }}>
+                                        <button className="post-action-btn" onClick={() => toggleLike('featured_' + post.id)} style={{ color: likedPosts['featured_' + post.id] ? 'var(--primary-color)' : 'inherit' }}>
                                             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                                                 <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                                             </svg>
@@ -214,7 +249,7 @@ const Home = () => {
                                             </svg>
                                             <span>Chia sẻ</span>
                                         </button>
-                                        <button className="post-action-btn" onClick={() => toggleSave('featured_' + post.id)} style={{ marginLeft: 'auto', color: savedPosts['featured_' + post.id] ? '#0066FF' : 'inherit' }}>
+                                        <button className="post-action-btn" onClick={() => toggleSave('featured_' + post.id)} style={{ marginLeft: 'auto', color: savedPosts['featured_' + post.id] ? 'var(--primary-color)' : 'inherit' }}>
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill={savedPosts['featured_' + post.id] ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                                             </svg>

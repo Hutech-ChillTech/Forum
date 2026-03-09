@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Posts from './pages/Posts';
@@ -14,6 +15,38 @@ import Saved from './pages/Saved';
 import './App.css';
 
 function App() {
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    // Apply theme to document
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    // Listen for theme changes from other tabs/components
+    const handleStorageChange = (e) => {
+      if (e.key === 'theme') {
+        setTheme(e.newValue);
+      }
+    };
+
+    const handleCustomThemeChange = (e) => {
+      setTheme(e.detail.theme);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('themeChanged', handleCustomThemeChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themeChanged', handleCustomThemeChange);
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>

@@ -4,8 +4,8 @@
     right: 32px;
     width: 360px;
     height: 500px;
-    background: white;
-    border: 1px solid #d6d9dc;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     display: flex;
@@ -32,14 +32,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    background: white;
-    border-bottom: 1px solid #e3e6e8;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 12px 12px;
 }
 
 .chatbox-title {
     margin: 0;
-    color: #232629;
+    color: var(--text-color);
     font-size: 15px;
     font-weight: 600;
     line-height: 1.2;
@@ -75,14 +75,14 @@
 .chatbox-close-btn {
     width: 32px;
     height: 32px;
-    border: 1px solid #d6d9dc;
-    background: #f8f9f9;
+    border: 1px solid var(--border-color);
+    background: var(--secondary-bg);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #525960;
+    color: var(--text-secondary);
     transition: all 0.2s ease;
 }
 
@@ -96,7 +96,7 @@
     flex: 1;
     padding: 24px 20px;
     overflow-y: auto;
-    background: #f8f9f9;
+    background: var(--bg-color);
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -147,10 +147,11 @@
 }
 
 .bot-message .message-bubble {
-    background: white;
-    color: #232629;
+    background: var(--card-bg);
+    color: var(--text-color);
     border-radius: 12px 12px 12px 12px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
 }
 
 /* Input Form */
@@ -159,23 +160,25 @@
     align-items: center;
     gap: 10px;
     padding: 16px 20px;
-    background: white;
-    border-top: 1px solid #e3e6e8;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
 }
 
 .chatbox-input {
     flex: 1;
     padding: 10px 18px;
-    background-color: #f1f2f3;
-    border: none;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
     border-radius: 24px;
     font-size: 14px;
+    color: var(--text-color);
     outline: none;
     transition: all 0.2s ease;
 }
 
 .chatbox-input:focus {
-    background-color: #ffffff;
+    background-color: var(--card-bg);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(10, 149, 255, 0.2);
 }
 

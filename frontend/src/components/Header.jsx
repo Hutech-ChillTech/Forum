@@ -9,14 +9,29 @@ const Header = ({ hideAuth = false }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Mock user data
-    const mockUser = {
-        name: "Trần Khánh Linh",
-        username: "1731_Trần Khánh Linh",
-        avatar: null // Will show initials
-    };
+    // Get user data from localStorage or use defaults
+    const [userData, setUserData] = useState(() => {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+            try {
+                const parsed = JSON.parse(savedProfile);
+                return {
+                    name: parsed.fullName || "Trần Khánh Linh",
+                    username: parsed.username || "khanhlinh_1731",
+                    avatar: parsed.avatar || null
+                };
+            } catch (e) {
+                console.error('Error parsing user profile in Header:', e);
+            }
+        }
+        return {
+            name: "Trần Khánh Linh",
+            username: "khanhlinh_1731",
+            avatar: null
+        };
+    });
 
-    // Close dropdown when clicking outside
+    // Close dropdown when clicking outside and listen for profile updates
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -28,11 +43,23 @@ const Header = ({ hideAuth = false }) => {
             setIsCreateOpen(true);
         };
 
+        const handleProfileUpdate = (e) => {
+            const profile = e.detail;
+            setUserData({
+                name: profile.fullName || profile.displayName || "Trần Khánh Linh",
+                username: profile.username || "khanhlinh_1731",
+                avatar: profile.avatar || null
+            });
+        };
+
         window.addEventListener('openCreatePost', handleOpenCreatePost);
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
         document.addEventListener('mousedown', handleClickOutside);
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('openCreatePost', handleOpenCreatePost);
+            window.removeEventListener('userProfileUpdated', handleProfileUpdate);
         };
     }, []);
 
@@ -108,11 +135,11 @@ const Header = ({ hideAuth = false }) => {
                                     onClick={() => setShowDropdown(!showDropdown)}
                                 >
                                     <div className="user-avatar">
-                                        {mockUser.avatar ? (
-                                            <img src={mockUser.avatar} alt={mockUser.name} />
+                                        {userData.avatar ? (
+                                            <img src={userData.avatar} alt={userData.name} />
                                         ) : (
                                             <span className="avatar-initials">
-                                                {getInitials(mockUser.name)}
+                                                {getInitials(userData.name)}
                                             </span>
                                         )}
                                     </div>
@@ -122,7 +149,7 @@ const Header = ({ hideAuth = false }) => {
                                     <div className="user-dropdown">
                                         <div className="dropdown-header">
                                             <div className="dropdown-user-info">
-                                                <div className="dropdown-user-name">{mockUser.username}</div>
+                                                <div className="dropdown-user-name">{userData.username}</div>
                                             </div>
                                         </div>
                                         <div className="dropdown-divider"></div>

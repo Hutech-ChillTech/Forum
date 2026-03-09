@@ -54,7 +54,7 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                             </button>
                         )}
                     </div>
-                    <span className="post-time" style={{ fontSize: '12px', color: '#6a737c' }}>{formatTime(post.timestamp || post.time || post.askedTime)}</span>
+                    <span className="post-time" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatTime(post.timestamp || post.time || post.askedTime)}</span>
                 </div>
             </div>
 
@@ -114,7 +114,7 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                     </svg>
                     <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
                 </button>
-                <button className="post-action-btn" onClick={() => setIsExpanded(!isExpanded)} style={{ color: '#6a737c', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                <button className="post-action-btn" onClick={() => setIsExpanded(!isExpanded)} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                         <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
                     </svg>
@@ -123,13 +123,13 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                 <button className="post-action-btn" onClick={() => {
                     navigator.clipboard.writeText(window.location.origin + '/posts/' + (post.id || ''));
                     alert('Đã sao chép liên kết bài viết!');
-                }} style={{ color: '#6a737c', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
                     </svg>
                     <span>Chia sẻ</span>
                 </button>
-                <button className="post-action-btn" onClick={() => setIsSaved(!isSaved)} style={{ marginLeft: 'auto', color: isSaved ? '#0066FF' : '#6a737c', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                <button className="post-action-btn" onClick={() => setIsSaved(!isSaved)} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -139,7 +139,7 @@ const PostCard = ({ post, hideFollowButton = false }) => {
 
             {/* Inline Comments Section Mock */}
             {isExpanded && (
-                <div className="comments-thread" style={{ marginTop: '16px', borderTop: '1px solid #e3e6e8', paddingTop: '16px' }}>
+                <div className="comments-thread" style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
                             <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0 }}>

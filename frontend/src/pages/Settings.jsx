@@ -7,22 +7,32 @@ import '../styles/Settings.css';
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('edit-profile');
 
-    // Mock user profile data
-    const [profile, setProfile] = useState({
-        displayName: '1731_Trần Khánh Linh',
-        fullName: 'Trần Khánh Linh',
-        username: 'khanhlinh_1731',
-        email: 'linh.tran@example.com',
-        phone: '0987654321',
-        gender: '1',
-        dateOfBirth: '2002-10-15',
-        status: 'Active',
-        location: 'Vietnam',
-        title: 'Frontend Developer',
-        aboutMe: 'Yêu thích React và thiết kế UI/UX.',
-        websiteLink: 'https://github.com/linh-tran',
-        twitterLink: '',
-        githubLink: 'linh-tran'
+    // Initialize profile data from localStorage or use defaults
+    const [profile, setProfile] = useState(() => {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+            try {
+                return JSON.parse(savedProfile);
+            } catch (e) {
+                console.error('Error parsing saved profile:', e);
+            }
+        }
+        return {
+            displayName: '1731_Trần Khánh Linh',
+            fullName: 'Trần Khánh Linh',
+            username: 'khanhlinh_1731',
+            email: 'linh.tran@example.com',
+            phone: '0987654321',
+            gender: '1',
+            dateOfBirth: '2002-10-15',
+            status: 'Active',
+            location: 'Vietnam',
+            title: 'Frontend Developer',
+            aboutMe: 'Yêu thích React và thiết kế UI/UX.',
+            websiteLink: 'https://github.com/linh-tran',
+            twitterLink: '',
+            githubLink: 'linh-tran'
+        };
     });
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -30,13 +40,10 @@ const Settings = () => {
     });
 
     useEffect(() => {
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
+        const theme = isDarkMode ? 'dark' : 'light';
+        localStorage.setItem('theme', theme);
+        // Dispatch custom event to notify App.jsx
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
     }, [isDarkMode]);
 
     const handleInputChange = (e) => {
@@ -49,7 +56,10 @@ const Settings = () => {
 
     const handleSave = (e) => {
         e.preventDefault();
-        // Mock save action
+        // Save to localStorage
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+        // Dispatch custom event to notify other components (like Header)
+        window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: profile }));
         alert('Hồ sơ đã được lưu thành công!');
     };
 

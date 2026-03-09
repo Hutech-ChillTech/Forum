@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -12,6 +12,39 @@ const PostDetail = () => {
     const [upvoteState, setUpvoteState] = useState(0); // 1, 0, -1
     const [replyingTo, setReplyingTo] = useState(null);
     const [commentSortOrder, setCommentSortOrder] = useState('newest');
+
+    // State for user data synced with localStorage
+    const [userData, setUserData] = useState(() => {
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+            try {
+                const parsed = JSON.parse(savedProfile);
+                return {
+                    name: parsed.fullName || parsed.displayName || "Bạn",
+                    avatar: parsed.avatar || null
+                };
+            } catch (e) {
+                console.error('Error parsing user profile in PostDetail:', e);
+            }
+        }
+        return {
+            name: "Bạn",
+            avatar: null
+        };
+    });
+
+    useEffect(() => {
+        const handleProfileUpdate = (e) => {
+            const profile = e.detail;
+            setUserData({
+                name: profile.fullName || profile.displayName,
+                avatar: profile.avatar || null
+            });
+        };
+
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+    }, []);
 
     // Mock data for the specific question
     const [question] = useState({
@@ -93,8 +126,8 @@ const PostDetail = () => {
         if (!newComment.trim()) return;
         const newComObj = {
             id: Date.now(),
-            author: 'You (Guest)',
-            avatar: '/images/download.jpg',
+            author: userData.name,
+            avatar: userData.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userData.name),
             content: newComment,
             likes: 0,
             timestamp: Date.now(),

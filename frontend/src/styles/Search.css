@@ -4,28 +4,24 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #ffffff;
+    background-color: var(--bg-color);
 }
 
 .search-container {
-    max-width: 1264px;
+    display: grid;
+    grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
+    max-width: var(--container-max-width);
     margin: 60px auto 0;
     padding: 24px 16px;
-    flex: 1;
-    display: flex;
     gap: 24px;
-    width: 100%;
+    flex: 1;
 }
 
 /* Sidebar Placeholder */
 .search-sidebar {
-    width: 164px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
     position: sticky;
     top: 80px;
+    width: var(--left-sidebar-width);
     height: calc(100vh - 80px);
 }
 
@@ -35,7 +31,7 @@
 }
 
 .search-header {
-    border-bottom: 1px solid #e3e6e8;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 16px;
     margin-bottom: 16px;
 }
@@ -51,12 +47,12 @@
     font-size: 27px;
     font-weight: 400;
     margin: 0;
-    color: #232629;
+    color: var(--text-color);
 }
 
 .search-subtitle {
     font-size: 13px;
-    color: #6a737c;
+    color: var(--text-secondary);
     margin: 0 0 16px 0;
 }
 
@@ -65,15 +61,15 @@
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    color: #3b4045;
-    background-color: #f8f9f9;
+    color: var(--text-color);
+    background-color: var(--secondary-bg);
     padding: 12px;
-    border: 1px solid #d6d9dc;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
 }
 
 .search-tips code {
-    background-color: #e3e6e8;
+    background-color: var(--sidebar-item-hover);
     padding: 2px 4px;
     border-radius: 12px;
     font-family: ui-monospace, "Cascadia Mono", monospace;
@@ -92,20 +88,19 @@
 .empty-state {
     padding: 48px 24px;
     text-align: center;
-    background: #f8f9f9;
-    border: 1px dashed #babfc4;
+    background: var(--secondary-bg);
+    border: 1px dashed var(--border-color);
     border-radius: 12px;
     font-size: 15px;
-    color: #3b4045;
+    color: var(--text-secondary);
 }
 
 /* Right Sidebar */
 .search-right-sidebar {
-    width: 300px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+    position: sticky;
+    top: 80px;
+    width: var(--right-sidebar-width);
+    height: fit-content;
 }
 
 .related-tags-list {
@@ -128,7 +123,11 @@
 }
 
 /* Respond */
-@media (max-width: 1080px) {
+@media (max-width: 1100px) {
+    .search-container {
+        grid-template-columns: var(--left-sidebar-width) 1fr;
+    }
+
     .search-right-sidebar {
         display: none;
     }

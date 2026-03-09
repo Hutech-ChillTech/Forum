@@ -2,13 +2,13 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #f8f9f9;
+    background-color: var(--bg-color);
 }
 
 .home-container {
     display: grid;
-    grid-template-columns: 200px 1fr 300px;
-    max-width: 1264px;
+    grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
+    max-width: var(--container-max-width);
     margin: 56px auto 0;
     padding: 24px 16px;
     gap: 24px;
@@ -19,6 +19,7 @@
 .home-sidebar {
     position: sticky;
     top: 80px;
+    width: var(--left-sidebar-width);
     height: fit-content;
 }
 
@@ -41,15 +42,15 @@
 }
 
 .nav-item:hover {
-    background-color: #e3e6e8;
-    color: #232629;
+    background-color: var(--sidebar-item-hover);
+    color: var(--text-color);
 }
 
 .nav-item.active {
-    background-color: #f1f2f3;
-    color: #0c0d0e;
+    background-color: var(--sidebar-item-hover);
+    color: var(--text-color);
     font-weight: 600;
-    border-right: 3px solid #0066FF;
+    border-right: 3px solid var(--primary-color);
 }
 
 .nav-item svg {
@@ -82,7 +83,7 @@
 }
 
 .collective-link:hover {
-    background-color: #e3e6e8;
+    background-color: var(--sidebar-item-hover);
 }
 
 /* Main Content */
@@ -96,8 +97,8 @@
     align-items: center;
     gap: 12px;
     padding: 8px 16px;
-    background-color: #ebf2fa;
-    border: 1px solid #e6f0ff;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
     border-radius: 40px;
     margin-bottom: 24px;
     transition: all 0.2s ease;
@@ -105,8 +106,8 @@
 }
 
 .greeting-card:hover {
-    background-color: #e6f0ff;
-    border-color: #d6d9dc;
+    background-color: var(--sidebar-item-hover);
+    border-color: var(--border-color);
 }
 
 .avatar-icon {
@@ -123,7 +124,7 @@
 
 .greeting-input-mock {
     flex: 1;
-    background-color: white;
+    background-color: var(--input-bg);
     border: none;
     border-radius: 30px;
     padding: 10px 20px;
@@ -135,7 +136,7 @@
     margin: 0;
     font-size: 15px;
     font-weight: 400;
-    color: #232629;
+    color: var(--text-color);
 }
 
 /* User Posts Section */
@@ -146,14 +147,14 @@
 .section-title {
     font-size: 21px;
     font-weight: 400;
-    color: #232629;
+    color: var(--text-color);
     margin: 0 0 16px 0;
 }
 
 .user-post-card {
     padding: 24px;
-    background-color: white;
-    border: 1px solid #e3e6e8;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
@@ -205,17 +206,17 @@
 .post-author-name {
     font-size: 14px;
     font-weight: 600;
-    color: #0c0d0e;
+    color: var(--text-color);
 }
 
 .post-time {
     font-size: 12px;
-    color: #9fa6ad;
+    color: var(--text-secondary);
 }
 
 .post-content-text {
     margin-bottom: 16px;
-    color: #3b4045;
+    color: var(--text-color);
     font-size: 15px;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -231,9 +232,9 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    border: 1px solid #e3e6e8;
-    background-color: #f8f9f9;
-    color: #525960;
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+    color: var(--text-secondary);
     font-size: 13px;
     border-radius: 20px;
     cursor: pointer;
@@ -242,9 +243,9 @@
 }
 
 .post-action-btn:hover {
-    background-color: #e3e6e8;
-    border-color: #d6d9dc;
-    color: #0c0d0e;
+    background-color: var(--sidebar-item-hover);
+    border-color: var(--border-color);
+    color: var(--text-color);
 }
 
 .post-action-btn svg {
@@ -261,8 +262,8 @@
 
 .featured-question-card {
     padding: 24px;
-    background-color: white;
-    border: 1px solid #e3e6e8;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
     transition: all 0.3s ease;
@@ -281,7 +282,7 @@
 }
 
 .featured-question-title a {
-    color: #0052cc;
+    color: var(--primary-color);
     text-decoration: none;
 }
 
@@ -291,7 +292,7 @@
 
 .featured-question-excerpt {
     margin: 0 0 16px 0;
-    color: #3b4045;
+    color: var(--text-color);
     font-size: 13px;
     line-height: 1.5;
     overflow: hidden;
@@ -319,8 +320,8 @@
 .tag {
     display: inline-block;
     padding: 5px 10px;
-    background-color: #edf2f6;
-    color: #0052cc;
+    background-color: var(--secondary-bg);
+    color: var(--primary-color);
     font-size: 12px;
     border-radius: 15px;
     text-decoration: none;
@@ -338,32 +339,33 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: #6a737c;
+    color: var(--text-secondary);
 }
 
 .featured-author {
-    color: #0052cc;
+    color: var(--primary-color);
     font-weight: 500;
 }
 
 .featured-reputation {
-    color: #6a737c;
+    color: var(--text-secondary);
 }
 
 .featured-time {
-    color: #9fa6ad;
+    color: var(--text-secondary);
 }
 
 /* Right Sidebar */
 .home-right-sidebar {
     position: sticky;
     top: 80px;
+    width: var(--right-sidebar-width);
     height: fit-content;
 }
 
 .tags-widget {
-    background-color: white;
-    border: 1px solid #e3e6e8;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -372,11 +374,11 @@
 .widget-title {
     font-size: 15px;
     font-weight: 600;
-    color: #3b4045;
+    color: var(--text-color);
     margin: 0;
     padding: 12px 16px;
-    background-color: #fdf7e2;
-    border-bottom: 1px solid #e3e6e8;
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .tags-list {
@@ -391,20 +393,20 @@
     display: inline-flex;
     align-items: center;
     padding: 6px 14px;
-    background-color: #f1f2f3;
+    background-color: var(--secondary-bg);
     border-radius: 20px;
     text-decoration: none;
     transition: all 0.2s ease;
-    border: 1px solid #e3e6e8;
+    border: 1px solid var(--border-color);
     width: fit-content;
 }
 
 .tag-item:hover {
-    background-color: #e3e6e8;
+    background-color: var(--sidebar-item-hover);
 }
 
 .tag-name {
-    color: #0052cc;
+    color: var(--primary-color);
     font-size: 13px;
     font-weight: 500;
 }
@@ -414,7 +416,7 @@
 /* Responsive Design */
 @media (max-width: 1100px) {
     .home-container {
-        grid-template-columns: 200px 1fr;
+        grid-template-columns: var(--left-sidebar-width) 1fr;
     }
 
     .home-right-sidebar {

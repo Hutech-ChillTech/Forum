@@ -2,13 +2,13 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #f8f9f9;
+    background-color: var(--bg-color);
 }
 
 .tags-container {
     display: grid;
-    grid-template-columns: 200px 1fr;
-    max-width: 1264px;
+    grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
+    max-width: var(--container-max-width);
     margin: 56px auto 0;
     padding: 24px 16px;
     gap: 24px;
@@ -19,6 +19,7 @@
 .tags-sidebar {
     position: sticky;
     top: 80px;
+    width: var(--left-sidebar-width);
     height: fit-content;
 }
 
@@ -33,7 +34,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    color: #525960;
+    color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
     border-radius: 12px;
@@ -41,15 +42,15 @@
 }
 
 .nav-item:hover {
-    background-color: #e3e6e8;
-    color: #232629;
+    background-color: var(--sidebar-item-hover);
+    color: var(--text-color);
 }
 
 .nav-item.active {
-    background-color: #f1f2f3;
-    color: #0c0d0e;
+    background-color: var(--sidebar-item-hover);
+    color: var(--text-color);
     font-weight: 600;
-    border-right: 3px solid #0066FF;
+    border-right: 3px solid var(--primary-color);
 }
 
 .nav-item svg {
@@ -66,7 +67,7 @@
 .sidebar-title {
     font-size: 11px;
     font-weight: 700;
-    color: #6a737c;
+    color: var(--text-secondary);
     margin: 0 0 12px 12px;
     text-transform: uppercase;
 }
@@ -82,7 +83,7 @@
 }
 
 .collective-link:hover {
-    background-color: #e3e6e8;
+    background-color: var(--sidebar-item-hover);
 }
 
 /* Main Content */
@@ -98,13 +99,13 @@
 .tags-title {
     font-size: 27px;
     font-weight: 400;
-    color: #232629;
+    color: var(--text-color);
     margin: 0 0 16px 0;
 }
 
 .tags-description {
     font-size: 15px;
-    color: #3b4045;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin: 0 0 12px 0;
 }
@@ -130,17 +131,18 @@
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8a9199;
+    color: var(--text-secondary);
     pointer-events: none;
 }
 
 .tags-search-input {
     width: 100%;
     padding: 10px 12px 10px 40px;
-    border: 1px solid #babfc4;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     font-size: 13px;
-    color: #0c0d0e;
+    color: var(--text-color);
+    background-color: var(--input-bg);
     transition: all 0.2s ease;
 }
 
@@ -151,7 +153,7 @@
 }
 
 .tags-search-input::placeholder {
-    color: #9fa6ad;
+    color: var(--text-secondary);
 }
 
 /* Tabs */
@@ -159,14 +161,14 @@
     display: flex;
     gap: 4px;
     margin-bottom: 24px;
-    border-bottom: 1px solid #d6d9dc;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .tab-btn {
     padding: 12px 16px;
     border: none;
     background: transparent;
-    color: #6a737c;
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -176,13 +178,13 @@
 }
 
 .tab-btn:hover {
-    background-color: #e3e6e8;
-    color: #232629;
+    background-color: var(--secondary-bg);
+    color: var(--text-color);
 }
 
 .tab-btn.active {
-    color: #0c0d0e;
-    border-bottom-color: #0066FF;
+    color: var(--text-color);
+    border-bottom-color: var(--primary-color);
     font-weight: 600;
 }
 
@@ -195,8 +197,8 @@
 
 .tag-card {
     padding: 16px;
-    background-color: white;
-    border: 1px solid #d6d9dc;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     transition: all 0.2s ease;
     display: flex;
@@ -212,8 +214,8 @@
 .tag-name-link {
     display: inline-block;
     padding: 4px 8px;
-    background-color: #e6f0ff;
-    color: #0052cc;
+    background-color: var(--secondary-bg);
+    color: var(--primary-color);
     font-size: 13px;
     font-weight: 500;
     border-radius: 12px;
@@ -229,7 +231,7 @@
 
 .tag-description {
     margin: 0;
-    color: #6a737c;
+    color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.5;
     overflow: hidden;
@@ -246,18 +248,18 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 8px;
-    border-top: 1px solid #e3e6e8;
+    border-top: 1px solid var(--border-color);
 }
 
 .tag-count {
     font-size: 12px;
-    color: #6a737c;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .tag-today {
     font-size: 11px;
-    color: #9fa6ad;
+    color: var(--text-secondary);
 }
 
 /* Responsive */
