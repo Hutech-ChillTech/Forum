@@ -7,7 +7,7 @@ import ChatBox from '../components/ChatBox';
 import '../styles/Posts.css';
 import '../styles/PostDetail.css';
 
-const Posts = () => {
+const Videos = () => {
     const [expandedCommentsId, setExpandedCommentsId] = useState(null);
     const [replyingTo, setReplyingTo] = useState(null);
     const [likedPosts, setLikedPosts] = useState({});
@@ -19,53 +19,52 @@ const Posts = () => {
     const toggleLike = (id) => setLikedPosts(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleSave = (id) => setSavedPosts(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleFollow = (author) => setFollowedUsers(prev => ({ ...prev, [author]: !prev[author] }));
-    const [questions] = useState([
+
+    const [videoPosts] = useState([
         {
             id: 1,
-            title: 'Java.lang.NoClassDefFoundError: org/eclipse/jetty/util/component/ContainerLifeCycle',
-            content: 'I was writing a simple program to send requests to a certain api using java and i decided to use jetty-client for http request handling...',
-            author: 'user123',
-            tags: ['c++', 'language-lawyer', 'undefined-behavior', 'constant-expression'],
-            askedTime: '3 years, 1 month ago',
-            modifiedTime: 'today',
-            images: ['/images/download.jpg', '/images/download (2).png'],
-            likes: 45,
-            comments: 12
+            title: 'Hướng dẫn cài đặt môi trường Java cho người mới bắt đầu',
+            excerpt: 'Video này mình sẽ hướng dẫn các bạn cách cài đặt JDK và IntelliJ IDEA một cách chi tiết nhất.',
+            author: 'Lập Trình Viên TV',
+            tags: ['java', 'tutorial', 'beginner'],
+            askedTime: '2 giờ trước',
+            youtube: 'Tn6-PIqc4UM',
+            likes: 1250,
+            comments: 84
         },
         {
             id: 2,
-            title: 'How to fix authentication error in Spring Boot?',
-            content: 'I am getting 401 unauthorized error when trying to access protected endpoints...',
-            author: 'developer456',
-            tags: ['java', 'spring-boot', 'security'],
-            askedTime: '2 days ago',
-            modifiedTime: '1 day ago',
-            youtube: 'Tn6-PIqc4UM',
-            likes: 12,
-            comments: 2
+            title: 'Top 5 thư viện React cực hay năm 2024',
+            excerpt: 'Chia sẻ các thư viện giúp tăng tốc độ phát triển dự án React của bạn.',
+            author: 'Tech Guru',
+            tags: ['javascript', 'react', 'frontend'],
+            askedTime: '5 giờ trước',
+            youtube: 'grEKMHGYyns',
+            likes: 840,
+            comments: 32
         },
         {
             id: 3,
-            title: 'React useState not updating immediately',
-            content: 'When I call setState, the state variable does not update immediately. Why is this happening?',
-            author: 'reactDev789',
-            tags: ['javascript', 'reactjs', 'hooks'],
-            askedTime: '1 week ago',
-            modifiedTime: '3 days ago',
-            images: ['/images/download.png', '/images/download.jpg', '/images/download (3).png'],
-            likes: 120,
-            comments: 48
+            title: 'Short: Giải thích nhanh về Docker trong 60 giây',
+            excerpt: 'Docker là gì? Tại sao lập trình viên nào cũng cần biết?',
+            author: 'Dev Ops Pro',
+            tags: ['docker', 'devops', 'shorts'],
+            askedTime: '1 ngày trước',
+            youtube: 'Tn6-PIqc4UM', // Dùng tạm mock youtube id
+            likes: 3200,
+            comments: 112,
+            isShort: true
         },
         {
             id: 4,
-            title: 'Best practices for database indexing in PostgreSQL',
-            content: 'What are the best practices when creating indexes in PostgreSQL for optimal query performance?',
-            author: 'dbAdmin',
-            tags: ['postgresql', 'database', 'indexing', 'performance'],
-            askedTime: '5 days ago',
-            modifiedTime: '2 days ago',
-            likes: 3,
-            comments: 0
+            title: 'Xây dựng ứng dụng Chat Realtime với Socket.io',
+            excerpt: 'Hướng dẫn step-by-step xây dựng ứng dụng chat đơn giản.',
+            author: 'Code With Me',
+            tags: ['nodejs', 'socketio', 'backend'],
+            askedTime: '2 ngày trước',
+            youtube: 'grEKMHGYyns',
+            likes: 560,
+            comments: 18
         }
     ]);
 
@@ -82,210 +81,91 @@ const Posts = () => {
                 {/* Main Content */}
                 <main className="posts-main">
                     <div className="questions-header">
-                        <h1>All Questions</h1>
-                        <button className="btn-primary">Ask Question</button>
+                        <h1>Khám phá Video</h1>
+                        <button className="btn-primary" onClick={() => window.dispatchEvent(new CustomEvent('openCreatePost'))}>Tải video lên</button>
                     </div>
 
                     <div className="questions-toolbar">
-                        <div className="questions-count">{questions.length} questions</div>
+                        <div className="questions-count">{videoPosts.length} video</div>
                         <div className="questions-filters">
-                            <button className="filter-btn">Newest</button>
-                            <button className="filter-btn">Active</button>
-                            <button className="filter-btn">Bountied</button>
-                            <button className="filter-btn">Unanswered</button>
-                            <button className="filter-btn">More</button>
+                            <button className="filter-btn">Dành cho bạn</button>
+                            <button className="filter-btn">Mới nhất</button>
+                            <button className="filter-btn">Học tập</button>
+                            <button className="filter-btn">Shorts</button>
+                            <button className="filter-btn">Live</button>
                         </div>
                     </div>
 
                     <div className="questions-list">
-                        {questions.map((question) => (
-                            <div key={question.id} className="question-card" style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                        {videoPosts.map((post) => (
+                            <div key={post.id} className={`question-card ${post.isShort ? 'short-video-style' : ''}`} style={{ display: 'flex', gap: '12px', flexDirection: 'column', backgroundColor: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #e3e6e8' }}>
                                 <div className="post-header" style={{ marginBottom: '8px' }}>
                                     <div className="post-avatar-small">
                                         <span className="post-avatar-initials-small">
-                                            {question.author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                            {post.author.slice(0, 2).toUpperCase()}
                                         </span>
                                     </div>
                                     <div className="post-author-info" style={{ display: 'flex', flexDirection: 'column' }}>
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <span className="post-author-name" style={{ marginRight: '8px' }}>{question.author}</span>
-                                            <button onClick={() => toggleFollow(question.author)} style={{ background: 'none', border: 'none', color: followedUsers[question.author] ? '#6a737c' : '#0052cc', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                {followedUsers[question.author] ? (
-                                                    <>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
-                                                        Đang theo dõi
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                                                        Theo dõi
-                                                    </>
-                                                )}
+                                            <span className="post-author-name" style={{ marginRight: '8px', fontWeight: 'bold', color: '#0066FF' }}>{post.author}</span>
+                                            <button onClick={() => toggleFollow(post.author)} style={{ background: 'none', border: 'none', color: followedUsers[post.author] ? '#6a737c' : '#0066FF', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {followedUsers[post.author] ? '• Đang theo dõi' : '• Theo dõi'}
                                             </button>
                                         </div>
-                                        <span className="post-time">{question.askedTime}</span>
+                                        <span className="post-time" style={{ fontSize: '12px', color: '#6a737c' }}>{post.askedTime}</span>
                                     </div>
                                 </div>
                                 <div className="question-content" style={{ flexGrow: 1 }}>
-                                    <h3 className="question-title">
-                                        <a href={`/posts/${question.id}`}>{question.title}</a>
+                                    <h3 className="question-title" style={{ marginBottom: '8px', fontSize: '18px' }}>
+                                        <a href={`/posts/${post.id}`} style={{ textDecoration: 'none', color: '#232629' }}>{post.title}</a>
                                     </h3>
-                                    <p className="question-excerpt">{question.content}</p>
+                                    <p className="question-excerpt" style={{ color: '#3b4045', fontSize: '14px', marginBottom: '12px' }}>{post.excerpt}</p>
 
-                                    {question.images && question.images.length > 0 && (
-                                        <a href={`/posts/${question.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                                            <ImageGrid images={question.images} />
-                                        </a>
-                                    )}
-
-                                    {question.video && (
-                                        <div className="question-media-preview" style={{ margin: '10px 0', width: '100%', backgroundColor: '#000', borderRadius: '12px', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
-                                            <video src={question.video} controls style={{ width: '100%', maxHeight: '450px', display: 'block' }} />
-                                        </div>
-                                    )}
-
-                                    {question.youtube && (
-                                        <div className="question-media-preview" style={{ margin: '10px 0', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', paddingTop: '56.25%' }}>
-                                            <iframe src={`https://www.youtube.com/embed/${question.youtube}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube video"></iframe>
+                                    {post.youtube && (
+                                        <div className="question-media-preview" style={{ margin: '10px 0', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', paddingTop: post.isShort ? '177.77%' : '56.25%', maxWidth: post.isShort ? '320px' : '100%', margin: post.isShort ? '10px auto' : '10px 0' }}>
+                                            <iframe src={`https://www.youtube.com/embed/${post.youtube}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube video"></iframe>
                                         </div>
                                     )}
 
                                     <div className="question-footer">
-                                        <div className="question-tags">
-                                            {question.tags.map((tag, index) => (
-                                                <span key={index} className="tag">{tag}</span>
+                                        <div className="question-tags" style={{ display: 'flex', gap: '8px' }}>
+                                            {post.tags.map((tag, index) => (
+                                                <span key={index} className="tag" style={{ backgroundColor: '#f0f2f5', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#5f6368' }}>#{tag}</span>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="post-actions" style={{ marginTop: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                        <button className="post-action-btn" onClick={() => toggleLike(question.id)} style={{ color: likedPosts[question.id] ? '#0066FF' : 'inherit' }}>
-                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                                            </svg>
-                                            <span>{question.likes + (likedPosts[question.id] ? 1 : 0)}</span>
+                                    <div className="post-actions" style={{ marginTop: '16px', display: 'flex', gap: '20px', alignItems: 'center', borderTop: '1px solid #f0f2f5', paddingTop: '12px' }}>
+                                        <button className="post-action-btn" onClick={() => toggleLike(post.id)} style={{ color: likedPosts[post.id] ? '#0066FF' : '#5f6368', display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill={likedPosts[post.id] ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                            <span style={{ fontWeight: '500' }}>{post.likes + (likedPosts[post.id] ? 1 : 0)}</span>
                                         </button>
-                                        <button className="post-action-btn" onClick={() => setExpandedCommentsId(expandedCommentsId === question.id ? null : question.id)}>
-                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                                <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
-                                            </svg>
-                                            <span>{question.comments}</span>
+                                        <button className="post-action-btn" onClick={() => setExpandedCommentsId(expandedCommentsId === post.id ? null : post.id)} style={{ color: '#5f6368', display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                            <span style={{ fontWeight: '500' }}>{post.comments}</span>
                                         </button>
-                                        <button className="post-action-btn" onClick={() => toggleSave(question.id)} style={{ marginLeft: 'auto', color: savedPosts[question.id] ? '#0066FF' : 'inherit' }}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill={savedPosts[question.id] ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <button className="post-action-btn" onClick={() => {
+                                            navigator.clipboard.writeText(window.location.origin + '/posts/' + post.id);
+                                            alert('Đã sao chép liên kết video!');
+                                        }} style={{ color: '#5f6368', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                            <span style={{ marginLeft: '6px', fontWeight: '500' }}>Chia sẻ</span>
+                                        </button>
+                                        <button className="post-action-btn" onClick={() => toggleSave(post.id)} style={{ marginLeft: 'auto', color: savedPosts[post.id] ? '#0066FF' : '#5f6368', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill={savedPosts[post.id] ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                                             </svg>
-                                            <span>{savedPosts[question.id] ? 'Đã lưu' : 'Lưu Bài'}</span>
                                         </button>
                                     </div>
 
-                                    {/* Inline Comments Section Mock */}
-                                    {expandedCommentsId === question.id && (
-                                        <div className="comments-thread" style={{ marginTop: '16px', borderTop: '1px solid #e3e6e8', paddingTop: '16px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
-                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#e6f0ff', color: '#0052cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0 }}>
-                                                        U
-                                                    </div>
-                                                    <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
-                                                        <input type="text" placeholder="Thêm bình luận..." className="comment-input-area" style={{ border: '1px solid #babfc4', borderRadius: '12px', padding: '8px 12px', height: 'auto' }} />
-                                                        <button className="btn-primary" style={{ padding: '8px 16px', height: 'auto', whiteSpace: 'nowrap' }}>Gửi</button>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
-                                                    <label style={{ fontSize: '12px', color: '#6a737c', fontWeight: '500' }}>Sắp xếp:</label>
-                                                    <select
-                                                        value={commentSortOrder}
-                                                        onChange={(e) => setCommentSortOrder(e.target.value)}
-                                                        style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid #babfc4', fontSize: '12px', cursor: 'pointer', outline: 'none' }}
-                                                    >
-                                                        <option value="newest">Mới nhất</option>
-                                                        <option value="oldest">Cũ nhất (Trễ nhất)</option>
-                                                    </select>
-                                                </div>
+                                    {expandedCommentsId === post.id && (
+                                        <div className="comments-thread" style={{ marginTop: '16px', borderTop: '1px solid #f0f2f5', paddingTop: '16px' }}>
+                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                                <input type="text" placeholder="Thêm bình luận về video..." className="comment-input-area" style={{ border: '1px solid #e3e6e8', borderRadius: '20px', padding: '10px 16px', flex: 1, backgroundColor: '#f0f2f5' }} />
+                                                <button className="btn-primary" style={{ borderRadius: '20px', padding: '0 20px' }}>Gửi</button>
                                             </div>
-
-                                            <div style={{ display: 'flex', flexDirection: commentSortOrder === 'newest' ? 'column' : 'column-reverse' }}>
-                                                <div className="comment-item" style={{ marginTop: '16px', order: 2 }}>
-                                                    <div className="comment-user-avatar">
-                                                        <img src="/images/download (3).png" alt="avatar" />
-                                                    </div>
-                                                    <div className="comment-content-wrapper">
-                                                        <span className="comment-username">DevGuy</span>
-                                                        <div className="comment-bubble">
-                                                            <p>Câu hỏi rất thú vị, hóng cao nhân vào giải đáp!</p>
-                                                            <div className="comment-actions">
-                                                                <button><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> 2</button>
-                                                                <button className="reply-btn" onClick={() => setReplyingTo(replyingTo === question.id + '_c1' ? null : question.id + '_c1')}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Phản hồi</button>
-                                                                <button className="more-btn">•••</button>
-                                                                <span style={{ fontSize: '11px', color: '#6a737c', marginLeft: 'auto' }}>1 giờ trước</span>
-                                                            </div>
-                                                            {replyingTo === question.id + '_c1' && (
-                                                                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center', animation: 'fadeIn 0.2s ease-out' }}>
-                                                                    <input type="text" placeholder={`Phản hồi DevGuy...`} className="comment-input-area" style={{ border: '1px solid #babfc4', borderRadius: '12px', padding: '6px 10px', height: 'auto', flex: 1, fontSize: '13px' }} autoFocus />
-                                                                    <button className="btn-primary" style={{ padding: '6px 12px', height: 'auto', fontSize: '12px' }}>Gửi</button>
-                                                                    <button style={{ padding: '6px', height: 'auto', fontSize: '12px', backgroundColor: 'transparent', color: '#6a737c', border: 'none', cursor: 'pointer' }} onClick={() => setReplyingTo(null)}>Hủy</button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Child Comment (Reply) */}
-                                                        <div className="comment-replies" style={{ marginTop: '16px' }}>
-                                                            <div className="comment-connector"></div>
-                                                            <div className="comment-item nested">
-                                                                <div className="comment-user-avatar">
-                                                                    <img src="/images/download (2).png" alt="avatar" />
-                                                                </div>
-                                                                <div className="comment-content-wrapper">
-                                                                    <span className="comment-username">{question.author}</span>
-                                                                    <div className="comment-bubble">
-                                                                        <p>Cảm ơn bạn nhé!</p>
-                                                                        <div className="comment-actions">
-                                                                            <button><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> 0</button>
-                                                                            <button className="reply-btn" onClick={() => setReplyingTo(replyingTo === question.id + '_r1' ? null : question.id + '_r1')}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Phản hồi</button>
-                                                                            <button className="more-btn">•••</button>
-                                                                            <span style={{ fontSize: '11px', color: '#6a737c', marginLeft: 'auto' }}>45 phút trước</span>
-                                                                        </div>
-                                                                        {replyingTo === question.id + '_r1' && (
-                                                                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center', animation: 'fadeIn 0.2s ease-out' }}>
-                                                                                <input type="text" placeholder={`Phản hồi ${question.author}...`} className="comment-input-area" style={{ border: '1px solid #babfc4', borderRadius: '12px', padding: '6px 10px', height: 'auto', flex: 1, fontSize: '13px' }} autoFocus />
-                                                                                <button className="btn-primary" style={{ padding: '6px 12px', height: 'auto', fontSize: '12px' }}>Gửi</button>
-                                                                                <button style={{ padding: '6px', height: 'auto', fontSize: '12px', backgroundColor: 'transparent', color: '#6a737c', border: 'none', cursor: 'pointer' }} onClick={() => setReplyingTo(null)}>Hủy</button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="comment-item" style={{ marginTop: '16px' }}>
-                                                    <div className="comment-user-avatar">
-                                                        <img src="/images/download.png" alt="avatar" />
-                                                    </div>
-                                                    <div className="comment-content-wrapper">
-                                                        <span className="comment-username">luckyluke</span>
-                                                        <div className="comment-bubble">
-                                                            <p>Thử xem lại phiên bản Maven của bạn nhé.</p>
-                                                            <div className="comment-actions">
-                                                                <button><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> 0</button>
-                                                                <button className="reply-btn" onClick={() => setReplyingTo(replyingTo === question.id + '_c2' ? null : question.id + '_c2')}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Phản hồi</button>
-                                                                <button className="more-btn">•••</button>
-                                                                <span style={{ fontSize: '11px', color: '#6a737c', marginLeft: 'auto' }}>25 phút trước</span>
-                                                            </div>
-                                                            {replyingTo === question.id + '_c2' && (
-                                                                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center', animation: 'fadeIn 0.2s ease-out' }}>
-                                                                    <input type="text" placeholder={`Phản hồi luckyluke...`} className="comment-input-area" style={{ border: '1px solid #babfc4', borderRadius: '12px', padding: '6px 10px', height: 'auto', flex: 1, fontSize: '13px' }} autoFocus />
-                                                                    <button className="btn-primary" style={{ padding: '6px 12px', height: 'auto', fontSize: '12px' }}>Gửi</button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                                                <a href={`/posts/${question.id}`} style={{ fontSize: '13px', color: '#0052cc', textDecoration: 'none', fontWeight: '500' }}>Xem tất cả bình luận ở trang chi tiết</a>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <a href={`/posts/${post.id}`} style={{ fontSize: '13px', color: '#0066FF', textDecoration: 'none', fontWeight: '500' }}>Xem tất cả bình luận</a>
                                             </div>
                                         </div>
                                     )}
@@ -295,30 +175,22 @@ const Posts = () => {
                     </div>
                 </main>
 
-                {/* Right Sidebar (optional) */}
+                {/* Right Sidebar */}
                 <aside className="posts-right-sidebar">
                     <div className="sidebar-widget">
-                        <h3 className="widget-title">The Overflow Blog</h3>
+                        <h3 className="widget-title">Trending Videos</h3>
                         <ul className="widget-list">
-                            <li><a href="#">The unexpected benefits of mentoring others</a></li>
-                            <li><a href="#">Podcast 354: Building for AR with Niantic Labs</a></li>
+                            <li><a href="#">Tương lai của AI trong năm 2025</a></li>
+                            <li><a href="#">Học Docker trong 10 phút</a></li>
+                            <li><a href="#">Tại sao nên dùng Next.js 15?</a></li>
                         </ul>
                     </div>
 
                     <div className="sidebar-widget">
-                        <h3 className="widget-title">Featured & Meta</h3>
+                        <h3 className="widget-title">Shorts Challenges</h3>
                         <ul className="widget-list">
-                            <li><a href="#">Beta release of Collectives™ on Stack Overflow</a></li>
-                            <li><a href="#">Announcing Design Accessibility Updates</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="sidebar-widget">
-                        <h3 className="widget-title">Hot Network Questions</h3>
-                        <ul className="widget-list hot-questions">
-                            <li><a href="#">Why does C++ allow undefined behavior?</a></li>
-                            <li><a href="#">Can I use React hooks with class components?</a></li>
-                            <li><a href="#">What is the difference between SQL and NoSQL?</a></li>
+                            <li><a href="#">#CodeChallenge60s</a></li>
+                            <li><a href="#">#DevLifeShorts</a></li>
                         </ul>
                     </div>
                 </aside>
@@ -345,4 +217,5 @@ const Posts = () => {
         </div >
     );
 };
-export default Posts;
+
+export default Videos;

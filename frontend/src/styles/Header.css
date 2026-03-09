@@ -16,7 +16,7 @@
     padding: 0 16px;
     height: 100%;
     display: grid;
-    grid-template-columns: minmax(auto, 350px) 1fr minmax(auto, 200px);
+    grid-template-columns: 200px 1fr 300px;
     align-items: center;
     gap: 24px;
 }
@@ -67,47 +67,7 @@
     transform: scale(1.05);
 }
 
-.header-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
 
-.nav-link {
-    padding: 6px 12px;
-    color: #525960;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 400;
-    border-radius: 16px;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
-}
-
-.nav-link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 116, 204, 0.15) 0%, rgba(0, 116, 204, 0.05) 50%, transparent 100%);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s ease-out, height 0.6s ease-out;
-}
-
-.nav-link:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.nav-link:hover {
-    color: #0052cc;
-    background: linear-gradient(135deg, rgba(0, 116, 204, 0.08) 0%, rgba(0, 149, 255, 0.12) 100%);
-}
 
 /* Search Bar */
 .header-center {
@@ -119,7 +79,6 @@
 .search-bar {
     position: relative;
     width: 100%;
-    max-width: 600px;
 }
 
 .search-icon {
@@ -155,12 +114,79 @@
     box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.15);
 }
 
-/* Header Right - Auth Buttons */
+/* Header Right - Auth & Tools */
 .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
     justify-self: end;
+}
+
+.header-icons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+}
+
+.icon-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #6a737c;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    background-color: #e6f0ff;
+    color: #0066FF;
+}
+
+.icon-btn .badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #ff4d4f;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.btn-create-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #0066FF;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 102, 255, 0.2);
+    margin-left: 8px;
+}
+
+.btn-create-header:hover {
+    background: #0052cc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
 }
 
 .btn-login {

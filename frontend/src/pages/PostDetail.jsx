@@ -153,21 +153,21 @@ const PostDetail = () => {
                     {/* Question Header */}
                     <div className="question-header-top">
                         <h1 className="question-header-title">{question.title}</h1>
-                        <button className="btn-primary">Ask Question</button>
+                        <button className="btn-primary" onClick={() => window.dispatchEvent(new CustomEvent('openCreatePost'))}>Tạo bài viết</button>
                     </div>
 
                     <div className="question-meta-bar">
                         <div className="meta-info">
-                            <span className="meta-label">Asked</span>
+                            <span className="meta-label">Đã đăng</span>
                             <span className="meta-value">{question.askedTime}</span>
                         </div>
                         <div className="meta-info">
-                            <span className="meta-label">Modified</span>
+                            <span className="meta-label">Hoạt động</span>
                             <span className="meta-value">{question.modifiedTime}</span>
                         </div>
                         <div className="meta-info">
-                            <span className="meta-label">Viewed</span>
-                            <span className="meta-value">{question.views} times</span>
+                            <span className="meta-label">Lượt xem</span>
+                            <span className="meta-value">{question.views} lần</span>
                         </div>
                     </div>
 
@@ -235,13 +235,16 @@ const PostDetail = () => {
 
                             <div className="post-author-row">
                                 <div className="post-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <a href="#" className="post-action-link">Share</a>
-                                    <a href="#" className="post-action-link">Edit</a>
+                                    <button onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        alert('Đã sao chép liên kết bài viết!');
+                                    }} style={{ background: 'none', border: 'none', color: '#6a737c', cursor: 'pointer', padding: '0', fontSize: '13px' }} className="post-action-link">Chia sẻ</button>
+                                    <a href="#" className="post-action-link" style={{ textDecoration: 'none' }}>Chỉnh sửa</a>
                                     <button onClick={() => setIsSaved(!isSaved)} style={{ background: 'none', border: 'none', color: isSaved ? '#0066FF' : '#6a737c', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }} className="post-action-link">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                                         </svg>
-                                        {isSaved ? 'Saved' : 'Save'}
+                                        {isSaved ? 'Đã lưu' : 'Lưu'}
                                     </button>
                                 </div>
                                 <div className="author-card">
@@ -359,7 +362,7 @@ const PostDetail = () => {
                                                                         <p>{reply.content}</p>
                                                                         <div className="comment-actions">
                                                                             <button><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> {reply.likes || 0}</button>
-                                                                            <button className="reply-btn" onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Reply</button>
+                                                                            <button className="reply-btn" onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Phản hồi</button>
                                                                             <button className="more-btn">•••</button>
                                                                         </div>
                                                                         {replyingTo === reply.id && (
@@ -385,7 +388,7 @@ const PostDetail = () => {
 
                     {/* Answers Section */}
                     <div className="answers-header">
-                        <h2>{answers.length} Answers</h2>
+                        <h2>{answers.length} Câu trả lời</h2>
                         <div className="sort-container">
                             <label>Sorted by:</label>
                             <select className="sort-select">
@@ -442,11 +445,11 @@ const PostDetail = () => {
 
                     {/* Your Answer Form */}
                     <div className="your-answer-section">
-                        <h2>Your Answer</h2>
+                        <h2>Câu trả lời của bạn</h2>
                         <div className="editor-container">
-                            <textarea className="answer-textarea" rows="10" placeholder="Write your answer here..."></textarea>
+                            <textarea className="answer-textarea" rows="10" placeholder="Viết câu trả lời của bạn tại đây..."></textarea>
                         </div>
-                        <button className="btn-primary post-answer-btn">Post Your Answer</button>
+                        <button className="btn-primary post-answer-btn">Gửi câu trả lời</button>
                     </div>
                 </main>
 

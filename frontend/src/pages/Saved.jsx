@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import ChatBox from '../components/ChatBox';
 import ImageGrid from '../components/ImageGrid';
+import PostCard from '../components/PostCard';
 import '../styles/Home.css'; // Reusing Home styles for consistency
 
 const Saved = () => {
@@ -71,58 +72,7 @@ const Saved = () => {
                         {savedPostData.filter(post => savedPosts['saved_' + post.id]).length > 0 ? (
                             savedPostData.map((post) => (
                                 savedPosts['saved_' + post.id] && (
-                                    <div key={post.id} className="featured-card" style={{ marginBottom: '16px' }}>
-                                        <div className="featured-card-content">
-                                            <div className="featured-user-block">
-                                                <div className="featured-user-avatar">
-                                                    <img src="/images/download.png" alt="avatar" />
-                                                </div>
-                                                <div className="featured-user-info">
-                                                    <span className="featured-author">{post.author}</span>
-                                                    <span className="featured-reputation">{post.reputation} reputation</span>
-                                                    <span className="featured-time">{post.time}</span>
-                                                </div>
-                                            </div>
-
-                                            <h3 className="question-title" style={{ margin: '15px 0 10px 0', fontSize: '18px', fontWeight: '600' }}>
-                                                <a href={`/posts/${post.id}`} style={{ color: '#0052cc', textDecoration: 'none' }}>{post.title}</a>
-                                            </h3>
-                                            <p style={{ fontSize: '14px', color: '#3b4045', lineHeight: '1.5', margin: '0 0 15px 0' }}>{post.excerpt}</p>
-
-                                            {post.images && (
-                                                <ImageGrid images={post.images} />
-                                            )}
-
-                                            <div className="question-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
-                                                <div className="question-tags" style={{ display: 'flex', gap: '8px' }}>
-                                                    {post.tags.map((tag, idx) => (
-                                                        <span key={idx} className="tag" style={{ fontSize: '12px', color: '#0052cc', backgroundColor: '#e6f0ff', padding: '4px 10px', borderRadius: '15px' }}>{tag}</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="post-actions" style={{ marginTop: '20px', display: 'flex', gap: '20px', borderTop: '1px solid #f1f2f3', paddingTop: '15px' }}>
-                                                <button className="post-action-btn" onClick={() => toggleLike('saved_' + post.id)} style={{ color: likedPosts['saved_' + post.id] ? '#0066FF' : '#6a737c' }}>
-                                                    <svg width="20" height="20" viewBox="0 0 18 18" fill="currentColor">
-                                                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                                                    </svg>
-                                                    <span>Thích</span>
-                                                </button>
-                                                <button className="post-action-btn">
-                                                    <svg width="20" height="20" viewBox="0 0 18 18" fill="currentColor">
-                                                        <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
-                                                    </svg>
-                                                    <span>Bình luận</span>
-                                                </button>
-                                                <button className="post-action-btn" onClick={() => toggleSave('saved_' + post.id)} style={{ marginLeft: 'auto', color: '#0066FF' }}>
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                                                    </svg>
-                                                    <span>Bỏ lưu</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <PostCard key={post.id} post={post} />
                                 )
                             ))
                         ) : (

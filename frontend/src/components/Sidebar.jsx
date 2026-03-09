@@ -12,10 +12,11 @@ const Sidebar = ({ activePage }) => {
                     Trang chủ
                 </a>
                 <a href="/posts" className={`nav-item ${activePage === 'posts' ? 'active' : ''}`}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                        <path d="M9 16A7 7 0 119 2a7 7 0 010 14zm0-2A5 5 0 109 4a5 5 0 000 10zm1-5h2v2h-2v-2zm-2 0h2v2H8V9z" />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                     </svg>
-                    Câu hỏi
+                    Video
                 </a>
                 <a href="/tags" className={`nav-item ${activePage === 'tags' ? 'active' : ''}`}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">

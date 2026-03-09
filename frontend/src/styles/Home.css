@@ -409,49 +409,7 @@
     font-weight: 500;
 }
 
-/* Floating Action Buttons */
-.floating-buttons {
-    position: fixed;
-    bottom: 32px;
-    right: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 900;
-}
 
-.fab {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.fab:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-.fab-primary {
-    background: linear-gradient(135deg, #0066FF 0%, #0052cc 100%);
-    color: white;
-}
-
-.fab-secondary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.fab svg {
-    width: 24px;
-    height: 24px;
-}
 
 /* Responsive Design */
 @media (max-width: 1100px) {
@@ -485,15 +443,5 @@
 
     .greeting-text {
         font-size: 20px;
-    }
-
-    .floating-buttons {
-        bottom: 16px;
-        right: 16px;
-    }
-
-    .fab {
-        width: 48px;
-        height: 48px;
     }
 }

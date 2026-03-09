@@ -25,7 +25,48 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     };
 
     const handleRemoveBlock = (id) => {
-        setBlocks(blocks.filter(block => block.id !== id));
+        setBlocks(prevBlocks => {
+            const index = prevBlocks.findIndex(b => b.id === id);
+            if (index === -1) return prevBlocks;
+
+            let newBlocks = [...prevBlocks];
+            const nextBlock = newBlocks[index + 1];
+
+            // If the next block is an empty text block (added automatically for this media), remove it
+            if (nextBlock && nextBlock.type === 'text' && nextBlock.content.trim() === '') {
+                newBlocks.splice(index + 1, 1);
+            }
+
+            // Remove the chosen image/code block
+            newBlocks.splice(index, 1);
+
+            // Merge any consecutive text blocks to keep UI clean
+            let cleanedBlocks = [];
+            for (let i = 0; i < newBlocks.length; i++) {
+                const current = newBlocks[i];
+                const prev = cleanedBlocks[cleanedBlocks.length - 1];
+
+                if (prev && prev.type === 'text' && current.type === 'text') {
+                    let combinedContent = prev.content;
+                    if (prev.content.trim() && current.content.trim()) {
+                        combinedContent += '\n\n' + current.content;
+                    } else if (current.content) {
+                        combinedContent += current.content;
+                    }
+                    cleanedBlocks[cleanedBlocks.length - 1] = {
+                        ...prev,
+                        content: combinedContent
+                    };
+                } else {
+                    cleanedBlocks.push(current);
+                }
+            }
+
+            if (cleanedBlocks.length === 0) {
+                cleanedBlocks = [{ id: Date.now(), type: 'text', content: '' }];
+            }
+            return cleanedBlocks;
+        });
     };
 
     const handleSubmit = (e) => {
