@@ -3,15 +3,15 @@ import Footer from '../components/Footer';
 import '../styles/Profile.css';
 
 const Profile = () => {
-    // Mock user data
+    // Mock user data matching the screenshot
     const mockUser = {
         name: "1731_Trần Khánh Linh",
         memberSince: "1 year, 1 month",
         lastSeen: "this week",
         reputation: 1,
-        questions: 0,
+        reached: 0,
         answers: 0,
-        solutions: 0,
+        questions: 0,
         communities: [
             {
                 name: "Stack Overflow",
@@ -26,34 +26,55 @@ const Profile = () => {
             <Header />
 
             <div className="profile-container">
+                {/* Left Sidebar Layout */}
+                <aside className="profile-sidebar">
+                    <nav className="sidebar-nav">
+                        <a href="/" className="nav-item">Trang chủ</a>
+                        <a href="/posts" className="nav-item">Câu hỏi</a>
+                        <a href="/tags" className="nav-item">Tags</a>
+                        <a href="/challenges" className="nav-item">Challenges</a>
+                        <a href="/chat" className="nav-item">Chat</a>
+                        <a href="/articles" className="nav-item">Articles</a>
+                        <a href="/users" className="nav-item active">Users</a>
+                        <a href="/jobs" className="nav-item">Jobs</a>
+                        <a href="/companies" className="nav-item">Companies</a>
+                    </nav>
+
+                    <div className="sidebar-section">
+                        <h3 className="sidebar-title">COLLECTIVES</h3>
+                        <a href="#" className="collective-link">Explore all Collectives</a>
+                    </div>
+                </aside>
+
                 {/* Main Content */}
                 <main className="profile-main">
                     {/* User Header */}
                     <div className="profile-header">
                         <div className="profile-avatar-large">
-                            <span className="avatar-initials-large">TK</span>
+                            {/* The pattern is handled by CSS background */}
                         </div>
                         <div className="profile-header-info">
-                            <h1 className="profile-name">{mockUser.name}</h1>
+                            <div className="profile-name-row">
+                                <h1 className="profile-name">{mockUser.name}</h1>
+                                <button className="btn-network-profile">
+                                    <svg viewBox="0 0 18 18">
+                                        <path d="M3 4c0-1.1.9-2 2-2h8a2 2 0 012 2H3zm11 10.59V6H4v8.59l4-4 4 4z"></path>
+                                    </svg>
+                                    Network profile
+                                </button>
+                            </div>
                             <div className="profile-meta">
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                                    <path d="M7 7a3 3 0 100-6 3 3 0 000 6zm0 1a5 5 0 00-5 5h10a5 5 0 00-5-5z" />
+                                <svg viewBox="0 0 18 18">
+                                    <path d="M14 6V3h2v11h-2v-3H4v3H2V3h2v3h10zM6 6h6V4H6v2z"></path>
                                 </svg>
                                 <span>Member for {mockUser.memberSince}</span>
                                 <span className="meta-separator">•</span>
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                                    <path d="M7 0a7 7 0 100 14A7 7 0 007 0zm0 11.667A4.667 4.667 0 1111.667 7 4.667 4.667 0 017 11.667zm.5-7.334h-1v4.5l3.5 2.1.5-.817-3-1.783V4.333z" />
+                                <svg viewBox="0 0 18 18">
+                                    <path d="M9 16A7 7 0 119 2a7 7 0 010 14zm0-2A5 5 0 109 4a5 5 0 000 10zM8 7h2v5H8V7zm0-2h2v1H8V5z"></path>
                                 </svg>
                                 <span>Last seen {mockUser.lastSeen}</span>
                             </div>
                         </div>
-                        <button className="btn-network-profile">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M1 3.5A1.5 1.5 0 012.5 2h11A1.5 1.5 0 0115 3.5v9a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9zM2 4v8h12V4H2z" />
-                                <path d="M4 6h8v1H4V6zm0 3h6v1H4V9z" />
-                            </svg>
-                            Network profile
-                        </button>
                     </div>
 
                     {/* Tabs */}
@@ -62,71 +83,79 @@ const Profile = () => {
                         <button className="tab-btn">Activity</button>
                     </div>
 
-                    {/* Stats Section */}
-                    <div className="profile-section">
-                        <h2 className="section-title">Stats</h2>
-                        <div className="stats-grid">
-                            <div className="stat-card">
-                                <div className="stat-value">{mockUser.reputation}</div>
-                                <div className="stat-label">reputation</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-value">{mockUser.questions}</div>
-                                <div className="stat-label">questions</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-value">{mockUser.answers}</div>
-                                <div className="stat-label">answers</div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-value">{mockUser.solutions}</div>
-                                <div className="stat-label">solutions</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Badges Section */}
-                    <div className="profile-section">
-                        <h2 className="section-title">
-                            Badges
-                            <span className="badge-count">{mockUser.badges.length}</span>
-                        </h2>
-                        <div className="empty-state">
-                            <p>This user has not earned any badges.</p>
-                        </div>
-                    </div>
-
-                    {/* Communities Section */}
-                    <div className="profile-section">
-                        <h2 className="section-title">Communities</h2>
-                        <div className="communities-list">
-                            {mockUser.communities.map((community, index) => (
-                                <a key={index} href="#" className="community-item">
-                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" className="community-icon">
-                                        <path d="M9 1l2.5 6.5L18 9l-6.5 1.5L9 17l-2.5-6.5L0 9l6.5-1.5L9 1z" />
-                                    </svg>
-                                    <div className="community-info">
-                                        <div className="community-name">{community.name}</div>
+                    {/* Content Grid (Two Columns) */}
+                    <div className="profile-content-grid">
+                        {/* Left Column */}
+                        <div className="profile-left-col">
+                            {/* Stats Section */}
+                            <div className="profile-section">
+                                <h2 className="section-title">Stats</h2>
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-value">{mockUser.reputation}</div>
+                                        <div className="stat-label">reputation</div>
                                     </div>
-                                    <div className="community-count">{community.count}</div>
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Posts Section */}
-                    <div className="profile-section">
-                        <h2 className="section-title">Posts</h2>
-                        <div className="empty-state">
-                            <div className="empty-illustration">
-                                <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
-                                    <rect x="12" y="20" width="72" height="56" rx="2" stroke="#C8CCCF" strokeWidth="2" />
-                                    <line x1="24" y1="32" x2="72" y2="32" stroke="#C8CCCF" strokeWidth="2" />
-                                    <line x1="24" y1="44" x2="60" y2="44" stroke="#C8CCCF" strokeWidth="2" />
-                                    <line x1="24" y1="56" x2="48" y2="56" stroke="#C8CCCF" strokeWidth="2" />
-                                </svg>
+                                    <div className="stat-card">
+                                        <div className="stat-value">{mockUser.reached}</div>
+                                        <div className="stat-label">reached</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-value">{mockUser.answers}</div>
+                                        <div className="stat-label">answers</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-value">{mockUser.questions}</div>
+                                        <div className="stat-label">questions</div>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="empty-text">This user hasn't posted yet.</p>
+
+                            {/* Communities Section */}
+                            <div className="profile-section">
+                                <h2 className="section-title">Communities</h2>
+                                <div className="communities-list">
+                                    {mockUser.communities.map((community, index) => (
+                                        <a key={index} href="#" className="community-item">
+                                            <svg className="community-icon" viewBox="0 0 18 18">
+                                                <path d="M12.9 14.1l3 2.7-1.3 1.3-3.1-2.9c-.8.4-1.8.7-2.8.7-3.3 0-6-2.7-6-6s2.7-6 6-6c1.6 0 3 .6 4.1 1.6l-1.3 1.4c-.8-.7-1.8-1-2.8-1-2.2 0-4 1.8-4 4s1.8 4 4 4c.8 0 1.6-.3 2.2-.7v-1h-2.5v-1.8h4.5v3.3z"></path>
+                                            </svg>
+                                            <div className="community-info">
+                                                <div className="community-name">{community.name}</div>
+                                            </div>
+                                            <div className="community-count">{community.count}</div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="profile-right-col">
+                            {/* Badges Section */}
+                            <div className="profile-section">
+                                <h2 className="section-title">
+                                    Badges
+                                </h2>
+                                <div className="empty-state">
+                                    <p>This user has not earned any <a href="#">badges</a>.</p>
+                                </div>
+                            </div>
+
+                            {/* Posts Section */}
+                            <div className="profile-section">
+                                <h2 className="section-title">Posts</h2>
+                                <div className="empty-state posts-empty-state">
+                                    <div className="empty-illustration">
+                                        <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
+                                            <rect x="14" y="24" width="40" height="32" rx="2" stroke="#e3e6e8" strokeWidth="2" fill="#f8f9f9"/>
+                                            <line x1="22" y1="34" x2="46" y2="34" stroke="#e3e6e8" strokeWidth="2" />
+                                            <line x1="22" y1="42" x2="38" y2="42" stroke="#e3e6e8" strokeWidth="2" />
+                                            <path d="M50 24v-4c0-1.1-.9-2-2-2H20c-1.1 0-2 .9-2 2v4" stroke="#e3e6e8" strokeWidth="2" fill="none"/>
+                                        </svg>
+                                    </div>
+                                    <p>This user hasn't posted yet.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </main>
@@ -138,3 +167,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

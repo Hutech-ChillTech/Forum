@@ -63,6 +63,11 @@ const Header = ({ hideAuth = false }) => {
                             type="text"
                             className="search-input"
                             placeholder="Search..."
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    window.location.href = `/search?q=${encodeURIComponent(e.target.value)}`;
+                                }
+                            }}
                         />
                     </div>
                 </div>

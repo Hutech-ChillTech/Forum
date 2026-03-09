@@ -146,7 +146,7 @@ const Posts = () => {
 
                                 <div className="question-content">
                                     <h3 className="question-title">
-                                        <a href={`/questions/${question.id}`}>{question.title}</a>
+                                        <a href={`/posts/${question.id}`}>{question.title}</a>
                                     </h3>
                                     <p className="question-excerpt">{question.content}</p>
                                     <div className="question-footer">
