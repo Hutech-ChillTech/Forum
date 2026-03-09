@@ -11,7 +11,7 @@
     display: grid;
     grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
     max-width: var(--container-max-width);
-    margin: 60px auto 0;
+    margin: 56px auto 0;
     padding: 24px 16px;
     gap: 24px;
     flex: 1;

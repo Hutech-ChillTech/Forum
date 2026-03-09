@@ -1,13 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import CreatePostModal from './CreatePostModal';
+import ChatBox from './ChatBox';
 import '../styles/Header.css';
 
 const Header = ({ hideAuth = false }) => {
-    // Mock login state - change to true to see avatar
     const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [activeChats, setActiveChats] = useState([]); // List of up to 5 user objects
+    const [maximizedChatId, setMaximizedChatId] = useState(null); // ID/Name of the chat currently open
+    const [isClosing, setIsClosing] = useState(false);
+    const [isChatClosing, setIsChatClosing] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [showSearchHistory, setShowSearchHistory] = useState(false);
     const dropdownRef = useRef(null);
+    const notificationRef = useRef(null);
+    const chatRef = useRef(null);
+    const searchRef = useRef(null);
 
     // Get user data from localStorage or use defaults
     const [userData, setUserData] = useState(() => {
@@ -37,6 +47,15 @@ const Header = ({ hideAuth = false }) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setShowDropdown(false);
             }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                if (showNotifications) closeNotifications();
+            }
+            if (chatRef.current && !chatRef.current.contains(event.target)) {
+                if (showChat) closeChat();
+            }
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSearchHistory(false);
+            }
         };
 
         const handleOpenCreatePost = () => {
@@ -61,12 +80,84 @@ const Header = ({ hideAuth = false }) => {
             window.removeEventListener('openCreatePost', handleOpenCreatePost);
             window.removeEventListener('userProfileUpdated', handleProfileUpdate);
         };
-    }, []);
+    }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
     const handleLogout = () => {
         setIsLoggedIn(false);
         setShowDropdown(false);
     };
+
+    const closeNotifications = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setShowNotifications(false);
+            setIsClosing(false);
+        }, 300); // Wait for animation to finish
+    };
+
+    const toggleNotifications = () => {
+        if (showNotifications) {
+            closeNotifications();
+        } else {
+            setShowNotifications(true);
+            setIsClosing(false);
+            setShowChat(false);
+            setShowDropdown(false);
+            setShowSearchHistory(false);
+        }
+    };
+
+    const closeChat = () => {
+        setIsChatClosing(true);
+        setTimeout(() => {
+            setShowChat(false);
+            setIsChatClosing(false);
+        }, 300);
+    };
+
+    const toggleChat = () => {
+        if (showChat) {
+            closeChat();
+        } else {
+            setShowChat(true);
+            setIsChatClosing(false);
+            setShowNotifications(false);
+            setShowDropdown(false);
+            setShowSearchHistory(false);
+        }
+    };
+
+    const handleOpenPersonalChat = (user) => {
+        setActiveChats(prev => {
+            // Check if user already exists
+            const existing = prev.find(c => c.name === user.name);
+            if (existing) {
+                setMaximizedChatId(user.name);
+                return prev;
+            }
+            // Limit to 5
+            if (prev.length >= 5) return prev;
+
+            setMaximizedChatId(user.name);
+            return [...prev, user];
+        });
+        setShowChat(false); // Close dropdown
+    };
+
+    const handleCloseChat = (userName) => {
+        setActiveChats(prev => prev.filter(c => c.name !== userName));
+        if (maximizedChatId === userName) setMaximizedChatId(null);
+    };
+
+    const handleMinimizeChat = (userName) => {
+        if (maximizedChatId === userName) setMaximizedChatId(null);
+    };
+
+    const handleMaximizeChat = (userName) => {
+        setMaximizedChatId(userName);
+    };
+
+    const activeChatUser = activeChats.find(c => c.name === maximizedChatId);
 
     // Get user initials for avatar
     const getInitials = (name) => {
@@ -78,6 +169,24 @@ const Header = ({ hideAuth = false }) => {
             .slice(0, 2);
     };
 
+    const dummyNotifications = [
+        { id: 1, text: "Nguyễn Văn A đã thích bài viết của bạn.", time: "5 phút trước", unread: true },
+        { id: 2, text: "Trần Thị B đã bình luận về bài viết của bạn.", time: "1 giờ trước", unread: true },
+        { id: 3, text: "Lê Văn C đã bắt đầu theo dõi bạn.", time: "1 ngày trước", unread: false }
+    ];
+
+    const dummyMessages = [
+        { id: 1, user: "Nguyễn Văn A", text: "Chào bạn, mình có câu hỏi về React...", time: "2 phút trước", unread: true },
+        { id: 2, user: "Admin", text: "Chào mừng bạn đã tham gia SkillForum!", time: "1 ngày trước", unread: false }
+    ];
+
+    const recentSearches = [
+        "cấu trúc dữ liệu và giải thuật",
+        "tự học reactjs",
+        "lỗi undefined is not a function",
+        "khóa học nodejs backend"
+    ];
+
     return (
         <header className="header">
             <div className="header-container">
@@ -86,7 +195,7 @@ const Header = ({ hideAuth = false }) => {
                 </div>
 
                 <div className="header-center">
-                    <div className="search-bar">
+                    <div className="search-bar" ref={searchRef}>
                         <svg className="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
                             <path d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             <path d="M16 16L12.65 12.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -95,44 +204,158 @@ const Header = ({ hideAuth = false }) => {
                             type="text"
                             className="search-input"
                             placeholder="Search..."
+                            onFocus={() => setShowSearchHistory(true)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     window.location.href = `/search?q=${encodeURIComponent(e.target.value)}`;
                                 }
                             }}
                         />
+                        {showSearchHistory && (
+                            <div className="search-history-dropdown">
+                                <div className="search-history-header">
+                                    <span>Lịch sử tìm kiếm</span>
+                                    <button className="clear-history-btn" onClick={() => { }}>Xóa</button>
+                                </div>
+                                <ul className="search-history-list">
+                                    {recentSearches.map((term, index) => (
+                                        <li key={index} className="search-history-item" onClick={() => { window.location.href = `/search?q=${encodeURIComponent(term)}`; }}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            <span className="search-term">{term}</span>
+                                            <button className="remove-item-btn" onClick={(e) => { e.stopPropagation(); }} title="Xóa">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
+                    {!hideAuth && isLoggedIn && (
+                        <button className="btn-create-header" title="Tạo bài viết mới" onClick={() => {
+                            setIsCreateOpen(true);
+                            setShowDropdown(false);
+                            setShowNotifications(false);
+                            setShowChat(false);
+                            setShowSearchHistory(false);
+                        }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Tạo bài</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="header-right">
                     {!hideAuth && isLoggedIn ? (
                         <>
                             <div className="header-icons">
-                                <button className="icon-btn" title="Thông báo">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                    </svg>
-                                    <span className="badge">3</span>
-                                </button>
-                                <button className="icon-btn" title="Tin nhắn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                    </svg>
-                                    <span className="badge">1</span>
-                                </button>
-                                <button className="btn-create-header" title="Tạo bài viết mới" onClick={() => setIsCreateOpen(true)}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
-                                    <span>Tạo bài</span>
-                                </button>
+                                <div className="notification-wrapper" ref={notificationRef}>
+                                    <button
+                                        className={`icon-btn ${showNotifications ? 'active' : ''}`}
+                                        title="Thông báo"
+                                        onClick={toggleNotifications}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                        </svg>
+                                        <span className="badge">3</span>
+                                    </button>
+
+                                    {(showNotifications || isClosing) && (
+                                        <div className={`notification-dropdown ${isClosing ? 'closing' : 'opening'}`}>
+                                            <div className="notification-header">
+                                                <h3>Thông báo</h3>
+                                                <button className="mark-read-btn">Đánh dấu đã đọc</button>
+                                            </div>
+                                            <div className="notification-list">
+                                                {dummyNotifications.map(notif => (
+                                                    <div key={notif.id} className={`notification-item ${notif.unread ? 'unread' : ''}`}>
+                                                        <div className="notification-avatar">
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                        </div>
+                                                        <div className="notification-content">
+                                                            <p>{notif.text}</p>
+                                                            <span className="notification-time">{notif.time}</span>
+                                                        </div>
+                                                        {notif.unread && <div className="unread-dot"></div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="notification-footer">
+                                                <a href="/notifications">Xem tất cả</a>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="notification-wrapper" ref={chatRef}>
+                                    <button
+                                        className={`icon-btn ${showChat ? 'active' : ''}`}
+                                        title="Tin nhắn"
+                                        onClick={toggleChat}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        <span className="badge">1</span>
+                                    </button>
+
+                                    {(showChat || isChatClosing) && (
+                                        <div className={`notification-dropdown chat-dropdown ${isChatClosing ? 'closing' : 'opening'}`} style={{ right: '-20px' }}>
+                                            <div className="notification-header">
+                                                <h3>Tin nhắn</h3>
+                                                <button className="mark-read-btn">Xem tất cả</button>
+                                            </div>
+                                            <div className="notification-list">
+                                                {dummyMessages.map(msg => (
+                                                    <div
+                                                        key={msg.id}
+                                                        className={`notification-item ${msg.unread ? 'unread' : ''}`}
+                                                        onClick={() => handleOpenPersonalChat({
+                                                            name: msg.user,
+                                                            avatar: msg.user[0],
+                                                            initialMessage: msg.text
+                                                        })}
+                                                    >
+                                                        <div className="notification-avatar">
+                                                            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{msg.user[0]}</span>
+                                                        </div>
+                                                        <div className="notification-content">
+                                                            <p style={{ fontWeight: '600', marginBottom: '2px' }}>{msg.user}</p>
+                                                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{msg.text}</p>
+                                                            <span className="notification-time">{msg.time}</span>
+                                                        </div>
+                                                        {msg.unread && <div className="unread-dot"></div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="notification-footer">
+                                                <a href="/messages">Vào trang chat</a>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="user-menu" ref={dropdownRef}>
                                 <button
-                                    className="user-avatar-btn"
-                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    className={`user-avatar-btn ${showDropdown ? 'active' : ''}`}
+                                    onClick={() => {
+                                        const newState = !showDropdown;
+                                        setShowDropdown(newState);
+                                        if (newState) {
+                                            setShowNotifications(false);
+                                            setShowChat(false);
+                                        }
+                                    }}
                                 >
                                     <div className="user-avatar">
                                         {userData.avatar ? (
@@ -185,6 +408,49 @@ const Header = ({ hideAuth = false }) => {
                         </>
                     ) : null}
                 </div>
+            </div>
+
+            <ChatBox
+                isOpen={!!maximizedChatId}
+                onClose={() => handleCloseChat(maximizedChatId)}
+                onMinimize={() => handleMinimizeChat(maximizedChatId)}
+                title={activeChatUser?.name}
+                avatar={activeChatUser?.avatar}
+                status="Đang hoạt động"
+                initialMessages={[
+                    { id: 1, text: activeChatUser?.initialMessage, sender: 'bot', timestamp: new Date() }
+                ]}
+            />
+
+            <div className="minimized-bubbles-stack">
+                {activeChats.map((chat) => (
+                    maximizedChatId !== chat.name && (
+                        <div
+                            key={chat.name}
+                            className="minimized-chat-bubble"
+                            onClick={() => handleMaximizeChat(chat.name)}
+                            title={`Mở tin nhắn với ${chat.name}`}
+                        >
+                            <div className="bubble-avatar-wrapper">
+                                {typeof chat.avatar === 'string' && chat.avatar.length <= 2 ? (
+                                    <span>{chat.avatar}</span>
+                                ) : (
+                                    <img src={chat.avatar} alt="" />
+                                )}
+                                <span className="bubble-online-dot"></span>
+                            </div>
+                            <button
+                                className="bubble-close-small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCloseChat(chat.name);
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )
+                ))}
             </div>
 
             <CreatePostModal

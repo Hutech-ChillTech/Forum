@@ -121,7 +121,7 @@ const Videos = () => {
                                     <p className="question-excerpt" style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px' }}>{post.excerpt}</p>
 
                                     {post.youtube && (
-                                        <div className="question-media-preview" style={{ margin: '10px 0', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', paddingTop: post.isShort ? '177.77%' : '56.25%', maxWidth: post.isShort ? '320px' : '100%', margin: post.isShort ? '10px auto' : '10px 0' }}>
+                                        <div className="question-media-preview" style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', paddingTop: post.isShort ? '177.77%' : '56.25%', maxWidth: post.isShort ? '320px' : '100%', margin: post.isShort ? '10px auto' : '10px 0' }}>
                                             <iframe src={`https://www.youtube.com/embed/${post.youtube}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube video"></iframe>
                                         </div>
                                     )}
@@ -200,11 +200,11 @@ const Videos = () => {
             <button
                 className="ai-chat-fab"
                 onClick={() => setIsAIChatOpen(!isAIChatOpen)}
+                title="Chat với AI"
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                <span>Chat AI</span>
             </button>
 
             <ChatBox

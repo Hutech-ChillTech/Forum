@@ -2,9 +2,11 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
+import ChatBox from '../components/ChatBox';
 import '../styles/Users.css';
 
 const Users = () => {
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('reputation'); // reputation, new, voters, editors, moderators
 
@@ -140,53 +142,53 @@ const Users = () => {
                         <h1 className="users-title">Users</h1>
                     </div>
 
-                    <div className="users-controls">
-                        <div className="search-bar">
+                    <div className="users-search-bar">
+                        <div className="search-container-inner">
                             <svg className="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
                                 <path d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <path d="M16 16L12.65 12.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                             <input
                                 type="text"
-                                className="search-input"
+                                className="users-search-input"
                                 placeholder="Filter by user"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
+                    </div>
 
-                        <div className="users-tabs">
-                            <button
-                                className={`tab-btn ${activeTab === 'reputation' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('reputation')}
-                            >
-                                Reputation
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'new' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('new')}
-                            >
-                                New users
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'voters' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('voters')}
-                            >
-                                Voters
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'editors' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('editors')}
-                            >
-                                Editors
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'moderators' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('moderators')}
-                            >
-                                Moderators
-                            </button>
-                        </div>
+                    <div className="users-tabs">
+                        <button
+                            className={`tab-btn ${activeTab === 'reputation' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('reputation')}
+                        >
+                            Reputation
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'new' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('new')}
+                        >
+                            New users
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'voters' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('voters')}
+                        >
+                            Voters
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'editors' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('editors')}
+                        >
+                            Editors
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'moderators' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('moderators')}
+                        >
+                            Moderators
+                        </button>
                     </div>
 
                     {/* Users Grid */}
@@ -258,6 +260,21 @@ const Users = () => {
 
                 </main>
             </div>
+
+            <button
+                className="ai-chat-fab"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                title="Chat với AI"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 012 2z" />
+                </svg>
+            </button>
+
+            <ChatBox
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+            />
 
             <Footer />
         </div>

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
+import ChatBox from '../components/ChatBox';
 import '../styles/Tags.css';
 
 const Tags = () => {
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('popular');
 
@@ -208,6 +210,21 @@ const Tags = () => {
                     </div>
                 </main>
             </div>
+
+            <button
+                className="ai-chat-fab"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                title="Chat với AI"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 012 2z" />
+                </svg>
+            </button>
+
+            <ChatBox
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+            />
 
             <Footer />
         </div>
