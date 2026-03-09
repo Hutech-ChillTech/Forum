@@ -24,7 +24,7 @@
 
 .modal-content {
     background: white;
-    border-radius: 8px;
+    border-radius: 12px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
@@ -96,7 +96,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f48225 0%, #ff7043 100%);
+    background: linear-gradient(135deg, #0066FF 0%, #3385ff 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,10 +130,10 @@
     padding: 8px 16px;
     border: 1px solid #7aa7c7;
     background: transparent;
-    color: #39739d;
+    color: #0052cc;
     font-size: 13px;
     font-weight: 500;
-    border-radius: 4px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -159,13 +159,38 @@
 }
 
 .btn-add-image:hover {
-    background: #e1ecf4;
+    background: #e6f0ff;
     border-color: #5b8db8;
 }
 
 .btn-add-image svg {
     width: 16px;
     height: 16px;
+}
+
+.btn-add-code {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid #7aa7c7;
+    background: transparent;
+    color: #0052cc;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-code:hover {
+    background: #e6f0ff;
+    border-color: #5b8db8;
+}
+
+.post-action-buttons {
+    display: flex;
+    gap: 8px;
 }
 
 /* Textarea */
@@ -178,7 +203,7 @@
     min-height: 200px;
     padding: 16px;
     border: 1px solid #d6d9dc;
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 15px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
     color: #0c0d0e;
@@ -189,7 +214,7 @@
 
 .post-textarea:focus {
     outline: none;
-    border-color: #6cbbff;
+    border-color: #3385ff;
     background: white;
     box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.1);
 }
@@ -198,17 +223,43 @@
     color: #9fa6ad;
 }
 
+.code-textarea {
+    width: 100%;
+    min-height: 150px;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid #d6d9dc;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #e6e6e6;
+    background: #1e1e1e;
+    /* Dark theme for code */
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.code-textarea:focus {
+    outline: none;
+    border-color: #3385ff;
+    box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.1);
+}
+
+.code-textarea::placeholder {
+    color: #888;
+}
+
 /* Submit Button */
 .btn-submit-post {
     width: 100%;
     padding: 12px 24px;
     border: none;
-    background: #0a95ff;
+    background: #0066FF;
     color: white;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.5px;
-    border-radius: 6px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -234,7 +285,7 @@
 }
 
 .btn-submit-post:hover:not(:disabled) {
-    background: #0074cc;
+    background: #0052cc;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(10, 149, 255, 0.4);
 }

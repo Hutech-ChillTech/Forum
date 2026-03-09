@@ -9,16 +9,23 @@
 
 .settings-container {
     max-width: 1264px;
-    margin: 60px auto 0;
-    padding: 24px 16px;
-    flex: 1;
+    margin: 50px auto 0;
     display: flex;
     width: 100%;
+    min-height: calc(100vh - 50px);
+}
+
+.settings-main-sidebar {
+    width: 164px;
+    flex-shrink: 0;
+    border-right: 1px solid #e3e6e8;
+    padding-top: 24px;
 }
 
 .settings-main {
     flex: 1;
     min-width: 0;
+    padding: 24px 32px;
 }
 
 .settings-page-title {
@@ -73,7 +80,7 @@
 }
 
 .settings-nav-item.active {
-    background-color: #f48225;
+    background-color: #0066FF;
     color: white;
 }
 
@@ -92,7 +99,7 @@
 .settings-section {
     background: white;
     border: 1px solid #d6d9dc;
-    border-radius: 5px;
+    border-radius: 12px;
     padding: 24px;
 }
 
@@ -128,7 +135,7 @@
     width: 100%;
     padding: 8px;
     border: 1px solid #babfc4;
-    border-radius: 3px;
+    border-radius: 12px;
     font-size: 13px;
     color: #0c0d0e;
     font-family: inherit;
@@ -138,7 +145,7 @@
 .form-input:focus,
 .form-textarea:focus {
     outline: none;
-    border-color: #6cbbff;
+    border-color: #3385ff;
     box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.15);
 }
 
@@ -184,11 +191,11 @@
 .profile-image-preview {
     width: 164px;
     height: 164px;
-    background: #ffe3d2;
-    background-image: repeating-linear-gradient(45deg, #ffebdd 25%, transparent 25%, transparent 75%, #ffebdd 75%, #ffebdd), repeating-linear-gradient(45deg, #ffebdd 25%, transparent 25%, transparent 75%, #ffebdd 75%, #ffebdd);
+    background: #ccd9ff;
+    background-image: repeating-linear-gradient(45deg, #e6f0ff 25%, transparent 25%, transparent 75%, #e6f0ff 75%, #e6f0ff), repeating-linear-gradient(45deg, #e6f0ff 25%, transparent 25%, transparent 75%, #e6f0ff 75%, #e6f0ff);
     background-position: 0 0, 10px 10px;
     background-size: 20px 20px;
-    border-radius: 4px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -199,7 +206,7 @@
     padding: 10px;
     background-color: white;
     border: 1px solid #9fa6ad;
-    border-radius: 3px;
+    border-radius: 12px;
     color: #3b4045;
     font-size: 13px;
     cursor: pointer;
@@ -249,26 +256,26 @@
 }
 
 .btn-primary {
-    background-color: #0a95ff;
+    background-color: #0066FF;
     color: white;
     padding: 10px;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: 12px;
     font-size: 13px;
     cursor: pointer;
     box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
 }
 
 .btn-primary:hover {
-    background-color: #0074cc;
+    background-color: #0052cc;
 }
 
 .btn-transparent {
     background-color: transparent;
-    color: #0074cc;
+    color: #0052cc;
     padding: 10px;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: 12px;
     font-size: 13px;
     cursor: pointer;
 }
@@ -280,7 +287,7 @@
 /* Common cards */
 .settings-card {
     padding: 16px;
-    border-radius: 3px;
+    border-radius: 12px;
     margin-bottom: 16px;
     font-size: 13px;
 }
@@ -312,6 +319,6 @@
     }
 
     .settings-nav-item {
-        border-radius: 3px;
+        border-radius: 12px;
     }
 }

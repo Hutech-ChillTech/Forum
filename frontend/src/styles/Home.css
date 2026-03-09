@@ -36,7 +36,7 @@
     color: #525960;
     text-decoration: none;
     font-size: 14px;
-    border-radius: 4px;
+    border-radius: 12px;
     transition: all 0.2s ease;
 }
 
@@ -49,7 +49,7 @@
     background-color: #f1f2f3;
     color: #0c0d0e;
     font-weight: 600;
-    border-right: 3px solid #f48225;
+    border-right: 3px solid #0066FF;
 }
 
 .nav-item svg {
@@ -74,11 +74,11 @@
 .collective-link {
     display: block;
     padding: 8px 12px;
-    color: #0074cc;
+    color: #0052cc;
     text-decoration: none;
     font-size: 13px;
     transition: background-color 0.2s ease;
-    border-radius: 4px;
+    border-radius: 12px;
 }
 
 .collective-link:hover {
@@ -94,33 +94,48 @@
 .greeting-card {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 8px;
+    gap: 12px;
+    padding: 8px 16px;
+    background-color: #ebf2fa;
+    border: 1px solid #e6f0ff;
+    border-radius: 40px;
     margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-.avatar-number {
-    width: 64px;
-    height: 64px;
-    background-color: #f48225;
+.greeting-card:hover {
+    background-color: #e6f0ff;
+    border-color: #d6d9dc;
+}
+
+.avatar-icon {
+    width: 48px;
+    height: 48px;
+    background-color: #0066FF;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
-    font-weight: 700;
     color: white;
     flex-shrink: 0;
 }
 
+.greeting-input-mock {
+    flex: 1;
+    background-color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+}
+
 .greeting-text {
     margin: 0;
-    font-size: 24px;
+    font-size: 15px;
     font-weight: 400;
-    color: white;
+    color: #232629;
 }
 
 /* User Posts Section */
@@ -136,17 +151,18 @@
 }
 
 .user-post-card {
-    padding: 20px;
+    padding: 24px;
     background-color: white;
-    border: 1px solid #d6d9dc;
-    border-radius: 4px;
-    margin-bottom: 16px;
-    transition: all 0.2s ease;
+    border: 1px solid #e3e6e8;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
 }
 
 .user-post-card:hover {
-    border-color: #9fa6ad;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: #d6d9dc;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
 .post-header {
@@ -160,7 +176,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f48225 0%, #ff7043 100%);
+    background: linear-gradient(135deg, #0066FF 0%, #3385ff 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,21 +229,22 @@
 .post-action-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border: 1px solid #d6d9dc;
-    background-color: white;
-    color: #6a737c;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #e3e6e8;
+    background-color: #f8f9f9;
+    color: #525960;
     font-size: 13px;
-    border-radius: 4px;
+    border-radius: 20px;
     cursor: pointer;
+    font-weight: 500;
     transition: all 0.2s ease;
 }
 
 .post-action-btn:hover {
-    background-color: #f8f9f9;
-    border-color: #9fa6ad;
-    color: #232629;
+    background-color: #e3e6e8;
+    border-color: #d6d9dc;
+    color: #0c0d0e;
 }
 
 .post-action-btn svg {
@@ -243,16 +260,17 @@
 }
 
 .featured-question-card {
-    padding: 20px;
+    padding: 24px;
     background-color: white;
-    border: 1px solid #d6d9dc;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+    border: 1px solid #e3e6e8;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
 }
 
 .featured-question-card:hover {
-    border-color: #9fa6ad;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: #d6d9dc;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
 .featured-question-title {
@@ -263,12 +281,12 @@
 }
 
 .featured-question-title a {
-    color: #0074cc;
+    color: #0052cc;
     text-decoration: none;
 }
 
 .featured-question-title a:hover {
-    color: #0a95ff;
+    color: #0066FF;
 }
 
 .featured-question-excerpt {
@@ -300,13 +318,14 @@
 
 .tag {
     display: inline-block;
-    padding: 4px 6px;
-    background-color: #e1ecf4;
-    color: #39739d;
+    padding: 5px 10px;
+    background-color: #edf2f6;
+    color: #0052cc;
     font-size: 12px;
-    border-radius: 3px;
+    border-radius: 15px;
     text-decoration: none;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .tag:hover {
@@ -323,7 +342,7 @@
 }
 
 .featured-author {
-    color: #0074cc;
+    color: #0052cc;
     font-weight: 500;
 }
 
@@ -344,34 +363,40 @@
 
 .tags-widget {
     background-color: white;
-    border: 1px solid #d6d9dc;
-    border-radius: 4px;
-    padding: 16px;
+    border: 1px solid #e3e6e8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .widget-title {
     font-size: 15px;
     font-weight: 600;
     color: #3b4045;
-    margin: 0 0 12px 0;
-    padding-bottom: 12px;
+    margin: 0;
+    padding: 12px 16px;
+    background-color: #fdf7e2;
     border-bottom: 1px solid #e3e6e8;
 }
 
 .tags-list {
+    padding: 16px;
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8px;
+    align-items: flex-start;
 }
 
 .tag-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    padding: 8px;
-    background-color: #f8f9f9;
-    border-radius: 3px;
+    padding: 6px 14px;
+    background-color: #f1f2f3;
+    border-radius: 20px;
     text-decoration: none;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    border: 1px solid #e3e6e8;
+    width: fit-content;
 }
 
 .tag-item:hover {
@@ -379,7 +404,7 @@
 }
 
 .tag-name {
-    color: #39739d;
+    color: #0052cc;
     font-size: 13px;
     font-weight: 500;
 }
@@ -414,7 +439,7 @@
 }
 
 .fab-primary {
-    background: linear-gradient(135deg, #0a95ff 0%, #0074cc 100%);
+    background: linear-gradient(135deg, #0066FF 0%, #0052cc 100%);
     color: white;
 }
 

@@ -69,23 +69,23 @@
     background-color: #f8f9f9;
     padding: 12px;
     border: 1px solid #d6d9dc;
-    border-radius: 3px;
+    border-radius: 12px;
 }
 
 .search-tips code {
     background-color: #e3e6e8;
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: 12px;
     font-family: ui-monospace, "Cascadia Mono", monospace;
 }
 
 .advanced-search-link {
-    color: #0074cc;
+    color: #0052cc;
     text-decoration: none;
 }
 
 .advanced-search-link:hover {
-    color: #0a95ff;
+    color: #0066FF;
 }
 
 /* Empty State */
@@ -94,7 +94,7 @@
     text-align: center;
     background: #f8f9f9;
     border: 1px dashed #babfc4;
-    border-radius: 4px;
+    border-radius: 12px;
     font-size: 15px;
     color: #3b4045;
 }

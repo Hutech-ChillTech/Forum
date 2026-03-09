@@ -1,5 +1,6 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
 import '../styles/Profile.css';
 
 const Profile = () => {
@@ -28,22 +29,7 @@ const Profile = () => {
             <div className="profile-container">
                 {/* Left Sidebar Layout */}
                 <aside className="profile-sidebar">
-                    <nav className="sidebar-nav">
-                        <a href="/" className="nav-item">Trang chủ</a>
-                        <a href="/posts" className="nav-item">Câu hỏi</a>
-                        <a href="/tags" className="nav-item">Tags</a>
-                        <a href="/challenges" className="nav-item">Challenges</a>
-                        <a href="/chat" className="nav-item">Chat</a>
-                        <a href="/articles" className="nav-item">Articles</a>
-                        <a href="/users" className="nav-item active">Users</a>
-                        <a href="/jobs" className="nav-item">Jobs</a>
-                        <a href="/companies" className="nav-item">Companies</a>
-                    </nav>
-
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">COLLECTIVES</h3>
-                        <a href="#" className="collective-link">Explore all Collectives</a>
-                    </div>
+                    <Sidebar activePage="users" />
                 </aside>
 
                 {/* Main Content */}
@@ -147,10 +133,10 @@ const Profile = () => {
                                 <div className="empty-state posts-empty-state">
                                     <div className="empty-illustration">
                                         <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
-                                            <rect x="14" y="24" width="40" height="32" rx="2" stroke="#e3e6e8" strokeWidth="2" fill="#f8f9f9"/>
+                                            <rect x="14" y="24" width="40" height="32" rx="2" stroke="#e3e6e8" strokeWidth="2" fill="#f8f9f9" />
                                             <line x1="22" y1="34" x2="46" y2="34" stroke="#e3e6e8" strokeWidth="2" />
                                             <line x1="22" y1="42" x2="38" y2="42" stroke="#e3e6e8" strokeWidth="2" />
-                                            <path d="M50 24v-4c0-1.1-.9-2-2-2H20c-1.1 0-2 .9-2 2v4" stroke="#e3e6e8" strokeWidth="2" fill="none"/>
+                                            <path d="M50 24v-4c0-1.1-.9-2-2-2H20c-1.1 0-2 .9-2 2v4" stroke="#e3e6e8" strokeWidth="2" fill="none" />
                                         </svg>
                                     </div>
                                     <p>This user hasn't posted yet.</p>

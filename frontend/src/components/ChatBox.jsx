@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './ChatBox.css';
+import '../styles/ChatBox.css';
 
 const ChatBox = ({ isOpen, onClose }) => {
     const [messages, setMessages] = useState([
@@ -38,10 +38,18 @@ const ChatBox = ({ isOpen, onClose }) => {
     return (
         <div className="chatbox-container">
             <div className="chatbox-header">
-                <h3 className="chatbox-title">Chat hỗ trợ</h3>
-                <button className="chatbox-close-btn" onClick={onClose}>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <div className="header-user-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="contact-avatar online" style={{ width: '36px', height: '36px', fontSize: '14px' }}>
+                        AI
+                    </div>
+                    <div>
+                        <h3 className="chatbox-title" style={{ fontSize: '15px' }}>Trợ lý AI</h3>
+                        <span style={{ fontSize: '11px', color: '#6a737c', display: 'block' }}>Đang hoạt động</span>
+                    </div>
+                </div>
+                <button className="chatbox-close-btn" onClick={onClose} style={{ border: 'none', background: 'none' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6a737c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
@@ -63,7 +71,7 @@ const ChatBox = ({ isOpen, onClose }) => {
                 <input
                     type="text"
                     className="chatbox-input"
-                    placeholder="Nhập tin nhắn..."
+                    placeholder="Hỏi AI bất cứ điều gì..."
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                 />

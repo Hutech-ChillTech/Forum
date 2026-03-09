@@ -38,7 +38,7 @@
     white-space: nowrap;
     position: relative;
     padding: 4px 8px;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     transition: all 0.3s ease;
 }
@@ -105,7 +105,7 @@
 }
 
 .nav-link:hover {
-    color: #0074cc;
+    color: #0052cc;
     background: linear-gradient(135deg, rgba(0, 116, 204, 0.08) 0%, rgba(0, 149, 255, 0.12) 100%);
 }
 
@@ -135,14 +135,14 @@
 
 .search-input {
     width: 100%;
-    height: 36px;
-    padding: 8px 12px 8px 38px;
-    border: 1px solid #babfc4;
-    border-radius: 3px;
-    font-size: 13px;
+    height: 38px;
+    padding: 8px 12px 8px 42px;
+    border: 1px solid #d6d9dc;
+    border-radius: 30px;
+    font-size: 14px;
     color: #0c0d0e;
-    background-color: white;
-    transition: all 0.15s ease;
+    background-color: #f8f9f9;
+    transition: all 0.2s ease;
 }
 
 .search-input::placeholder {
@@ -151,7 +151,7 @@
 
 .search-input:focus {
     outline: none;
-    border-color: #6cbbff;
+    border-color: #3385ff;
     box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.15);
 }
 
@@ -164,19 +164,16 @@
 }
 
 .btn-login {
-    padding: 8px 12px;
-    border: 1px solid #7aa7c7;
-    background: transparent;
-    color: #39739d;
+    padding: 8px 16px;
+    border: 1px solid #d6d9dc;
+    background: #f8f9f9;
+    color: #0052cc;
     font-size: 13px;
-    font-weight: 400;
-    border-radius: 3px;
+    font-weight: 600;
+    border-radius: 20px;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
 }
 
 .btn-login::before {
@@ -198,24 +195,22 @@
 }
 
 .btn-login:hover {
-    background-color: #e1ecf4;
+    background-color: #e6f0ff;
     border-color: #5b8db8;
 }
 
 .btn-signup {
-    padding: 8px 12px;
-    border: 1px solid transparent;
-    background: #0a95ff;
+    padding: 8px 16px;
+    border: none;
+    background: #0066FF;
     color: white;
     font-size: 13px;
-    font-weight: 400;
-    border-radius: 3px;
+    font-weight: 600;
+    border-radius: 20px;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(10, 149, 255, 0.2);
 }
 
 .btn-signup::before {
@@ -237,7 +232,7 @@
 }
 
 .btn-signup:hover {
-    background: #0074cc;
+    background: #0052cc;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(10, 149, 255, 0.3);
 }
@@ -312,13 +307,14 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 200px;
+    width: 220px;
     background: white;
-    border: 1px solid #d6d9dc;
-    border-radius: 4px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e3e6e8;
+    border-radius: 12px;
+    box-shadow: 0(0, 0, 0, 0.05);
     z-index: 1001;
     animation: dropdownFadeIn 0.2s ease;
+    overflow: hidden;
 }
 
 @keyframes dropdownFadeIn {
@@ -393,7 +389,7 @@
 
 .dropdown-item:hover {
     background: linear-gradient(135deg, rgba(0, 116, 204, 0.06) 0%, rgba(0, 149, 255, 0.08) 100%);
-    color: #0074cc;
+    color: #0052cc;
 }
 
 .dropdown-item svg {

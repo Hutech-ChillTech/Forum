@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -36,6 +37,11 @@ const Settings = () => {
             <Header />
 
             <div className="settings-container">
+                {/* Left Sidebar */}
+                <aside className="settings-main-sidebar">
+                    <Sidebar activePage="" />
+                </aside>
+
                 {/* Main Content Structure */}
                 <main className="settings-main">
                     <h1 className="settings-page-title">Edit your profile</h1>

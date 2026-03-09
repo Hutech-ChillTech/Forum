@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
 import '../styles/Search.css';
 
 const Search = () => {
@@ -49,24 +50,9 @@ const Search = () => {
             <Header hideAuth={false} />
 
             <div className="search-container">
-                {/* Left Sidebar Layout */}
+                {/* Left Sidebar */}
                 <aside className="search-sidebar">
-                    <nav className="sidebar-nav">
-                        <a href="/" className="nav-item">Trang chủ</a>
-                        <a href="/posts" className="nav-item">Câu hỏi</a>
-                        <a href="/tags" className="nav-item">Tags</a>
-                        <a href="/challenges" className="nav-item">Challenges</a>
-                        <a href="/chat" className="nav-item">Chat</a>
-                        <a href="/articles" className="nav-item">Articles</a>
-                        <a href="/users" className="nav-item">Users</a>
-                        <a href="/jobs" className="nav-item">Jobs</a>
-                        <a href="/companies" className="nav-item">Companies</a>
-                    </nav>
-
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">COLLECTIVES</h3>
-                        <a href="#" className="collective-link">Explore all Collectives</a>
-                    </div>
+                    <Sidebar activePage="" />
                 </aside>
 
                 <main className="search-main">

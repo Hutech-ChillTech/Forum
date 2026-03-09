@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
 import '../styles/Tags.css';
 
 const Tags = () => {
@@ -142,31 +143,7 @@ const Tags = () => {
             <div className="tags-container">
                 {/* Left Sidebar */}
                 <aside className="tags-sidebar">
-                    <nav className="sidebar-nav">
-                        <a href="/" className="nav-item">
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                <path d="M9 1L1 6v9h5V9h6v6h5V6L9 1z" />
-                            </svg>
-                            Trang chủ
-                        </a>
-                        <a href="/posts" className="nav-item">
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                <path d="M9 16A7 7 0 119 2a7 7 0 010 14zm0-2A5 5 0 109 4a5 5 0 000 10zm1-5h2v2h-2v-2zm-2 0h2v2H8V9z" />
-                            </svg>
-                            Câu hỏi
-                        </a>
-                        <a href="/tags" className="nav-item active">
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                <path d="M2 4.5A2.5 2.5 0 014.5 2h5.086a1 1 0 01.707.293l6.414 6.414a1 1 0 010 1.414l-5.086 5.086a1 1 0 01-1.414 0L4.293 9.293A1 1 0 014 8.586V4.5zM6 6a1 1 0 100-2 1 1 0 000 2z" />
-                            </svg>
-                            Tags
-                        </a>
-                    </nav>
-
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">COLLECTIVES</h3>
-                        <a href="#" className="collective-link">Explore all Collectives</a>
-                    </div>
+                    <Sidebar activePage="tags" />
                 </aside>
 
                 {/* Main Content */}

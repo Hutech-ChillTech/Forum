@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import './Header.css';
+import '../styles/Header.css';
 
 const Header = ({ hideAuth = false }) => {
     // Mock login state - change to true to see avatar

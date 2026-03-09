@@ -154,7 +154,7 @@
     background: white;
     color: #3c4043;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -163,7 +163,7 @@
     justify-content: center;
     gap: 10px;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0(0, 0, 0, 0.05);
 }
 
 .google-login-btn:hover {
@@ -222,7 +222,7 @@
 .form-group input {
     padding: 10px 12px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 13px;
     background: rgba(255, 255, 255, 0.2);
     color: white;
@@ -258,7 +258,7 @@
     background: rgba(255, 255, 255, 0.25);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -321,7 +321,7 @@
     background: linear-gradient(135deg, #008BFF 0%, #0066FF 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -420,7 +420,7 @@
     border: 1px solid rgba(76, 217, 100, 0.5);
     color: white;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 14px;
     text-align: center;
     font-weight: 500;

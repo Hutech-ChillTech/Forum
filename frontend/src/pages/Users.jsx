@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Sidebar from '../components/Sidebar';
 import '../styles/Users.css';
 
 const Users = () => {
@@ -131,22 +132,7 @@ const Users = () => {
             <div className="users-container">
                 {/* Left Sidebar Layout */}
                 <aside className="users-sidebar">
-                    <nav className="sidebar-nav">
-                        <a href="/" className="nav-item">Trang chủ</a>
-                        <a href="/posts" className="nav-item">Câu hỏi</a>
-                        <a href="/tags" className="nav-item">Tags</a>
-                        <a href="/challenges" className="nav-item">Challenges</a>
-                        <a href="/chat" className="nav-item">Chat</a>
-                        <a href="/articles" className="nav-item">Articles</a>
-                        <a href="/users" className="nav-item active">Users</a>
-                        <a href="/jobs" className="nav-item">Jobs</a>
-                        <a href="/companies" className="nav-item">Companies</a>
-                    </nav>
-
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">COLLECTIVES</h3>
-                        <a href="#" className="collective-link">Explore all Collectives</a>
-                    </div>
+                    <Sidebar activePage="users" />
                 </aside>
 
                 <main className="users-main">

@@ -9,6 +9,8 @@ import Settings from './pages/Settings';
 import Search from './pages/Search';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Chat from './pages/Chat';
+import Saved from './pages/Saved';
 import './App.css';
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/saved" element={<Saved />} />
       </Routes>
     </Router>
   );
