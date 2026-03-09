@@ -4,12 +4,13 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
     animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(4px);
 }
 
 @keyframes fadeIn {
@@ -23,19 +24,20 @@
 }
 
 .modal-content {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.3s ease;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-color);
 }
 
 @keyframes slideUp {
     from {
-        transform: translateY(50px);
+        transform: translateY(30px);
         opacity: 0;
     }
 
@@ -50,14 +52,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid #e3e6e8;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-title {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #232629;
+    color: var(--text-color);
     letter-spacing: 0.5px;
 }
 
@@ -71,13 +73,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6a737c;
+    color: var(--text-secondary);
     transition: all 0.2s ease;
 }
 
 .modal-close:hover {
-    background: #f1f2f3;
-    color: #232629;
+    background: var(--sidebar-item-hover);
+    color: var(--text-color);
 }
 
 /* Post Form */
@@ -96,7 +98,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0066FF 0%, #3385ff 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #3385ff 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,73 +121,29 @@
 .post-username {
     font-size: 15px;
     font-weight: 600;
-    color: #0c0d0e;
+    color: var(--text-color);
     flex: 1;
 }
 
-.btn-add-image {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border: 1px solid #7aa7c7;
-    background: transparent;
-    color: #0052cc;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-add-image::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(57, 115, 157, 0.2) 0%, rgba(57, 115, 157, 0.1) 50%, transparent 100%);
-    transform: translate(-50%, -50%);
-    transition: width 0.5s ease-out, height 0.5s ease-out;
-}
-
-.btn-add-image:hover::before {
-    width: 250px;
-    height: 250px;
-}
-
-.btn-add-image:hover {
-    background: #e6f0ff;
-    border-color: #5b8db8;
-}
-
-.btn-add-image svg {
-    width: 16px;
-    height: 16px;
-}
-
+.btn-add-image,
 .btn-add-code {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    border: 1px solid #7aa7c7;
-    background: transparent;
-    color: #0052cc;
+    border: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    color: var(--primary-color);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
+.btn-add-image:hover,
 .btn-add-code:hover {
-    background: #e6f0ff;
-    border-color: #5b8db8;
+    background: var(--sidebar-item-hover);
 }
 
 .post-action-buttons {
@@ -202,25 +160,25 @@
     width: 100%;
     min-height: 200px;
     padding: 16px;
-    border: 1px solid #d6d9dc;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     font-size: 15px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-    color: #0c0d0e;
-    background: #f8f9f9;
+    font-family: inherit;
+    color: var(--text-color);
+    background: var(--input-bg);
     resize: vertical;
     transition: all 0.2s ease;
 }
 
 .post-textarea:focus {
     outline: none;
-    border-color: #3385ff;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
 }
 
 .post-textarea::placeholder {
-    color: #9fa6ad;
+    color: var(--text-secondary);
+    opacity: 0.7;
 }
 
 .code-textarea {
@@ -228,25 +186,19 @@
     min-height: 150px;
     margin-top: 12px;
     padding: 16px;
-    border: 1px solid #d6d9dc;
+    border: 1px solid #343536;
     border-radius: 12px;
     font-size: 14px;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     color: #e6e6e6;
     background: #1e1e1e;
-    /* Dark theme for code */
     resize: vertical;
     transition: all 0.2s ease;
 }
 
 .code-textarea:focus {
     outline: none;
-    border-color: #3385ff;
-    box-shadow: 0 0 0 4px rgba(0, 116, 204, 0.1);
-}
-
-.code-textarea::placeholder {
-    color: #888;
+    border-color: var(--primary-color);
 }
 
 /* Submit Button */
@@ -254,7 +206,7 @@
     width: 100%;
     padding: 12px 24px;
     border: none;
-    background: #0066FF;
+    background: var(--primary-color);
     color: white;
     font-size: 14px;
     font-weight: 600;
@@ -262,38 +214,18 @@
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-submit-post::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-    transform: translate(-50%, -50%);
-    transition: width 0.5s ease-out, height 0.5s ease-out;
-}
-
-.btn-submit-post:hover::before {
-    width: 400px;
-    height: 400px;
 }
 
 .btn-submit-post:hover:not(:disabled) {
     background: #0052cc;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(10, 149, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
 }
 
 .btn-submit-post:disabled {
-    background: #c8cccf;
+    background: var(--border-color);
     cursor: not-allowed;
-    opacity: 0.6;
+    color: var(--text-secondary);
 }
 
 /* Responsive */

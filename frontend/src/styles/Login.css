@@ -206,20 +206,20 @@
     gap: 14px;
 }
 
-.form-group {
+.login-container .form-group {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.form-group label {
+.login-container .form-group label {
     color: rgba(255, 255, 255, 0.95);
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.3px;
 }
 
-.form-group input {
+.login-container .form-group input {
     padding: 10px 12px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px;
