@@ -2,10 +2,13 @@
 
 package com.forum.it.exceptions;
 
-import com.forum.it.dtos.response.ApiResponses;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.forum.it.dtos.response.ApiResponses;
 
 @RestControllerAdvice
 public class GlobalExceptinHandler {
@@ -40,12 +43,40 @@ public class GlobalExceptinHandler {
         try {
             errorCode = ErrorCode.valueOf(enumKey);
         } catch (IllegalArgumentException e) {
-            // TODO: handle exception
+            // Use generic message if not an ErrorCode enum value
+            ApiResponses<Object> apiResponse = new ApiResponses<>();
+            apiResponse.setCode(400);
+            apiResponse.setMessage(enumKey);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
         }
         ApiResponses<Object> apiResponse = new ApiResponses<>();
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
 
         return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
+    }
+
+    @ExceptionHandler(value = ResourceNotFoundException.class)
+    ResponseEntity<ApiResponses<Object>> handlingResourceNotFound(ResourceNotFoundException exception) {
+        ApiResponses<Object> apiResponses = new ApiResponses<>();
+        apiResponses.setCode(404);
+        apiResponses.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponses);
+    }
+
+    @ExceptionHandler(value = BadRequestException.class)
+    ResponseEntity<ApiResponses<Object>> handlingBadRequest(BadRequestException exception) {
+        ApiResponses<Object> apiResponses = new ApiResponses<>();
+        apiResponses.setCode(400);
+        apiResponses.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponses);
+    }
+
+    @ExceptionHandler(value = ForbiddenException.class)
+    ResponseEntity<ApiResponses<Object>> handlingForbidden(ForbiddenException exception) {
+        ApiResponses<Object> apiResponses = new ApiResponses<>();
+        apiResponses.setCode(403);
+        apiResponses.setMessage(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponses);
     }
 }
