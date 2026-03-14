@@ -21,7 +21,8 @@ import com.forum.it.entities.tag.Tag;
 import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
-import com.forum.it.exceptions.BadRequestException;
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
@@ -29,43 +30,40 @@ import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.PostTagRepository;
 import com.forum.it.repositories.TagRepository;
 import com.forum.it.repositories.UserRepository;
+import com.forum.it.utils.SecurityContextHelper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PostService {
 
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
-    private final TagRepository tagRepository;
-    private final PostTagRepository postTagRepository;
-    private final CommentRepository commentRepository;
+    private final PostRepository      postRepository;
+    private final UserRepository      userRepository;
+    private final TagRepository       tagRepository;
+    private final PostTagRepository   postTagRepository;
+    private final CommentRepository   commentRepository;
+    private final SecurityContextHelper securityContextHelper;
 
-    public PostService(PostRepository postRepository,
-                       UserRepository userRepository,
-                       TagRepository tagRepository,
-                       PostTagRepository postTagRepository,
-                       CommentRepository commentRepository) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-        this.tagRepository = tagRepository;
-        this.postTagRepository = postTagRepository;
-        this.commentRepository = commentRepository;
-    }
-
+    /**
+     * userId is resolved from the JWT — NOT from the request body.
+     */
     public PostResponse createPost(CreatePostRequest request) {
-        User user = userRepository.findById(Objects.requireNonNull(request.getUserId()))
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.getUserId()));
+        UUID userId = securityContextHelper.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (user.getStatus() == AccountStatus.BANNED) {
-            throw new ForbiddenException("User is banned and cannot create posts");
+            throw new AppException(ErrorCode.USER_BANNED);
         }
 
         if (user.getVerifyStatus() == UserStatus.DELETED) {
-            throw new ForbiddenException("User account has been deleted");
+            throw new AppException(ErrorCode.USER_DELETED);
         }
 
         if (postRepository.existsByTitleAndUserUserId(request.getTitle(), user.getUserId())) {
-            throw new BadRequestException("You already have a post with this title");
+            throw new AppException(ErrorCode.POST_DUPLICATE_TITLE);
         }
 
         Post post = new Post();
@@ -117,7 +115,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public Page<PostResponse> searchPosts(String keyword, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            throw new BadRequestException("Search keyword cannot be empty");
+            throw new AppException(ErrorCode.INVALID_KEY);
         }
         return postRepository.searchPosts(keyword.trim(), pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
@@ -130,22 +128,23 @@ public class PostService {
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
     }
 
-    public PostResponse updatePost(UUID postId, UUID userId, UpdatePostRequest request) {
+    public PostResponse updatePost(UUID postId, UpdatePostRequest request) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
 
-        if (!post.getUser().getUserId().equals(userId)) {
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        if (!post.getUser().getUserId().equals(currentUserId)) {
             throw new ForbiddenException("You can only edit your own posts");
         }
 
         if (post.getStatus() == PostStatus.REJECTED) {
-            throw new BadRequestException("Cannot edit a rejected post");
+            throw new AppException(ErrorCode.POST_REJECTED);
         }
 
         if (request.getTitle() != null && !request.getTitle().trim().isEmpty()) {
             if (!post.getTitle().equals(request.getTitle().trim())
-                    && postRepository.existsByTitleAndUserUserId(request.getTitle().trim(), userId)) {
-                throw new BadRequestException("You already have a post with this title");
+                    && postRepository.existsByTitleAndUserUserId(request.getTitle().trim(), currentUserId)) {
+                throw new AppException(ErrorCode.POST_DUPLICATE_TITLE);
             }
             post.setTitle(request.getTitle().trim());
         }
@@ -179,11 +178,13 @@ public class PostService {
         return new PostResponse(updatedPost, postTagRepository.findTagNamesByPostId(postId));
     }
 
-    public void deletePost(UUID postId, UUID userId) {
+    public void deletePost(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
 
-        if (!post.getUser().getUserId().equals(userId)) {
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        boolean isAdmin = securityContextHelper.isModeratorOrAdmin();
+        if (!isAdmin && !post.getUser().getUserId().equals(currentUserId)) {
             throw new ForbiddenException("You can only delete your own posts");
         }
 

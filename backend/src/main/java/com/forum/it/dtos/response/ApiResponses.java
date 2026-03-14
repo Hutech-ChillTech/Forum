@@ -28,4 +28,8 @@ public class ApiResponses<T> {
     public static <T> ApiResponses<T> error(ErrorCode errorCode) {
         return ApiResponses.<T>builder().code(errorCode.getCode()).message(errorCode.getMessage()).build();
     }
+
+    public static <T> ApiResponses<T> error(int code, String message) {
+        return ApiResponses.<T>builder().code(code).message(message).build();
+    }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forum.it.contants.Routes;
 import com.forum.it.dtos.request.CreatePostRequest;
 import com.forum.it.dtos.request.UpdatePostRequest;
 import com.forum.it.dtos.response.PostResponse;
@@ -28,26 +29,22 @@ import com.forum.it.entities.post.PostStatus;
 import com.forum.it.services.PostService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping(Routes.Post.BASE)
+@RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
 
-    public PostController(PostService postService) {
-        this.postService = postService;
-    }
-
-    // POST /api/v1/posts
-    @PostMapping
+    @PostMapping(Routes.Post.CREATE)
     public ResponseEntity<PostResponse> createPost(@Valid @RequestBody CreatePostRequest request) {
         PostResponse response = postService.createPost(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // GET /api/v1/posts
-    @GetMapping
+    @GetMapping(Routes.Post.GET_ALL)
     public ResponseEntity<Map<String, Object>> getPublishedPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -57,8 +54,7 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // GET /api/v1/posts/all
-    @GetMapping("/all")
+    @GetMapping(Routes.Post.GET_ALL_ADMIN)
     public ResponseEntity<Map<String, Object>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -68,15 +64,13 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // GET /api/v1/posts/{id}
-    @GetMapping("/{id}")
+    @GetMapping(Routes.Post.GET_BY_ID)
     public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
         PostResponse response = postService.getPostById(id);
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/v1/posts/user/{userId}
-    @GetMapping("/user/{userId}")
+    @GetMapping(Routes.Post.GET_BY_USER)
     public ResponseEntity<Map<String, Object>> getPostsByUser(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -87,8 +81,7 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // GET /api/v1/posts/status/{status}
-    @GetMapping("/status/{status}")
+    @GetMapping(Routes.Post.GET_BY_STATUS)
     public ResponseEntity<Map<String, Object>> getPostsByStatus(
             @PathVariable PostStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -99,8 +92,7 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // GET /api/v1/posts/search?keyword=xxx
-    @GetMapping("/search")
+    @GetMapping(Routes.Post.SEARCH)
     public ResponseEntity<Map<String, Object>> searchPosts(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -110,8 +102,7 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // GET /api/v1/posts/recent?days=7
-    @GetMapping("/recent")
+    @GetMapping(Routes.Post.RECENT)
     public ResponseEntity<Map<String, Object>> getRecentPosts(
             @RequestParam(defaultValue = "7") int days,
             @RequestParam(defaultValue = "0") int page,
@@ -121,18 +112,15 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
-    // PUT /api/v1/posts/{id}?userId=xxx
-    @PutMapping("/{id}")
+    @PutMapping(Routes.Post.UPDATE)
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable UUID id,
-            @RequestParam UUID userId,
             @Valid @RequestBody UpdatePostRequest request) {
-        PostResponse response = postService.updatePost(id, userId, request);
+        PostResponse response = postService.updatePost(id, request);
         return ResponseEntity.ok(response);
     }
 
-    // PATCH /api/v1/posts/{id}/status
-    @PatchMapping("/{id}/status")
+    @PatchMapping(Routes.Post.UPDATE_STATUS)
     public ResponseEntity<PostResponse> updatePostStatus(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
@@ -141,38 +129,31 @@ public class PostController {
         return ResponseEntity.ok(response);
     }
 
-    // DELETE /api/v1/posts/{id}?userId=xxx
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePost(
-            @PathVariable UUID id,
-            @RequestParam UUID userId) {
-        postService.deletePost(id, userId);
+    @DeleteMapping(Routes.Post.DELETE)
+    public ResponseEntity<Void> deletePost(@PathVariable UUID id) {
+        postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE /api/v1/posts/{id}/admin
-    @DeleteMapping("/{id}/admin")
+    @DeleteMapping(Routes.Post.DELETE_ADMIN)
     public ResponseEntity<Void> deletePostByAdmin(@PathVariable UUID id) {
         postService.deletePostByAdmin(id);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/v1/posts/statistics/total
-    @GetMapping("/statistics/total")
+    @GetMapping(Routes.Post.STATS_TOTAL)
     public ResponseEntity<Map<String, Long>> getTotalPosts() {
         long total = postService.getTotalPosts();
         return ResponseEntity.ok(Map.of("total", total));
     }
 
-    // GET /api/v1/posts/statistics/status/{status}
-    @GetMapping("/statistics/status/{status}")
+    @GetMapping(Routes.Post.STATS_STATUS)
     public ResponseEntity<Map<String, Long>> countPostsByStatus(@PathVariable PostStatus status) {
         long count = postService.countPostsByStatus(status);
         return ResponseEntity.ok(Map.of("count", count));
     }
 
-    // GET /api/v1/posts/statistics/user/{userId}
-    @GetMapping("/statistics/user/{userId}")
+    @GetMapping(Routes.Post.STATS_USER)
     public ResponseEntity<Map<String, Long>> countPostsByUser(@PathVariable UUID userId) {
         long count = postService.countPostsByUser(userId);
         return ResponseEntity.ok(Map.of("count", count));
@@ -181,8 +162,7 @@ public class PostController {
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParams = sort.split(",");
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
     }
 

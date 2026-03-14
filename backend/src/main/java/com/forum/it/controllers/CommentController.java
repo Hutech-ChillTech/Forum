@@ -21,32 +21,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forum.it.contants.Routes;
 import com.forum.it.dtos.request.CreateCommentRequest;
 import com.forum.it.dtos.request.UpdateCommentRequest;
 import com.forum.it.dtos.response.CommentResponse;
 import com.forum.it.services.CommentService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/comments")
+@RequestMapping(Routes.Comment.BASE)
+@RequiredArgsConstructor
 public class CommentController {
 
     private final CommentService commentService;
 
-    public CommentController(CommentService commentService) {
-        this.commentService = commentService;
-    }
-
-    // POST /api/v1/comments
-    @PostMapping
+    @PostMapping(Routes.Comment.CREATE)
     public ResponseEntity<CommentResponse> createComment(@Valid @RequestBody CreateCommentRequest request) {
         CommentResponse response = commentService.createComment(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // GET /api/v1/comments/post/{postId}
-    @GetMapping("/post/{postId}")
+    @GetMapping(Routes.Comment.BY_POST)
     public ResponseEntity<Map<String, Object>> getCommentsByPost(
             @PathVariable UUID postId,
             @RequestParam(defaultValue = "0") int page,
@@ -57,8 +54,7 @@ public class CommentController {
         return ResponseEntity.ok(buildPageResponse(commentsPage, "comments"));
     }
 
-    // GET /api/v1/comments/post/{postId}/all
-    @GetMapping("/post/{postId}/all")
+    @GetMapping(Routes.Comment.BY_POST_ALL)
     public ResponseEntity<Map<String, Object>> getAllCommentsByPost(
             @PathVariable UUID postId,
             @RequestParam(defaultValue = "0") int page,
@@ -69,22 +65,19 @@ public class CommentController {
         return ResponseEntity.ok(buildPageResponse(commentsPage, "comments"));
     }
 
-    // GET /api/v1/comments/{id}
-    @GetMapping("/{id}")
+    @GetMapping(Routes.Comment.GET_BY_ID)
     public ResponseEntity<CommentResponse> getCommentById(@PathVariable UUID id) {
         CommentResponse response = commentService.getCommentById(id);
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/v1/comments/{id}/replies
-    @GetMapping("/{id}/replies")
+    @GetMapping(Routes.Comment.REPLIES)
     public ResponseEntity<List<CommentResponse>> getReplies(@PathVariable UUID id) {
         List<CommentResponse> replies = commentService.getReplies(id);
         return ResponseEntity.ok(replies);
     }
 
-    // GET /api/v1/comments/user/{userId}
-    @GetMapping("/user/{userId}")
+    @GetMapping(Routes.Comment.BY_USER)
     public ResponseEntity<Map<String, Object>> getCommentsByUser(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -95,41 +88,33 @@ public class CommentController {
         return ResponseEntity.ok(buildPageResponse(commentsPage, "comments"));
     }
 
-    // PUT /api/v1/comments/{id}?userId=xxx
-    @PutMapping("/{id}")
+    @PutMapping(Routes.Comment.UPDATE)
     public ResponseEntity<CommentResponse> updateComment(
             @PathVariable UUID id,
-            @RequestParam UUID userId,
             @Valid @RequestBody UpdateCommentRequest request) {
-        CommentResponse response = commentService.updateComment(id, userId, request);
+        CommentResponse response = commentService.updateComment(id, request);
         return ResponseEntity.ok(response);
     }
 
-    // DELETE /api/v1/comments/{id}?userId=xxx
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteComment(
-            @PathVariable UUID id,
-            @RequestParam UUID userId) {
-        commentService.deleteComment(id, userId);
+    @DeleteMapping(Routes.Comment.DELETE)
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID id) {
+        commentService.deleteComment(id);
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE /api/v1/comments/{id}/admin
-    @DeleteMapping("/{id}/admin")
+    @DeleteMapping(Routes.Comment.DELETE_ADMIN)
     public ResponseEntity<Void> deleteCommentByAdmin(@PathVariable UUID id) {
         commentService.deleteCommentByAdmin(id);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/v1/comments/count/post/{postId}
-    @GetMapping("/count/post/{postId}")
+    @GetMapping(Routes.Comment.COUNT_BY_POST)
     public ResponseEntity<Map<String, Long>> countByPost(@PathVariable UUID postId) {
         long count = commentService.countCommentsByPostId(postId);
         return ResponseEntity.ok(Map.of("count", count));
     }
 
-    // GET /api/v1/comments/count/user/{userId}
-    @GetMapping("/count/user/{userId}")
+    @GetMapping(Routes.Comment.COUNT_BY_USER)
     public ResponseEntity<Map<String, Long>> countByUser(@PathVariable UUID userId) {
         long count = commentService.countCommentsByUserId(userId);
         return ResponseEntity.ok(Map.of("count", count));

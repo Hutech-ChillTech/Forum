@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.forum.it.dtos.response.SavedPostResponse;
 import com.forum.it.entities.post.SavedPost;
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.SavedPostRepository;
 import com.forum.it.repositories.UserRepository;
@@ -16,16 +18,17 @@ import com.forum.it.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class SavedPostService {
 
     private final SavedPostRepository savedPostRepository;
-    private final UserRepository userRepository;
-    private final PostRepository postRepository;
+    private final UserRepository      userRepository;
+    private final PostRepository      postRepository;
 
     public void bookmarkPost(UUID userId, UUID postId) {
         if (savedPostRepository.existsByUserUserIdAndPostPostId(userId, postId)) {
-            throw new RuntimeException("Bài viết này đã được lưu trước đó.");
+            throw new AppException(ErrorCode.BOOKMARK_ALREADY_EXISTS);
         }
 
         var user = userRepository.getReferenceById(userId);
@@ -37,10 +40,9 @@ public class SavedPostService {
         savedPostRepository.save(newBookmark);
     }
 
-    @Transactional
     public void unbookmarkPost(UUID userId, UUID postId) {
         if (!savedPostRepository.existsByUserUserIdAndPostPostId(userId, postId)) {
-            throw new RuntimeException("Không tìm thấy bài lưu này để xóa.");
+            throw new AppException(ErrorCode.BOOKMARK_NOT_FOUND);
         }
         savedPostRepository.deleteByUserUserIdAndPostPostId(userId, postId);
     }
@@ -54,3 +56,4 @@ public class SavedPostService {
                 .build());
     }
 }
+

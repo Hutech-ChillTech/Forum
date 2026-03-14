@@ -4,6 +4,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,22 +31,21 @@ public class JwtTokenProvider {
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
-    public String generateToken(Account account) {
-        return buildToken(new HashMap<>(), account, accessTokenExpiration);
-    }
+    // ── Token generation ──────────────────────────────────────────────────────
 
+    /**
+     * Generates an access token embedding userId, role, and minimal user info.
+     */
     public String generateToken(Account account, String roleName) {
         User user = account.getUser();
-
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getUserId().toString());
-        claims.put("userName", user.getUserName());
-        claims.put("email", account.getEmail());
-        claims.put("fullName", user.getFullName());
-        claims.put("role", roleName);
-        claims.put("avatarURL", user.getAvatarURL());
+        claims.put("userId",       user.getUserId().toString());
+        claims.put("role",         roleName);
+        // Keep additional claims minimal to reduce token size
+        claims.put("userName",     user.getUserName());
+        claims.put("avatarURL",    user.getAvatarURL());
         claims.put("verifyStatus", user.getVerifyStatus().name());
-        claims.put("status", user.getStatus().name());
+        claims.put("status",       user.getStatus().name());
 
         return Jwts.builder()
                 .setSubject(account.getEmail())
@@ -56,28 +56,60 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * Generates a refresh token — subject only, no extra claims.
+     */
     public String generateRefreshToken(Account account) {
-        return buildToken(new HashMap<>(), account, refreshTokenExpiration);
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, Account account, long expiration) {
         return Jwts.builder()
-                .setClaims(extraClaims)
                 .setSubject(account.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
+    // ── Claim extraction ──────────────────────────────────────────────────────
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    /** Extracts userId from access-token claims. */
+    public UUID extractUserId(String token) {
+        String raw = extractClaim(token, claims -> claims.get("userId", String.class));
+        return UUID.fromString(raw);
     }
+
+    /** Extracts the role name from access-token claims. */
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        return claimsResolver.apply(extractAllClaims(token));
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+
+    public boolean isTokenValid(String token, String username) {
+        return extractUsername(token).equals(username) && !isTokenExpired(token);
+    }
+
+    public boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    /**
+     * Returns the remaining lifetime of the token in milliseconds.
+     * Returns 0 if the token is already expired.
+     */
+    public long getExpirationMillis(String token) {
+        long expiry = extractExpiration(token).getTime();
+        long remaining = expiry - System.currentTimeMillis();
+        return Math.max(0, remaining);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
@@ -87,21 +119,12 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    public boolean isTokenValid(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username)) && !isTokenExpired(token);
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
     }
 }
