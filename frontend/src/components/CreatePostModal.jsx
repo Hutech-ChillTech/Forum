@@ -1,14 +1,13 @@
 import { useState } from 'react';
+import postService from '../service/postService';
+import authService from '../service/authService';
 import '../styles/CreatePostModal.css';
 
 const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
     const [blocks, setBlocks] = useState([{ id: Date.now(), type: 'text', content: '' }]);
 
-    // Mock user data
-    const mockUser = {
-        name: "Alex",
-        avatar: null
-    };
+    // Get real user data
+    const user = authService.getUser() || { fullName: "User", avatar: null };
 
     const handleAddCode = () => {
         setBlocks([...blocks, { id: Date.now(), type: 'code', content: '' }, { id: Date.now() + 1, type: 'text', content: '' }]);
@@ -69,32 +68,52 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Filter out empty text and code blocks
         const validBlocks = blocks.filter(b => b.type === 'image' || b.content.trim() !== '');
         if (validBlocks.length === 0) return;
 
-        // Create post object
-        const newPost = {
-            id: Date.now(),
-            author: mockUser.name,
-            avatar: mockUser.avatar,
-            timestamp: new Date().toISOString(),
-            likes: 0,
-            comments: 0,
-            contentBlocks: validBlocks
-        };
+        // Backend only supports a single content string for now
+        // We will combine the blocks into a single string
+        const content = validBlocks.map(block => {
+            if (block.type === 'code') return `\n\`\`\`\n${block.content}\n\`\`\`\n`;
+            if (block.type === 'image') return `\n![image](${block.content})\n`;
+            return block.content;
+        }).join('\n');
 
-        // Call parent callback to add post
-        if (onPostCreated) {
-            onPostCreated(newPost);
+        // Find the first image if any to use as imageURL for backend
+        const firstImage = validBlocks.find(b => b.type === 'image')?.content || null;
+
+        try {
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            if (!userProfile || !userProfile.userId) {
+                alert('Vui lòng đăng nhập để đăng bài');
+                return;
+            }
+
+            // Create post on backend
+            const createdPost = await postService.createPost({
+                userId: userProfile.userId,
+                title: validBlocks[0]?.content.substring(0, 50) || "Untitled Post", // Simple title from first content
+                content: content,
+                imageURL: firstImage,
+                tagNames: []
+            });
+
+            // Call parent callback to add post to feed
+            if (onPostCreated) {
+                onPostCreated(createdPost);
+            }
+
+            // Reset and close
+            setBlocks([{ id: Date.now(), type: 'text', content: '' }]);
+            onClose();
+        } catch (err) {
+            console.error('Failed to create post:', err);
+            alert('Đăng bài thất bại: ' + err.message);
         }
-
-        // Reset and close
-        setBlocks([{ id: Date.now(), type: 'text', content: '' }]);
-        onClose();
     };
 
     const getInitials = (name) => {
@@ -123,15 +142,15 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                 <form onSubmit={handleSubmit} className="post-form">
                     <div className="post-user-info">
                         <div className="post-avatar">
-                            {mockUser.avatar ? (
-                                <img src={mockUser.avatar} alt={mockUser.name} />
+                            {user.avatar ? (
+                                <img src={user.avatar} alt={user.fullName} />
                             ) : (
                                 <span className="post-avatar-initials">
-                                    {getInitials(mockUser.name)}
+                                    {getInitials(user.fullName || "User")}
                                 </span>
                             )}
                         </div>
-                        <span className="post-username">{mockUser.name}</span>
+                        <span className="post-username">{user.fullName || "User"}</span>
 
                         <div className="post-action-buttons">
                             <button type="button" className="btn-add-image" onClick={handleAddImage}>

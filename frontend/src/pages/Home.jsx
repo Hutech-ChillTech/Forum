@@ -5,6 +5,7 @@ import Sidebar from '../components/Sidebar';
 import ChatBox from '../components/ChatBox';
 import ImageGrid from '../components/ImageGrid';
 import PostCard from '../components/PostCard';
+import postService from '../service/postService';
 import '../styles/Home.css';
 import '../styles/PostDetail.css';
 
@@ -54,31 +55,32 @@ const Home = () => {
     const toggleSave = (id) => setSavedPosts(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleFollow = (author) => setFollowedUsers(prev => ({ ...prev, [author]: !prev[author] }));
 
-    const [userPosts, setUserPosts] = useState(() => [
-        {
-            id: 101,
-            author: 'Anonymous',
-            avatar: '',
-            content: 'Góc làm việc hôm nay của mình! Các bạn setup góc code thế nào rồi chia sẻ với nhé 😎💻',
-            timestamp: Date.now() - 3600000 * 2, // 2 hours ago
-            images: ['/images/download (2).png', '/images/download.jpg', '/images/download.png', '/images/download (3).png', '/images/download (2).png'],
-            likes: 15,
-            comments: 4
-        },
-        {
-            id: 102,
-            author: 'CodeMaster',
-            avatar: 'https://ui-avatars.com/api/?name=Code+Master&background=random',
-            content: 'Cuối cùng cũng học xong khoá React, mừng rơi nước mắt 😂',
-            timestamp: Date.now() - 86400000, // 1 day ago
-            images: ['/images/download (3).png'],
-            likes: 42,
-            comments: 12
-        }
-    ]);
+    const [userPosts, setUserPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Fetch posts from API
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                setLoading(true);
+                const data = await postService.getPublishedPosts(0, 20);
+                // Backend returns list in 'posts' field based on buildPageResponse
+                setUserPosts(data.posts || []);
+            } catch (err) {
+                console.error('Failed to fetch posts:', err);
+                setError('Không thể tải bài viết. Vui lòng thử lại sau.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, []);
 
     // Handle new post creation
     const handlePostCreated = (newPost) => {
+        // newPost is already the format from API (PostResponse)
         setUserPosts(prevPosts => [newPost, ...prevPosts]);
     };
 
@@ -92,6 +94,7 @@ const Home = () => {
 
     // Helper function to format timestamp
     const formatTime = (timestamp) => {
+        if (!timestamp) return 'vừa xong';
         const date = new Date(timestamp);
         const now = new Date();
         const diff = Math.floor((now - date) / 1000); // seconds
@@ -165,18 +168,26 @@ const Home = () => {
                         </div>
                         <div className="greeting-input-mock">
                             <h2 className="greeting-text">
-                                Xin chào {userData.name.split(' ').pop()}, chia sẻ gì đó nhé!
+                                Xin chào {(userData.name || "bạn").split(' ').pop()}, chia sẻ gì đó nhé!
                             </h2>
                         </div>
                     </div>
 
                     {/* User Posts */}
-                    {userPosts.length > 0 && (
+                    {loading ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            Đang tải bài viết...
+                        </div>
+                    ) : userPosts.length > 0 ? (
                         <div className="user-posts-section">
                             <h2 className="section-title">Bài viết</h2>
                             {userPosts.map((post) => (
-                                <PostCard key={post.id} post={post} />
+                                <PostCard key={post.postId || post.id} post={post} />
                             ))}
+                        </div>
+                    ) : (
+                        <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)', backgroundColor: 'var(--card-bg)', borderRadius: '12px', marginBottom: '20px' }}>
+                            Chưa có bài viết nào. Hãy là người đầu tiên chia sẻ!
                         </div>
                     )}
 

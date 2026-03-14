@@ -18,21 +18,22 @@ const Settings = () => {
             }
         }
         return {
-            displayName: '1731_Trần Khánh Linh',
-            fullName: 'Trần Khánh Linh',
-            username: 'khanhlinh_1731',
-            email: 'linh.tran@example.com',
-            phone: '0987654321',
+            displayName: 'User',
+            fullName: 'User Name',
+            username: 'user',
+            email: 'user@example.com',
+            phone: '',
             gender: '1',
-            dateOfBirth: '2002-10-15',
+            dateOfBirth: '',
             status: 'Active',
-            location: 'Vietnam',
-            title: 'Frontend Developer',
-            aboutMe: 'Yêu thích React và thiết kế UI/UX.',
-            websiteLink: 'https://github.com/linh-tran',
+            location: '',
+            title: '',
+            aboutMe: '',
+            websiteLink: '',
             twitterLink: '',
-            githubLink: 'linh-tran'
+            githubLink: ''
         };
+
     });
 
     const [isDarkMode, setIsDarkMode] = useState(() => {

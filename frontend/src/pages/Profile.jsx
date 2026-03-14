@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import PostCard from '../components/PostCard';
+import postService from '../service/postService';
 import '../styles/Profile.css';
 
 const Profile = () => {
@@ -13,7 +14,7 @@ const Profile = () => {
             try {
                 const parsed = JSON.parse(savedProfile);
                 return {
-                    name: parsed.fullName || parsed.displayName || "Trần Khánh Linh",
+                    name: parsed.fullName || parsed.username || "User",
                     memberSince: "1 năm, 1 tháng",
                     lastSeen: "tuần này",
                     reputation: 1,
@@ -28,7 +29,7 @@ const Profile = () => {
             }
         }
         return {
-            name: "1731_Trần Khánh Linh",
+            name: "User",
             memberSince: "1 năm, 1 tháng",
             lastSeen: "tuần này",
             reputation: 1,
@@ -39,6 +40,9 @@ const Profile = () => {
             badges: []
         };
     });
+
+    const [userPosts, setUserPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const handleProfileUpdate = (e) => {
@@ -53,29 +57,36 @@ const Profile = () => {
         return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
     }, []);
 
-    // Mock recent posts for the current profile user
-    const userPosts = [
-        {
-            id: 201,
-            author: userData.name,
-            content: 'Chào cả nhà, mình vừa hoàn thành dự án đầu tay bằng ReactJS. Mọi người xem thử và góp ý giúp mình với nhé! 🚀',
-            timestamp: Date.now() - 3600000 * 5, // 5 hours ago
-            images: ['/images/download (3).png'],
-            likes: 24,
-            comments: 8,
-            tags: ["reactjs", "project", "showcase"]
-        },
-        {
-            id: 202,
-            title: 'Làm thế nào để fix lỗi CORS khi fetch API từ ReactJS?',
-            excerpt: 'Mình đang build ứng dụng React và gửi request đến backend Spring Boot nhưng toàn bị báo lỗi CORS policy chặn. Ai biết cách config backend để cho phép ạ?',
-            author: userData.name,
-            timestamp: Date.now() - 86400000 * 2, // 2 days ago
-            likes: 12,
-            comments: 15,
-            tags: ["cors", "reactjs", "spring-boot", "api"]
-        }
-    ];
+    // Fetch user posts from API
+    useEffect(() => {
+        const fetchUserPosts = async () => {
+            const savedProfile = localStorage.getItem('userProfile');
+            if (!savedProfile) return;
+
+            try {
+                const parsed = JSON.parse(savedProfile);
+                if (parsed.userId) {
+                    setLoading(true);
+                    const data = await postService.getPostsByUser(parsed.userId);
+                    // data.posts because of buildPageResponse in backend
+                    const posts = data.posts || [];
+                    setUserPosts(posts);
+                    
+                    // Update stats
+                    setUserData(prev => ({
+                        ...prev,
+                        questions: posts.length
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to fetch user posts:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserPosts();
+    }, []);
 
     return (
         <div className="profile-layout">
@@ -187,9 +198,17 @@ const Profile = () => {
                             <div className="profile-section">
                                 <h2 className="section-title">Bài viết gần đây</h2>
                                 <div className="profile-posts-list" style={{ marginTop: '16px' }}>
-                                    {userPosts.map(post => (
-                                        <PostCard key={post.id} post={post} hideFollowButton={true} />
-                                    ))}
+                                    {loading ? (
+                                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>Đang tải bài viết...</div>
+                                    ) : userPosts.length > 0 ? (
+                                        userPosts.map(post => (
+                                            <PostCard key={post.postId || post.id} post={post} hideFollowButton={true} />
+                                        ))
+                                    ) : (
+                                        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', backgroundColor: 'var(--secondary-bg)', borderRadius: '12px' }}>
+                                            Bạn chưa có bài viết nào.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

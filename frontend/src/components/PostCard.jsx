@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ImageGrid from './ImageGrid';
+import commentService from '../service/commentService';
+import authService from '../service/authService';
 
 const PostCard = ({ post, hideFollowButton = false }) => {
     const [isLiked, setIsLiked] = useState(false);
@@ -7,13 +9,40 @@ const PostCard = ({ post, hideFollowButton = false }) => {
     const [isFollowed, setIsFollowed] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
-    const [sortOrder, setSortOrder] = useState('newest');
+    const [comments, setComments] = useState([]);
+    const [commentLoading, setCommentLoading] = useState(false);
+    const [newComment, setNewComment] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [localCommentCount, setLocalCommentCount] = useState(post.commentCount || 0);
+    const [replyingToCommentId, setReplyingToCommentId] = useState(null);
+    const [replyContent, setReplyContent] = useState('');
+    
+    const userProfile = authService.getUser();
+
+    // Map backend fields to local variables
+    const id = post.postId || post.id;
+    const author = post.userName || post.author;
+    const avatar = post.userAvatarURL || post.avatar;
+    const time = post.createdAt || post.timestamp || post.time || post.askedTime;
+    const commentCount = post.commentCount !== undefined ? post.commentCount : post.comments;
+    const content = post.content || post.excerpt;
+    const title = post.title;
+    const image = post.imageURL || (post.images && post.images[0]);
 
     // Helper function to format timestamp
     const formatTime = (timestamp) => {
         if (!timestamp) return 'vừa xong';
-        if (typeof timestamp === 'string') return timestamp; // If passed as "2 mins ago"
-        const date = new Date(timestamp);
+        
+        let date;
+        if (Array.isArray(timestamp)) {
+            // Handle [year, month, day] format from Jackson if applicable
+            date = new Date(timestamp[0], timestamp[1] - 1, timestamp[2]);
+        } else {
+            date = new Date(timestamp);
+        }
+
+        if (isNaN(date.getTime())) return typeof timestamp === 'string' ? timestamp : 'vừa xong';
+        
         const now = new Date();
         const diff = Math.floor((now - date) / 1000);
 
@@ -23,21 +52,85 @@ const PostCard = ({ post, hideFollowButton = false }) => {
         return `${Math.floor(diff / 86400)} ngày trước`;
     };
 
+    // Fetch comments when expanded
+    useEffect(() => {
+        if (isExpanded && id) {
+            const fetchComments = async () => {
+                try {
+                    setCommentLoading(true);
+                    const data = await commentService.getCommentsByPost(id);
+                    // Backend returns list in 'comments' field based on buildPageResponse in CommentController
+                    setComments(data.comments || []);
+                } catch (err) {
+                    console.error('Failed to fetch comments:', err);
+                } finally {
+                    setCommentLoading(false);
+                }
+            };
+            fetchComments();
+        }
+    }, [isExpanded, id]);
+
+    const handleCommentSubmit = async (e, parentId = null) => {
+        if (e) e.preventDefault();
+        
+        const contentToPost = parentId ? replyContent : newComment;
+        if (!contentToPost.trim() || !userProfile?.userId || submitting) return;
+
+        try {
+            setSubmitting(true);
+            const createdComment = await commentService.createComment({
+                postId: id,
+                userId: userProfile.userId,
+                content: contentToPost.trim(),
+                parentId: parentId
+            });
+
+            if (parentId) {
+                // Find parent and add to its replies
+                setComments(prev => prev.map(c => {
+                    if (c.commentId === parentId) {
+                        return {
+                            ...c,
+                            replies: [createdComment, ...(c.replies || [])],
+                            replyCount: (c.replyCount || 0) + 1
+                        };
+                    }
+                    return c;
+                }));
+                setReplyContent('');
+                setReplyingToCommentId(null);
+            } else {
+                setComments(prev => [createdComment, ...prev]);
+                setNewComment('');
+            }
+            
+            // Increment local comment count
+            setLocalCommentCount(prev => prev + 1);
+        } catch (err) {
+            console.error('Failed to post comment:', err);
+            alert('Lỗi: ' + err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+
     return (
         <div className="user-post-card" style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
             <div className="post-header" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div className="post-avatar-small" style={{ marginRight: '12px' }}>
-                    {post.avatar ? (
-                        <img src={post.avatar} alt={post.author} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                    {avatar ? (
+                        <img src={avatar} alt={author} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                         <span className="post-avatar-initials-small" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>
-                            {post.author ? post.author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                            {author ? author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                         </span>
                     )}
                 </div>
                 <div className="post-author-info" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="post-author-name" style={{ marginRight: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>{post.author}</span>
+                        <span className="post-author-name" style={{ marginRight: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>{author}</span>
                         {!hideFollowButton && (
                             <button onClick={() => setIsFollowed(!isFollowed)} style={{ background: 'none', border: 'none', color: isFollowed ? 'var(--text-secondary)' : 'var(--primary-color)', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 {isFollowed ? (
@@ -54,13 +147,13 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                             </button>
                         )}
                     </div>
-                    <span className="post-time" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatTime(post.timestamp || post.time || post.askedTime)}</span>
+                    <span className="post-time" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatTime(time)}</span>
                 </div>
             </div>
 
-            {post.title && (
+            {title && (
                 <h3 className="question-title" style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>
-                    <a href={`/posts/${post.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>{post.title}</a>
+                    <a href={`/posts/${id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>{title}</a>
                 </h3>
             )}
 
@@ -76,22 +169,16 @@ const PostCard = ({ post, hideFollowButton = false }) => {
             ) : (
                 <>
                     <div className="post-content-text">
-                        <a href={`/posts/${post.id}`} style={{ color: 'inherit', textDecoration: 'none', display: 'block', fontSize: '15px', lineHeight: '1.5', marginBottom: '12px' }}>
-                            {post.content || post.excerpt}
+
+
+                        <a href={`/posts/${id}`} style={{ color: 'inherit', textDecoration: 'none', display: 'block', fontSize: '15px', lineHeight: '1.5', marginBottom: '12px' }}>
+                            {content}
                         </a>
                     </div>
 
-                    {post.images && post.images.length > 0 && (
-                        <a href={`/posts/${post.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                            <ImageGrid images={post.images} />
-                        </a>
-                    )}
-
-                    {post.video && (
-                        <a href={`/posts/${post.id}`} style={{ display: 'block' }}>
-                            <div className="post-media-preview" style={{ margin: '15px 0', width: '100%', backgroundColor: '#000', borderRadius: '12px', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
-                                <video src={post.video} controls style={{ width: '100%', maxHeight: '450px', display: 'block' }} />
-                            </div>
+                    {image && (
+                        <a href={`/posts/${id}`} style={{ display: 'block', textDecoration: 'none' }}>
+                            <ImageGrid images={Array.isArray(image) ? image : [image]} />
                         </a>
                     )}
                 </>
@@ -118,10 +205,10 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                         <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
                     </svg>
-                    <span>{post.comments || 0}</span>
+                    <span>{localCommentCount}</span>
                 </button>
                 <button className="post-action-btn" onClick={() => {
-                    navigator.clipboard.writeText(window.location.origin + '/posts/' + (post.id || ''));
+                    navigator.clipboard.writeText(window.location.origin + '/posts/' + (id || ''));
                     alert('Đã sao chép liên kết bài viết!');
                 }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,60 +224,147 @@ const PostCard = ({ post, hideFollowButton = false }) => {
                 </button>
             </div>
 
-            {/* Inline Comments Section Mock */}
+            {/* Inline Comments Section */}
             {isExpanded && (
                 <div className="comments-thread" style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
-                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0 }}>
-                                U
+                            <div className="post-avatar-extra-small" style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', flexShrink: 0, overflow: 'hidden' }}>
+                                {userProfile?.avatar ? (
+                                    <img src={userProfile.avatar} alt="Me" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    (userProfile?.fullName || 'U').charAt(0).toUpperCase()
+                                )}
                             </div>
-                            <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
-                                <input type="text" placeholder="Thêm bình luận..." className="comment-input-area" style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', height: 'auto', flex: 1, outline: 'none', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }} />
-                                <button className="btn-primary" style={{ padding: '8px 16px', height: 'auto', whiteSpace: 'nowrap', border: 'none', borderRadius: '12px', background: 'var(--primary-color)', color: 'white', cursor: 'pointer' }}>Gửi</button>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
-                            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '500' }}>Sắp xếp:</label>
-                            <select
-                                value={sortOrder}
-                                onChange={(e) => setSortOrder(e.target.value)}
-                                style={{ padding: '6px 12px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '12px', cursor: 'pointer', outline: 'none', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
-                            >
-                                <option value="newest">Mới nhất</option>
-                                <option value="oldest">Cũ nhất</option>
-                            </select>
+                            <form onSubmit={handleCommentSubmit} style={{ flex: 1, display: 'flex', gap: '8px' }}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Thêm bình luận..." 
+                                    className="comment-input-area" 
+                                    style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', height: 'auto', flex: 1, outline: 'none', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    disabled={submitting}
+                                />
+                                <button 
+                                    type="submit"
+                                    className="btn-primary" 
+                                    style={{ padding: '8px 16px', height: 'auto', whiteSpace: 'nowrap', border: 'none', borderRadius: '12px', background: 'var(--primary-color)', color: 'white', cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}
+                                    disabled={submitting || !newComment.trim()}
+                                >
+                                    {submitting ? '...' : 'Gửi'}
+                                </button>
+                            </form>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: sortOrder === 'newest' ? 'column' : 'column-reverse' }}>
-                        <div className="comment-item" style={{ marginTop: '16px', order: 2, display: 'flex', gap: '12px' }}>
-                            <div className="comment-user-avatar">
-                                <img src="/images/download (3).png" alt="avatar" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
-                            </div>
-                            <div className="comment-content-wrapper" style={{ flex: 1 }}>
-                                <span className="comment-username" style={{ fontWeight: 'bold', fontSize: '13px' }}>DevGuy</span>
-                                <div className="comment-bubble" style={{ fontSize: '14px', marginTop: '4px' }}>
-                                    <p style={{ margin: 0 }}>Bài viết rất hay, cảm ơn bạn đã chia sẻ!</p>
-                                    <div className="comment-actions" style={{ display: 'flex', gap: '12px', marginTop: '8px', alignItems: 'center' }}>
-                                        <button style={{ background: 'none', border: 'none', color: '#6a737c', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px' }}><svg width="16" height="16" viewBox="0 0 16 16"><path fill="currentColor" d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> 2</button>
-                                        <button style={{ background: 'none', border: 'none', color: '#6a737c', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px' }} onClick={() => setReplyingTo(replyingTo === post.id + '_c1' ? null : post.id + '_c1')}><svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 3h10v7H5l-3 3V3z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg> Phản hồi</button>
-                                        <span style={{ fontSize: '11px', color: '#6a737c', marginLeft: 'auto' }}>1 giờ trước</span>
-                                    </div>
-                                    {replyingTo === post.id + '_c1' && (
-                                        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
-                                            <input type="text" placeholder={`Phản hồi DevGuy...`} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', flex: 1, outline: 'none', fontSize: '13px', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }} autoFocus />
-                                            <button style={{ background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>Gửi</button>
-                                            <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px' }} onClick={() => setReplyingTo(null)}>Hủy</button>
+                    {commentLoading ? (
+                        <div style={{ textAlign: 'center', padding: '10px', fontSize: '14px', color: 'var(--text-secondary)' }}>Đang tải bình luận...</div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {comments.length > 0 ? (
+                                comments.map(comment => (
+                                    <div key={comment.commentId} className="comment-group" style={{ marginTop: '16px' }}>
+                                        {/* Parent Comment */}
+                                        <div className="comment-item" style={{ display: 'flex', gap: '12px' }}>
+                                            <div className="comment-user-avatar">
+                                                {comment.userAvatarURL ? (
+                                                    <img src={comment.userAvatarURL} alt="avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                                                        {(comment.userName || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="comment-content-wrapper" style={{ flex: 1 }}>
+                                                <span className="comment-username" style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-color)' }}>{comment.userName}</span>
+                                                <div className="comment-bubble" style={{ fontSize: '14px', marginTop: '4px' }}>
+                                                    <p style={{ margin: 0, color: 'var(--text-color)' }}>{comment.content}</p>
+                                                    <div className="comment-actions" style={{ display: 'flex', gap: '12px', marginTop: '8px', alignItems: 'center' }}>
+                                                        <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                                                            <svg width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> Thích
+                                                        </button>
+                                                        <button 
+                                                            style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}
+                                                            onClick={() => setReplyingToCommentId(replyingToCommentId === comment.commentId ? null : comment.commentId)}
+                                                        >
+                                                            Phản hồi
+                                                        </button>
+                                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: 'auto' }}>{formatTime(comment.createdAt)}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Reply Input */}
+                                                {replyingToCommentId === comment.commentId && (
+                                                    <form onSubmit={(e) => handleCommentSubmit(e, comment.commentId)} style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder={`Phản hồi ${comment.userName}...`} 
+                                                            style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', flex: 1, outline: 'none', fontSize: '13px', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                                                            value={replyContent}
+                                                            onChange={(e) => setReplyContent(e.target.value)}
+                                                            autoFocus
+                                                            disabled={submitting}
+                                                        />
+                                                        <button 
+                                                            type="submit"
+                                                            style={{ background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', opacity: submitting ? 0.7 : 1 }}
+                                                            disabled={submitting || !replyContent.trim()}
+                                                        >
+                                                            {submitting ? '...' : 'Gửi'}
+                                                        </button>
+                                                        <button 
+                                                            type="button"
+                                                            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px' }}
+                                                            onClick={() => setReplyingToCommentId(null)}
+                                                        >
+                                                            Hủy
+                                                        </button>
+                                                    </form>
+                                                )}
+
+                                                {/* Child Replies */}
+                                                {comment.replies && comment.replies.length > 0 && (
+                                                    <div className="replies-list" style={{ marginTop: '12px', borderLeft: '2px solid var(--border-color)', paddingLeft: '16px' }}>
+                                                        {comment.replies.map(reply => (
+                                                            <div key={reply.commentId} className="reply-item" style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                                                                <div className="reply-user-avatar">
+                                                                    {reply.userAvatarURL ? (
+                                                                        <img src={reply.userAvatarURL} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                                    ) : (
+                                                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '10px' }}>
+                                                                            {(reply.userName || 'U').charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="reply-content-wrapper" style={{ flex: 1 }}>
+                                                                    <span className="reply-username" style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--text-color)' }}>{reply.userName}</span>
+                                                                    <div className="reply-bubble" style={{ fontSize: '13px', marginTop: '2px' }}>
+                                                                        <p style={{ margin: 0, color: 'var(--text-color)' }}>{reply.content}</p>
+                                                                        <div className="reply-actions" style={{ display: 'flex', gap: '10px', marginTop: '4px', alignItems: 'center' }}>
+                                                                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{formatTime(reply.createdAt)}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px', fontSize: '14px', color: 'var(--text-secondary)' }}>Chưa có bình luận nào.</div>
+                            )}
                         </div>
-                    </div>
-                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                        <a href={`/posts/${post.id}`} style={{ fontSize: '13px', color: '#0052cc', textDecoration: 'none', fontWeight: '500' }}>Xem tất cả bình luận ở trang chi tiết</a>
-                    </div>
+                    )}
+                    
+                    {comments.length > 0 && (
+                        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                            <a href={`/posts/${id}`} style={{ fontSize: '13px', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '500' }}>Xem tất cả bình luận ở trang chi tiết</a>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

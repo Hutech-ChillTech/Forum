@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import CreatePostModal from './CreatePostModal';
 import ChatBox from './ChatBox';
+import authService from '../service/authService';
 import '../styles/Header.css';
 
 const Header = ({ hideAuth = false }) => {
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
+    const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
     const [showDropdown, setShowDropdown] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showChat, setShowChat] = useState(false);
@@ -26,8 +27,8 @@ const Header = ({ hideAuth = false }) => {
             try {
                 const parsed = JSON.parse(savedProfile);
                 return {
-                    name: parsed.fullName || "Trần Khánh Linh",
-                    username: parsed.username || "khanhlinh_1731",
+                    name: parsed.fullName || "User",
+                    username: parsed.username || "user",
                     avatar: parsed.avatar || null
                 };
             } catch (e) {
@@ -35,8 +36,8 @@ const Header = ({ hideAuth = false }) => {
             }
         }
         return {
-            name: "Trần Khánh Linh",
-            username: "khanhlinh_1731",
+            name: "User",
+            username: "user",
             avatar: null
         };
     });
@@ -83,8 +84,10 @@ const Header = ({ hideAuth = false }) => {
     }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
     const handleLogout = () => {
+        authService.logout();
         setIsLoggedIn(false);
         setShowDropdown(false);
+        window.location.href = '/login';
     };
 
     const closeNotifications = () => {

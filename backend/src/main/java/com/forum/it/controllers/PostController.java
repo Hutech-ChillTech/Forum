@@ -181,7 +181,8 @@ public class PostController {
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParams = sort.split(",");
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
     }
 
