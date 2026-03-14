@@ -1,14 +1,9 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+import { apiFetch, API_BASE_URL } from '../utils/apiFetch.js';
 
-function authHeader() {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 const postService = {
   async getPublishedPosts(page = 0, size = 20, sort = "createdAt,desc") {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts?page=${page}&size=${size}&sort=${sort}`,
     );
     if (!response.ok) throw new Error("Failed to fetch posts");
@@ -17,14 +12,14 @@ const postService = {
   },
 
   async getPostById(postId) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/posts/${postId}`);
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}`);
     if (!response.ok) throw new Error("Post not found");
     const data = await response.json();
     return data.result ?? data;
   },
 
   async getPostsByUser(userId, page = 0, size = 20) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts/user/${userId}?page=${page}&size=${size}`,
     );
     if (!response.ok) throw new Error("Failed to fetch user posts");
@@ -33,7 +28,7 @@ const postService = {
   },
 
   async searchPosts(keyword, page = 0, size = 20) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`,
     );
     if (!response.ok) throw new Error("Search failed");
@@ -42,37 +37,33 @@ const postService = {
   },
 
   async createPost(postData) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/posts`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeader() },
-      body: JSON.stringify(postData),
-    });
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(postData) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to create post");
     return data.result ?? data;
   },
 
-  async updatePost(postId, userId, postData) {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/posts/${postId}?userId=${userId}`,
+  async updatePost(postId, postData) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/posts/${postId}`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify(postData),
-      },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData) },
     );
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to update post");
     return data.result ?? data;
   },
 
-  async deletePost(postId, userId) {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/posts/${postId}?userId=${userId}`,
+  async deletePost(postId) {
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/posts/${postId}`,
       {
-        method: "DELETE",
-        headers: authHeader(),
-      },
+        method: "DELETE" },
     );
     if (!response.ok) {
       const data = await response.json();
@@ -81,7 +72,7 @@ const postService = {
   },
 
   async getRecentPosts(days = 7, page = 0, size = 20) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts/recent?days=${days}&page=${page}&size=${size}`,
     );
     if (!response.ok) throw new Error("Failed to fetch recent posts");
@@ -90,13 +81,50 @@ const postService = {
   },
 
   async getTotalPosts() {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts/statistics/total`,
     );
     if (!response.ok) throw new Error("Failed to get total");
     const data = await response.json();
     return data.result ?? data;
   },
-};
+  async getAllPostsAdmin(page = 0, size = 20, sort = "createdAt,desc") {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/all?page=${page}&size=${size}&sort=${sort}`, { });
+    if (!response.ok) throw new Error("Failed to fetch all posts");
+    const data = await response.json(); return data.result ?? data;
+  },
+
+  async getPostsByStatus(status, page = 0, size = 20, sort = "createdAt,desc") {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`, { });
+    if (!response.ok) throw new Error("Failed to fetch posts by status");
+    const data = await response.json(); return data.result ?? data;
+  },
+
+  async updatePostStatus(postId, status) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to update post status");
+    return data.result ?? data;
+  },
+
+  async deletePostByAdmin(postId) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/admin`, { method: "DELETE" });
+    if (!response.ok) { const data = await response.json(); throw new Error(data.message || "Failed to delete post"); }
+  },
+
+  async countPostsByStatus(status) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/statistics/status/${status}`, { });
+    if (!response.ok) throw new Error("Failed to get count");
+    const data = await response.json(); return data.result ?? data;
+  },
+
+  async countPostsByUser(userId) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/statistics/user/${userId}`);
+    if (!response.ok) throw new Error("Failed to get count");
+    const data = await response.json(); return data.result ?? data;
+  } };
 
 export default postService;

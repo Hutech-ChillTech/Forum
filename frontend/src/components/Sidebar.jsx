@@ -2,6 +2,9 @@ import React from 'react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ activePage }) => {
+    const userProfile = (() => { try { return JSON.parse(localStorage.getItem('userProfile') || '{}'); } catch(e) { return {}; } })();
+    const isAdmin = userProfile.role === 'ADMIN';
+
     return (
         <aside className="sidebar">
             <nav className="sidebar-nav">
@@ -9,14 +12,16 @@ const Sidebar = ({ activePage }) => {
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                         <path d="M9 1L1 6v9h5V9h6v6h5V6L9 1z" />
                     </svg>
-                    Trang chủ
+                    Trang chu
                 </a>
                 <a href="/posts" className={`nav-item ${activePage === 'posts' ? 'active' : ''}`}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
                     </svg>
-                    Video
+                    Bai viet
                 </a>
                 <a href="/tags" className={`nav-item ${activePage === 'tags' ? 'active' : ''}`}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
@@ -31,7 +36,7 @@ const Sidebar = ({ activePage }) => {
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    Người dùng
+                    Nguoi dung
                 </a>
                 <a href="/chat" className={`nav-item ${activePage === 'chat' ? 'active' : ''}`}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
@@ -43,8 +48,16 @@ const Sidebar = ({ activePage }) => {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    Đã lưu
+                    Da luu
                 </a>
+                {isAdmin && (
+                    <a href="/admin" className={`nav-item ${activePage === 'admin' ? 'active' : ''}`}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        Admin
+                    </a>
+                )}
             </nav>
         </aside>
     );

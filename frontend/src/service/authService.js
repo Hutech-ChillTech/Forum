@@ -68,6 +68,18 @@ const authService = {
     return !!localStorage.getItem("token");
   },
 
+
+  async changePassword(changePasswordData) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(changePasswordData),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Doi mat khau that bai");
+    return data.result;
+  },
   saveSession(authResult) {
     localStorage.setItem("token", authResult.accessToken);
     if (authResult.refreshToken) {

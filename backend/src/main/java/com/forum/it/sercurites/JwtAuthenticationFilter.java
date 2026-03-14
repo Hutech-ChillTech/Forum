@@ -1,4 +1,4 @@
-package com.forum.it.sercurites;
+﻿package com.forum.it.sercurites;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,13 +20,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Intercepts every request, validates the Bearer JWT and populates the
- * SecurityContext with a {@link UserPrincipal} — avoiding redundant DB lookups.
- * <p>
- * Blacklisted access-tokens (invalidated on logout) are stored in Redis and
- * rejected here.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -51,14 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
 
         try {
-            // ── Blacklist check ────────────────────────────────────────────────
-            if (redisService.hasKey("blacklist:" + jwt)) {
-                write401(response, "TOKEN_REVOKED");
-                return;
+            // Redis blacklist check — if Redis is unavailable, skip the check
+            // (log a warning) rather than failing all authenticated requests.
+            try {
+                if (redisService.hasKey("blacklist:" + jwt)) {
+                    write401(response, "TOKEN_REVOKED");
+                    return;
+                }
+            } catch (Exception redisEx) {
+                log.warn("Redis unavailable for blacklist check on {}; proceeding without blacklist validation: {}",
+                        request.getServletPath(), redisEx.getMessage());
             }
 
-            // ── Parse token without DB round-trip ─────────────────────────────
-            String email = jwtTokenProvider.extractUsername(jwt);
+            String email  = jwtTokenProvider.extractUsername(jwt);
             UUID   userId = jwtTokenProvider.extractUserId(jwt);
             String role   = jwtTokenProvider.extractRole(jwt);
 
@@ -96,10 +94,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return path.startsWith("/api/v1/auth/login")
                 || path.startsWith("/api/v1/auth/register")
                 || path.startsWith("/api/v1/auth/refresh-token")
-                || path.startsWith("/ws");   // WebSocket handshake handled separately
+                || path.startsWith("/ws");
     }
-
-    // ── private ───────────────────────────────────────────────────────────────
 
     private void write401(HttpServletResponse response, String errorCode) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -107,4 +103,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.getWriter().write("{\"code\":401,\"message\":\"" + errorCode + "\"}");
     }
 }
-

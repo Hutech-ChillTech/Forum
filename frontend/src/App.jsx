@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Chat from './pages/Chat';
 import Saved from './pages/Saved';
+import Admin from './pages/Admin';
 import './App.css';
 
 function App() {
@@ -62,6 +63,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/saved" element={<Saved />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );
