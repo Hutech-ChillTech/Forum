@@ -98,8 +98,6 @@ public class AccountService {
 
         } catch (AppException e) {
             throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to register user: " + e.getMessage());
         }
     }
 
@@ -132,8 +130,8 @@ public class AccountService {
                     .authenticated(true)
                     .build();
 
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -152,8 +150,8 @@ public class AccountService {
             } else {
                 throw new AppException(ErrorCode.UNAUTHORIZED);
             }
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -182,8 +180,8 @@ public class AccountService {
                     .authenticated(true)
                     .build();
 
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+        } catch (AppException e) {
+            throw e;
         }
     }
 }

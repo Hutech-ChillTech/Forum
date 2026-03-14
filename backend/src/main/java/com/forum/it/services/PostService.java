@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.UserRepository;
@@ -24,7 +25,9 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PostService {
+    @Autowired
     PostRepository postRepository;
+    @Autowired
     UserRepository userRepository;
 
     @Transactional
@@ -52,14 +55,17 @@ public class PostService {
 
     @Transactional
     public PostResponse create(CreatePostRequest createPostRequest, UUID userId) {
+        if (userId == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
         try {
             Post post = new Post();
             post.setTitle(createPostRequest.getTitle());
             post.setContent(createPostRequest.getContent());
             post.setImageURL(createPostRequest.getImageURL());
             post.setStatus(PostStatus.PENDING);
-            post.setUser(userRepository.findById(userId)
-                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)));
+            post.setUser(userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
             return new PostResponse(postRepository.save(post));
         } catch (AppException e) {
             throw e;

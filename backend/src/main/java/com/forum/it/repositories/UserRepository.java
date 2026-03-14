@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.Column;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,42 +21,45 @@ import com.forum.it.entities.user.UserStatus;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    Optional<User> findByEmail(String email);
+        Optional<User> findByEmail(String email);
 
-    Optional<User> findByUserName(String userName);
+        Optional<User> findByUserName(String userName);
 
-    List<User> findByStatus(AccountStatus status);
+        @Column(name = "user_id")
+        Optional<User> findByUserId(UUID userId);
 
-    List<User> findByVerifyStatus(UserStatus verifyStatus);
+        List<User> findByStatus(AccountStatus status);
 
-    List<User> findByStatusAndVerifyStatus(AccountStatus status, UserStatus verifyStatus);
+        List<User> findByVerifyStatus(UserStatus verifyStatus);
 
-    boolean existsByEmail(String email);
+        List<User> findByStatusAndVerifyStatus(AccountStatus status, UserStatus verifyStatus);
 
-    boolean existsByUserName(String userName);
+        boolean existsByEmail(String email);
 
-    List<User> findByUserNameContaining(String keyword);
+        boolean existsByUserName(String userName);
 
-    List<User> findByEmailContaining(String keyword);
+        List<User> findByUserNameContaining(String keyword);
 
-    @Query("SELECT u FROM User u WHERE " +
-            "LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<User> searchUsers(@Param("keyword") String keyword);
+        List<User> findByEmailContaining(String keyword);
 
-    @Query("SELECT u FROM User u WHERE u.verifyStatus = 'ACTIVE' AND u.status != 'BANNED'")
-    Page<User> findActiveUsers(Pageable pageable);
+        @Query("SELECT u FROM User u WHERE " +
+                        "LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+        List<User> searchUsers(@Param("keyword") String keyword);
 
-    @Query(value = "SELECT COUNT(*) FROM users WHERE status = :status", nativeQuery = true)
-    long countByStatus(@Param("status") String status);
+        @Query("SELECT u FROM User u WHERE u.verifyStatus = 'ACTIVE' AND u.status != 'BANNED'")
+        Page<User> findActiveUsers(Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE u.createdAt BETWEEN :startDate AND :endDate")
-    List<User> findUsersByDateRange(
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+        @Query(value = "SELECT COUNT(*) FROM users WHERE status = :status", nativeQuery = true)
+        long countByStatus(@Param("status") String status);
 
-    void deleteByEmail(String email);
+        @Query("SELECT u FROM User u WHERE u.createdAt BETWEEN :startDate AND :endDate")
+        List<User> findUsersByDateRange(
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
-    void deleteByStatus(AccountStatus status);
+        void deleteByEmail(String email);
+
+        void deleteByStatus(AccountStatus status);
 }

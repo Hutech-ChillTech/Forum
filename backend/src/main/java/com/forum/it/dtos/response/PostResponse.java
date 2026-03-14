@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 public class PostResponse {
 
     UUID postId;
+    UUID userId;
     String title;
     String content;
     String imageURL;
@@ -30,6 +31,7 @@ public class PostResponse {
 
     public PostResponse(Post post) {
         this.postId = post.getPostId();
+        this.userId = post.getUser().getUserId();
         this.title = post.getTitle();
         this.content = post.getContent();
         this.imageURL = post.getImageURL();

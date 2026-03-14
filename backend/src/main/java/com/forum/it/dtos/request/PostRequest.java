@@ -16,21 +16,23 @@ import lombok.experimental.FieldDefaults;
 public class PostRequest {
 
     @Data
-    public class CreatePostRequest {
+    public static class CreatePostRequest {
         @NotBlank(message = "Title cannot be empty")
         @Size(max = 255)
         String title;
 
+        String userId;
+
         @NotBlank(message = "Content cannot be empty")
         String content;
-
         String imageURL;
 
     }
 
     @Data
-    public class UpdatePostRequest {
+    public static class UpdatePostRequest {
         String title;
+        String userId;
         String content;
         String imageURL;
         PostStatus status;

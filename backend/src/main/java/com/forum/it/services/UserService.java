@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.forum.it.repositories.UserRepository;
 import com.forum.it.repositories.AccountRepository;
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 
 import com.forum.it.dtos.response.*;
 import com.forum.it.dtos.request.*;
@@ -43,8 +45,8 @@ public class UserService {
         try {
             return userRepository.findAll(pageable)
                     .map(UserResponse::new);
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting all users: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -52,9 +54,9 @@ public class UserService {
     public UserResponse getById(UUID id) {
         try {
             return userRepository.findById(id).map(UserResponse::new)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting user by id: " + e.getMessage());
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -62,9 +64,9 @@ public class UserService {
     public UserResponse getByEmail(String email) {
         try {
             return userRepository.findByEmail(email).map(UserResponse::new)
-                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting user by email: " + e.getMessage());
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -72,11 +74,11 @@ public class UserService {
     public UserResponse create(CreateUserRequest request) {
         try {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists: " + request.getEmail());
+                throw new AppException(ErrorCode.NOT_FOUND);
             }
 
             if (userRepository.existsByUserName(request.getUserName())) {
-                throw new RuntimeException("Username already exists: " + request.getUserName());
+                throw new AppException(ErrorCode.NOT_FOUND);
             }
 
             User user = new User();
@@ -93,8 +95,8 @@ public class UserService {
             User savedUser = userRepository.save(user);
 
             return new UserResponse(savedUser);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating user: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -102,18 +104,18 @@ public class UserService {
     public UserResponse update(UUID id, UpdateUserRequest request) {
         try {
             User user = userRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
             if (request.getUserName() != null && !request.getUserName().isEmpty()) {
                 if (!user.getUserName().equals(request.getUserName()) &&
                         userRepository.existsByUserName(request.getUserName())) {
-                    throw new RuntimeException("Username already exists: " + request.getUserName());
+                    throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
                 }
                 user.setUserName(request.getUserName());
             }
             if (request.getEmail() != null && !request.getEmail().isEmpty()) {
                 if (!user.getEmail().equals(request.getEmail()) &&
                         userRepository.existsByEmail(request.getEmail())) {
-                    throw new RuntimeException("Email already exists: " + request.getEmail());
+                    throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
                 }
                 user.setEmail(request.getEmail());
             }
@@ -134,8 +136,8 @@ public class UserService {
             }
             User updatedUser = userRepository.save(user);
             return new UserResponse(updatedUser);
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating user: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -143,11 +145,11 @@ public class UserService {
     public UserResponse delete(UUID id) {
         try {
             User user = userRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
             userRepository.delete(user);
             return new UserResponse(user);
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting user: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -155,9 +157,9 @@ public class UserService {
     public UserResponse getByUserName(String userName) {
         try {
             return userRepository.findByUserName(userName).map(UserResponse::new)
-                    .orElseThrow(() -> new RuntimeException("User not found with username: " + userName));
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting user by username: " + e.getMessage());
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -167,8 +169,8 @@ public class UserService {
             return userRepository.findByStatus(status)
                     .stream().map(UserResponse::new)
                     .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting users by status: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -177,8 +179,8 @@ public class UserService {
         try {
             return userRepository.findActiveUsers(pageable)
                     .map(UserResponse::new);
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting active users: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -188,8 +190,8 @@ public class UserService {
             return userRepository.searchUsers(keyword)
                     .stream().map(UserResponse::new)
                     .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Error searching users: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -197,8 +199,8 @@ public class UserService {
     public long countByStatus(AccountStatus status) {
         try {
             return userRepository.countByStatus(status.name());
-        } catch (Exception e) {
-            throw new RuntimeException("Error counting users by status: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -206,8 +208,8 @@ public class UserService {
     public long getTotal() {
         try {
             return userRepository.count();
-        } catch (Exception e) {
-            throw new RuntimeException("Error counting total users: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -215,8 +217,8 @@ public class UserService {
     public boolean existsByEmail(String email) {
         try {
             return userRepository.existsByEmail(email);
-        } catch (Exception e) {
-            throw new RuntimeException("Error checking email existence: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 
@@ -224,8 +226,8 @@ public class UserService {
     public boolean existsByUserName(String userName) {
         try {
             return userRepository.existsByUserName(userName);
-        } catch (Exception e) {
-            throw new RuntimeException("Error checking username existence: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
         }
     }
 }

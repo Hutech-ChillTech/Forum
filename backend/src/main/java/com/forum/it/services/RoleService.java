@@ -11,6 +11,8 @@ import com.forum.it.dtos.request.RoleRequest;
 import com.forum.it.dtos.response.RoleResponse;
 import com.forum.it.entities.user.Role;
 import com.forum.it.repositories.RoleRepository;
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 
 @Service
 public class RoleService {
@@ -31,14 +33,14 @@ public class RoleService {
     @Transactional(readOnly = true)
     public RoleResponse getByName(String name) {
         Role role = roleRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Role not found with name: " + name));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         return new RoleResponse(role);
     }
 
     @Transactional
     public RoleResponse create(RoleRequest request) {
         if (roleRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("Role already exists: " + request.getName());
+            throw new AppException(ErrorCode.NOT_FOUND);
         }
         Role role = new Role();
         role.setName(request.getName());
@@ -48,7 +50,7 @@ public class RoleService {
     @Transactional
     public void delete(UUID id) {
         if (!roleRepository.existsById(id)) {
-            throw new RuntimeException("Role not found with id: " + id);
+            throw new AppException(ErrorCode.NOT_FOUND);
         }
         roleRepository.deleteById(id);
     }
