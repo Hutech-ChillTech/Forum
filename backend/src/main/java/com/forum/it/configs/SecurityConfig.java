@@ -24,14 +24,13 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Enable annotation-based security
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CustomUserDetailsService userDetailsService;
 
-    // Cấu hình hash password
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -55,10 +54,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
+                        // Auth endpoints — public
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // WebSocket handshake
+                        .requestMatchers("/ws/**").permitAll()
+                        // Public read endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
+                        // Admin-only routes
+                        .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "MODERATOR")
+                        // Everything else requires authentication
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -68,3 +75,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+

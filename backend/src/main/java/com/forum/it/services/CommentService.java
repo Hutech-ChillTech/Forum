@@ -19,46 +19,47 @@ import com.forum.it.entities.post.PostStatus;
 import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
-import com.forum.it.exceptions.BadRequestException;
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.UserRepository;
+import com.forum.it.utils.SecurityContextHelper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class CommentService {
 
-    private final CommentRepository commentRepository;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final CommentRepository   commentRepository;
+    private final PostRepository      postRepository;
+    private final UserRepository      userRepository;
+    private final SecurityContextHelper securityContextHelper;
 
-    public CommentService(CommentRepository commentRepository,
-                          PostRepository postRepository,
-                          UserRepository userRepository) {
-        this.commentRepository = commentRepository;
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-    }
-
+    /**
+     * userId is resolved from the JWT — NOT from the request body.
+     */
     public CommentResponse createComment(CreateCommentRequest request) {
         Post post = postRepository.findById(Objects.requireNonNull(request.getPostId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", request.getPostId()));
 
         if (post.getStatus() != PostStatus.PUBLISHED) {
-            throw new BadRequestException("Cannot comment on a post that is not published");
+            throw new AppException(ErrorCode.POST_NOT_PUBLISHED);
         }
 
-        User user = userRepository.findById(Objects.requireNonNull(request.getUserId()))
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.getUserId()));
+        UUID userId = securityContextHelper.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (user.getStatus() == AccountStatus.BANNED) {
-            throw new ForbiddenException("User is banned and cannot comment");
+            throw new AppException(ErrorCode.USER_BANNED);
         }
-
         if (user.getVerifyStatus() == UserStatus.DELETED) {
-            throw new ForbiddenException("User account has been deleted");
+            throw new AppException(ErrorCode.USER_DELETED);
         }
 
         Comment comment = new Comment();
@@ -71,13 +72,11 @@ public class CommentService {
                     .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", request.getParentId()));
 
             if (!parentComment.getPost().getPostId().equals(post.getPostId())) {
-                throw new BadRequestException("Parent comment does not belong to the same post");
+                throw new AppException(ErrorCode.COMMENT_WRONG_POST);
             }
-
             if (parentComment.getParent() != null) {
-                throw new BadRequestException("Cannot reply to a reply. Only one level of nesting is allowed");
+                throw new AppException(ErrorCode.COMMENT_NESTED_REPLY);
             }
-
             comment.setParent(parentComment);
         }
 
@@ -109,9 +108,7 @@ public class CommentService {
             throw new ResourceNotFoundException("Comment", "id", commentId);
         }
         return commentRepository.findByParentCommentId(commentId)
-                .stream()
-                .map(CommentResponse::new)
-                .collect(Collectors.toList());
+                .stream().map(CommentResponse::new).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -126,28 +123,30 @@ public class CommentService {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", "id", userId);
         }
-        return commentRepository.findByUserUserId(userId, pageable)
-                .map(CommentResponse::new);
+        return commentRepository.findByUserUserId(userId, pageable).map(CommentResponse::new);
     }
 
-    public CommentResponse updateComment(UUID commentId, UUID userId, UpdateCommentRequest request) {
+    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request) {
         Comment comment = commentRepository.findById(Objects.requireNonNull(commentId))
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", commentId));
 
-        if (!comment.getUser().getUserId().equals(userId)) {
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        if (!comment.getUser().getUserId().equals(currentUserId)) {
             throw new ForbiddenException("You can only edit your own comments");
         }
 
         comment.setContent(request.getContent().trim());
-        Comment updatedComment = commentRepository.save(comment);
-        return new CommentResponse(updatedComment);
+        return new CommentResponse(commentRepository.save(comment));
     }
 
-    public void deleteComment(UUID commentId, UUID userId) {
+    public void deleteComment(UUID commentId) {
         Comment comment = commentRepository.findById(Objects.requireNonNull(commentId))
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", commentId));
 
-        if (!comment.getUser().getUserId().equals(userId)) {
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        boolean isAdmin = securityContextHelper.isModeratorOrAdmin();
+
+        if (!isAdmin && !comment.getUser().getUserId().equals(currentUserId)) {
             throw new ForbiddenException("You can only delete your own comments");
         }
 
@@ -170,3 +169,4 @@ public class CommentService {
         return commentRepository.countByUserId(userId);
     }
 }
+
