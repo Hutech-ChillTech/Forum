@@ -1,4 +1,4 @@
-﻿package com.forum.it.sercurites;
+package com.forum.it.sercurites;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,13 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisService     redisService;
+    private final RedisService redisService;
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest  request,
+            HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain         filterChain) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
 
@@ -56,9 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         request.getServletPath(), redisEx.getMessage());
             }
 
-            String email  = jwtTokenProvider.extractUsername(jwt);
-            UUID   userId = jwtTokenProvider.extractUserId(jwt);
-            String role   = jwtTokenProvider.extractRole(jwt);
+            String email = jwtTokenProvider.extractUsername(jwt);
+            UUID userId = jwtTokenProvider.extractUserId(jwt);
+            String role = jwtTokenProvider.extractRole(jwt);
 
             if (email != null
                     && SecurityContextHolder.getContext().getAuthentication() == null
@@ -79,7 +79,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("Expired JWT for request {}", request.getServletPath());
             write401(response, "ACCESS_TOKEN_EXPIRED");
         } catch (io.jsonwebtoken.security.SignatureException
-                 | io.jsonwebtoken.MalformedJwtException e) {
+                | io.jsonwebtoken.MalformedJwtException e) {
             log.debug("Invalid JWT signature/format: {}", e.getMessage());
             write401(response, "ACCESS_TOKEN_INVALID");
         } catch (Exception e) {
