@@ -31,7 +31,7 @@ public class SavedPostController {
         UUID currentUserId = securityContextHelper.getCurrentUserId();
         savedPostService.bookmarkPost(currentUserId, postId);
         return ResponseEntity.status(HttpStatus.CREATED).body("Saved post successfully");
-    }
+    }  
 
     @DeleteMapping(Routes.Post.BASE + Routes.Post.BOOKMARK)
     public ResponseEntity<String> unbookmark(@PathVariable UUID postId) {
