@@ -23,7 +23,8 @@ public class PostResponse {
     private LocalDate createdAt;
     private LocalDate updatedAt;
 
-    public PostResponse() {}
+    public PostResponse() {
+    }
 
     public PostResponse(Post post, List<String> tagNames) {
         this.postId = post.getPostId();
@@ -34,7 +35,7 @@ public class PostResponse {
         this.userId = post.getUser().getUserId();
         this.userName = post.getUser().getUserName();
         this.userAvatarURL = post.getUser().getAvatarURL();
-        this.commentCount = 0;
+        this.commentCount = post.getComments() != null ? post.getComments().size() : 0;
         this.tags = tagNames != null ? tagNames : new ArrayList<>();
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
@@ -45,39 +46,99 @@ public class PostResponse {
     }
 
     // Getters and setters
-    public UUID getPostId() { return postId; }
-    public void setPostId(UUID postId) { this.postId = postId; }
+    public UUID getPostId() {
+        return postId;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setPostId(UUID postId) {
+        this.postId = postId;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public String getTitle() {
+        return title;
+    }
 
-    public String getImageURL() { return imageURL; }
-    public void setImageURL(String imageURL) { this.imageURL = imageURL; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public PostStatus getStatus() { return status; }
-    public void setStatus(PostStatus status) { this.status = status; }
+    public String getContent() {
+        return content;
+    }
 
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
+    public void setContent(String content) {
+        this.content = content;
+    }
 
-    public String getUserName() { return userName; }
-    public void setUserName(String userName) { this.userName = userName; }
+    public String getImageURL() {
+        return imageURL;
+    }
 
-    public String getUserAvatarURL() { return userAvatarURL; }
-    public void setUserAvatarURL(String userAvatarURL) { this.userAvatarURL = userAvatarURL; }
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
+    }
 
-    public int getCommentCount() { return commentCount; }
-    public void setCommentCount(int commentCount) { this.commentCount = commentCount; }
+    public PostStatus getStatus() {
+        return status;
+    }
 
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    public void setStatus(PostStatus status) {
+        this.status = status;
+    }
 
-    public LocalDate getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+    public UUID getUserId() {
+        return userId;
+    }
 
-    public LocalDate getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDate updatedAt) { this.updatedAt = updatedAt; }
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserAvatarURL() {
+        return userAvatarURL;
+    }
+
+    public void setUserAvatarURL(String userAvatarURL) {
+        this.userAvatarURL = userAvatarURL;
+    }
+
+    public int getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(int commentCount) {
+        this.commentCount = commentCount;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDate getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDate updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

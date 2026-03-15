@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import Chat from './pages/Chat';
 import Saved from './pages/Saved';
 import Admin from './pages/Admin';
+import MainLayout from './components/MainLayout';
 import './App.css';
 
 function App() {
@@ -28,7 +29,6 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    // Listen for theme changes from other tabs/components
     const handleStorageChange = (e) => {
       if (e.key === 'theme') {
         setTheme(e.newValue);
@@ -51,19 +51,22 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/posts" element={<Posts />} />
-        <Route path="/posts/:id" element={<PostDetail />} />
-        <Route path="/tags" element={<Tags />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/search" element={<Search />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/posts" element={<Posts />} />
+          <Route path="/posts/:id" element={<PostDetail />} />
+          <Route path="/tags" element={<Tags />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/saved" element={<Saved />} />
+          <Route path="/admin" element={<Admin />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/saved" element={<Saved />} />
-        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );

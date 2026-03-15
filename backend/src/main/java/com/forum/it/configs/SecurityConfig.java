@@ -52,7 +52,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
                 .authorizeHttpRequests(auth -> auth
                         // Auth endpoints — public
                         .requestMatchers("/api/v1/auth/**").permitAll()
@@ -63,6 +64,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
+                        // Static resources & File uploads
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/v1/files/**").permitAll()
                         // Admin-only routes
                         .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "MODERATOR")
                         // Everything else requires authentication
@@ -75,4 +79,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
