@@ -39,13 +39,14 @@ public class JwtTokenProvider {
     public String generateToken(Account account, String roleName) {
         User user = account.getUser();
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId",       user.getUserId().toString());
-        claims.put("role",         roleName);
+        claims.put("userId", user.getUserId().toString());
+        claims.put("email", account.getEmail());
+        claims.put("role", roleName);
         // Keep additional claims minimal to reduce token size
-        claims.put("userName",     user.getUserName());
-        claims.put("avatarURL",    user.getAvatarURL());
+        claims.put("userName", user.getUserName());
+        claims.put("avatarURL", user.getAvatarURL());
         claims.put("verifyStatus", user.getVerifyStatus().name());
-        claims.put("status",       user.getStatus().name());
+        claims.put("status", user.getStatus().name());
 
         return Jwts.builder()
                 .setSubject(account.getEmail())
