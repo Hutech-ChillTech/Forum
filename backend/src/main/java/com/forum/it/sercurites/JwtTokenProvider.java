@@ -128,4 +128,16 @@ public class JwtTokenProvider {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    private Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
+    }
+
+    public long getExpirationTime(String token) {
+        return extractExpiration(token).getTime();
+    }
+
+    public long getIssuedAtTime(String token) {
+        return extractIssuedAt(token).getTime();
+    }
 }

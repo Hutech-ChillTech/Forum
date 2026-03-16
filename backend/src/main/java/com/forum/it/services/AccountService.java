@@ -120,6 +120,9 @@ public class AccountService {
         String accessToken = jwtTokenProvider.generateToken(account, roleName);
         String refreshToken = jwtTokenProvider.generateRefreshToken(account);
 
+        long iat = jwtTokenProvider.getIssuedAtTime(accessToken);
+        long exp = jwtTokenProvider.getExpirationTime(accessToken);
+
         redisService.setValueWithTTL("RT:" + account.getEmail(), refreshToken, REFRESH_TOKEN_TTL,
                 TimeUnit.MILLISECONDS);
 
@@ -127,6 +130,8 @@ public class AccountService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .authenticated(true)
+                .issuedAt(iat)
+                .expiredAt(exp)
                 .build();
     }
 
@@ -134,11 +139,9 @@ public class AccountService {
      * Blacklists the raw JWT string. Call this from the controller where the
      * raw Authorization header value is available.
      */
-    public void blacklistToken(String rawJwt) {
-        long remaining = jwtTokenProvider.getExpirationMillis(rawJwt);
-        if (remaining > 0) {
-            redisService.setValueWithTTL("blacklist:" + rawJwt, "1", remaining, TimeUnit.MILLISECONDS);
-        }
+    public void blacklistToken(String email) {
+        redisService.setValueWithTTL("REVOKED_AT:" + email, String.valueOf(System.currentTimeMillis()),
+                REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -146,12 +149,12 @@ public class AccountService {
      * and clears the refresh token stored on the account.
      */
     @Transactional
-    public void logout(String rawJwt) {
+    public void logout() {
         UserPrincipal principal = securityContextHelper.getCurrentUser();
         String email = principal.getEmail();
 
         redisService.deleteValue("RT:" + email);
-        blacklistToken(rawJwt);
+        blacklistToken(email);
     }
 
     @Transactional
@@ -176,6 +179,8 @@ public class AccountService {
         String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
 
+        long iat = jwtTokenProvider.getIssuedAtTime(newAccessToken);
+        long exp = jwtTokenProvider.getExpirationTime(newAccessToken);
         // Rotate: invalidate old refresh token immediately
         redisService.setValueWithTTL("RT:" + userEmail, newRefreshToken, REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
 
@@ -183,6 +188,8 @@ public class AccountService {
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .authenticated(true)
+                .issuedAt(iat)
+                .expiredAt(exp)
                 .build();
     }
 

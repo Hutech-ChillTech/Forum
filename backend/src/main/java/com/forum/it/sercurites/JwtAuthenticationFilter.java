@@ -44,19 +44,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
 
         try {
-            // Redis blacklist check — if Redis is unavailable, skip the check
-            // (log a warning) rather than failing all authenticated requests.
-            try {
-                if (redisService.hasKey("blacklist:" + jwt)) {
-                    write401(response, "TOKEN_REVOKED");
-                    return;
+            final String email = jwtTokenProvider.extractUsername(jwt);
+
+            String revokedAtStr = redisService.getValue("REVOKED_AT:" + email);
+            if (revokedAtStr != null) {
+                long revokedAt = Long.parseLong(revokedAtStr);
+                long tokenIssuedAt = jwtTokenProvider.getIssuedAtTime(jwt);
+                if (tokenIssuedAt < (revokedAt + 1000)) {
+                    throw new io.jsonwebtoken.security.SignatureException("Token has been revoked");
                 }
-            } catch (Exception redisEx) {
-                log.warn("Redis unavailable for blacklist check on {}; proceeding without blacklist validation: {}",
-                        request.getServletPath(), redisEx.getMessage());
             }
 
-            String email = jwtTokenProvider.extractUsername(jwt);
             UUID userId = jwtTokenProvider.extractUserId(jwt);
             String role = jwtTokenProvider.extractRole(jwt);
 

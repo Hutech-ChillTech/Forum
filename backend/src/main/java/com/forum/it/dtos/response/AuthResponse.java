@@ -12,4 +12,6 @@ public class AuthResponse {
     @Builder.Default
     private String tokenType = "Bearer";
     private boolean authenticated;
+    private long issuedAt;
+    private long expiredAt;
 }
