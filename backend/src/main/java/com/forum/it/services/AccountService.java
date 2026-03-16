@@ -1,12 +1,14 @@
 package com.forum.it.services;
 
 import java.util.concurrent.TimeUnit;
+import java.lang.Integer;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
@@ -33,21 +35,26 @@ import com.forum.it.utils.SecurityContextHelper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AccountService {
 
-    AccountRepository     accountRepository;
-    UserRepository        userRepository;
+    AccountRepository accountRepository;
+    UserRepository userRepository;
     AccountRoleRepository accountRoleRepository;
-    RoleRepository        roleRepository;
-    PasswordEncoder       passwordEncoder;
-    JwtTokenProvider      jwtTokenProvider;
+    RoleRepository roleRepository;
+    PasswordEncoder passwordEncoder;
+    JwtTokenProvider jwtTokenProvider;
     AuthenticationManager authenticationManager;
-    RedisService          redisService;
+    RedisService redisService;
     SecurityContextHelper securityContextHelper;
+
+    @Value("${JWT_REFRESH_TOKEN_EXPIRATION}")
+    @NonFinal
+    Integer REFRESH_TOKEN_TTL;
 
     @Transactional
     public AuthResponse register(CreateUserRequest request) {
@@ -110,11 +117,11 @@ public class AccountService {
         }
 
         String roleName = resolveRole(account);
-        String accessToken  = jwtTokenProvider.generateToken(account, roleName);
+        String accessToken = jwtTokenProvider.generateToken(account, roleName);
         String refreshToken = jwtTokenProvider.generateRefreshToken(account);
 
-        account.setRefreshToken(refreshToken);
-        accountRepository.save(account);
+        redisService.setValueWithTTL("RT:" + account.getEmail(), refreshToken, REFRESH_TOKEN_TTL,
+                TimeUnit.MILLISECONDS);
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -124,26 +131,7 @@ public class AccountService {
     }
 
     /**
-     * Blacklists the current access token in Redis (TTL = remaining token lifetime)
-     * and clears the refresh token stored on the account.
-     */
-    @Transactional
-    public void logout() {
-        UserPrincipal principal = securityContextHelper.getCurrentUser();
-        String email = principal.getEmail();
-
-        Account account = accountRepository.findByEmail(email);
-        if (account == null) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-        }
-
-        // Invalidate refresh token in DB
-        account.setRefreshToken(null);
-        accountRepository.save(account);
-    }
-
-    /**
-     * Blacklists the raw JWT string.  Call this from the controller where the
+     * Blacklists the raw JWT string. Call this from the controller where the
      * raw Authorization header value is available.
      */
     public void blacklistToken(String rawJwt) {
@@ -153,10 +141,28 @@ public class AccountService {
         }
     }
 
+    /**
+     * Blacklists the current access token in Redis (TTL = remaining token lifetime)
+     * and clears the refresh token stored on the account.
+     */
+    @Transactional
+    public void logout(String rawJwt) {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
+        String email = principal.getEmail();
+
+        redisService.deleteValue("RT:" + email);
+        blacklistToken(rawJwt);
+    }
+
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        String token     = request.getRefreshToken();
+        String token = request.getRefreshToken();
         String userEmail = jwtTokenProvider.extractUsername(token);
+
+        String storedToken = redisService.getValue("RT: " + userEmail);
+        if (storedToken == null || !storedToken.equals(token) || !jwtTokenProvider.isTokenValid(token, userEmail)) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
 
         Account account = accountRepository.findByEmail(userEmail);
         if (account == null
@@ -167,12 +173,11 @@ public class AccountService {
         }
 
         String roleName = resolveRole(account);
-        String newAccessToken  = jwtTokenProvider.generateToken(account, roleName);
+        String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
 
         // Rotate: invalidate old refresh token immediately
-        account.setRefreshToken(newRefreshToken);
-        accountRepository.save(account);
+        redisService.setValueWithTTL("RT:" + userEmail, newRefreshToken, REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
@@ -214,4 +219,3 @@ public class AccountService {
                 .orElse("USER");
     }
 }
-

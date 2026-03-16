@@ -91,10 +91,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/v1/auth/login")
-                || path.startsWith("/api/v1/auth/register")
-                || path.startsWith("/api/v1/auth/refresh-token")
-                || path.startsWith("/ws");
+        String method = request.getMethod();
+        // Chỉ bỏ qua GET cho các đầu route công khai
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.startsWith("/api/v1/posts/") ||
+                    path.startsWith("/api/v1/comments/") ||
+                    path.startsWith("/api/v1/tags/")) {
+                return true;
+            }
+        }
+        // Các route auth mặc định
+        return path.startsWith("/api/v1/auth/") || path.startsWith("/ws");
     }
 
     private void write401(HttpServletResponse response, String errorCode) throws IOException {

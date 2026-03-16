@@ -43,9 +43,8 @@ public class AccountController {
         String authHeader = httpRequest.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String rawJwt = authHeader.substring(7);
-            accountService.blacklistToken(rawJwt);
+            accountService.logout(rawJwt);
         }
-        accountService.logout();
         return ApiResponses.success("Logout success", null);
     }
 
