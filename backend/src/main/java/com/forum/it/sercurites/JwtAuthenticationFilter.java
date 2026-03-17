@@ -44,19 +44,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
 
         try {
-            // Redis blacklist check — if Redis is unavailable, skip the check
-            // (log a warning) rather than failing all authenticated requests.
-            try {
-                if (redisService.hasKey("blacklist:" + jwt)) {
-                    write401(response, "TOKEN_REVOKED");
-                    return;
+            final String email = jwtTokenProvider.extractUsername(jwt);
+
+            String revokedAtStr = redisService.getValue("REVOKED_AT:" + email);
+            if (revokedAtStr != null) {
+                long revokedAt = Long.parseLong(revokedAtStr);
+                long tokenIssuedAt = jwtTokenProvider.getIssuedAtTime(jwt);
+                if (tokenIssuedAt < (revokedAt + 1000)) {
+                    throw new io.jsonwebtoken.security.SignatureException("Token has been revoked");
                 }
-            } catch (Exception redisEx) {
-                log.warn("Redis unavailable for blacklist check on {}; proceeding without blacklist validation: {}",
-                        request.getServletPath(), redisEx.getMessage());
             }
 
-            String email = jwtTokenProvider.extractUsername(jwt);
             UUID userId = jwtTokenProvider.extractUserId(jwt);
             String role = jwtTokenProvider.extractRole(jwt);
 
@@ -91,10 +89,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/v1/auth/login")
-                || path.startsWith("/api/v1/auth/register")
-                || path.startsWith("/api/v1/auth/refresh-token")
-                || path.startsWith("/ws");
+        String method = request.getMethod();
+        // Chỉ bỏ qua GET cho các đầu route công khai
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.startsWith("/api/v1/posts/") ||
+                    path.startsWith("/api/v1/comments/") ||
+                    path.startsWith("/api/v1/tags/")) {
+                return true;
+            }
+        }
+        // Các route auth mặc định
+        return path.startsWith("/api/v1/auth/") || path.startsWith("/ws");
     }
 
     private void write401(HttpServletResponse response, String errorCode) throws IOException {

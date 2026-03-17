@@ -19,21 +19,17 @@ public class RedisConfig {
         @Bean
         public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
                 RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                                .entryTtl(Duration.ofHours(1)) // Mặc định dữ liệu sống 1 tiếng
-                                .serializeKeysWith(
-                                                RedisSerializationContext.SerializationPair
-                                                                .fromSerializer(new StringRedisSerializer()))
+                                .entryTtl(Duration.ofHours(1))
+                                .serializeKeysWith(RedisSerializationContext.SerializationPair
+                                                .fromSerializer(new StringRedisSerializer()))
                                 .serializeValuesWith(RedisSerializationContext.SerializationPair
                                                 .fromSerializer(new GenericJackson2JsonRedisSerializer()))
-                                .disableCachingNullValues(); // Không lưu các giá trị null vào cache
+                                .disableCachingNullValues();
 
                 return RedisCacheManager.builder(connectionFactory)
                                 .cacheDefaults(config)
-                                .withCacheConfiguration("users", config.entryTtl(Duration.ofHours(24))) // Cache User
-                                                                                                        // 24h
-                                .withCacheConfiguration("courses", config.entryTtl(Duration.ofMinutes(30))) // Cache
-                                                                                                            // Course
-                                                                                                            // 30p
+                                .withCacheConfiguration("users", config.entryTtl(Duration.ofHours(24)))
+                                .withCacheConfiguration("courses", config.entryTtl(Duration.ofMinutes(30)))
                                 .build();
         }
 
