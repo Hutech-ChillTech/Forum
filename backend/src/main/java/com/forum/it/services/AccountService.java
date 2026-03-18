@@ -31,6 +31,7 @@ import com.forum.it.repositories.UserRepository;
 import com.forum.it.sercurites.JwtTokenProvider;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.utils.SecurityContextHelper;
+import com.forum.it.dtos.response.UserResponse;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class AccountService {
     RedisService redisService;
     SecurityContextHelper securityContextHelper;
 
-    @Value("${JWT_REFRESH_TOKEN_EXPIRATION}")
+    @Value("${jwt.refresh-token.expiration}")
     @NonFinal
     Integer REFRESH_TOKEN_TTL;
 
@@ -160,20 +161,20 @@ public class AccountService {
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         String token = request.getRefreshToken();
-        String userEmail = jwtTokenProvider.extractUsername(token);
+        String userEmail = null;
 
-        String storedToken = redisService.getValue("RT: " + userEmail);
+        try {
+            userEmail = jwtTokenProvider.extractUsername(token);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+        String storedToken = redisService.getValue("RT:" + userEmail);
         if (storedToken == null || !storedToken.equals(token) || !jwtTokenProvider.isTokenValid(token, userEmail)) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
         Account account = accountRepository.findByEmail(userEmail);
-        if (account == null
-                || account.getRefreshToken() == null
-                || !account.getRefreshToken().equals(token)
-                || !jwtTokenProvider.isTokenValid(token, userEmail)) {
-            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
-        }
 
         String roleName = resolveRole(account);
         String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
@@ -215,6 +216,20 @@ public class AccountService {
         }
 
         accountRepository.save(account);
+    }
+
+    public UserResponse getProfile() {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
+
+        if (principal == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Account account = accountRepository.findByEmail(principal.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        return new UserResponse(account.getUser());
     }
 
     // ── private ───────────────────────────────────────────────────────────────

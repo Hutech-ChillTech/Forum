@@ -35,10 +35,10 @@ public class UserResponse implements Serializable {
     private UserStatus verifyStatus;
     private AccountStatus status;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate updatedAt;
 
     public UserResponse(User user) {
