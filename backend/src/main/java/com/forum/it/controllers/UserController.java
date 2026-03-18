@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.UpdateUserRequest;
+import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.UserResponse;
+import com.forum.it.services.AccountService;
 import com.forum.it.services.UserService;
 import com.forum.it.contants.*;
 
@@ -37,7 +39,13 @@ import lombok.experimental.FieldDefaults;
 @RequestMapping(Routes.User.BASE)
 public class UserController {
 
-    UserService userService;
+    final UserService userService;
+    final AccountService accountService;
+
+    @GetMapping(Routes.User.ME)
+    public ApiResponses<UserResponse> getProfile() {
+        return ApiResponses.success(accountService.getProfile(), null);
+    }
 
     @PostMapping(Routes.User.CREATE)
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
