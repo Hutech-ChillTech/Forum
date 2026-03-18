@@ -14,8 +14,8 @@ html {
   --primary-color: #0066FF;
   --secondary-bg: #f8f9f9;
   --container-max-width: 1264px;
-  --left-sidebar-width: 164px;
-  --right-sidebar-width: 300px;
+  --left-sidebar-width: 260px;
+  --right-sidebar-width: 260px;
   --breakpoint-tablet: 1100px;
   --breakpoint-mobile: 768px;
 }
