@@ -20,6 +20,8 @@ public enum ErrorCode {
     REFRESH_TOKEN_INVALID(1014, "Refresh token is invalid or expired", HttpStatus.UNAUTHORIZED),
     INVALID_PASSWORD(1011, "Invalid password", HttpStatus.UNAUTHORIZED),
     INVALID_OLD_PASSWORD(1015, "Current password is incorrect", HttpStatus.BAD_REQUEST),
+    OTP_INVALID(1018, "Invalid or expired OTP", HttpStatus.BAD_REQUEST),
+    OTP_REQUIRED(1019, "OTP is required for login", HttpStatus.BAD_REQUEST),
 
     // ── User / Account ────────────────────────────────────────────────────────
     USER_EXISTED(1001, "User already exists", HttpStatus.BAD_REQUEST),
@@ -82,4 +84,3 @@ public enum ErrorCode {
         this.statusCode = statusCode;
     }
 }
-

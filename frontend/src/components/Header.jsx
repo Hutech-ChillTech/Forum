@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import CreatePostModal from './CreatePostModal';
 import ChatBox from './ChatBox';
 import authService from '../service/authService';
+import searchService from '../service/searchService';
 import '../styles/Header.css';
 
 const Header = ({ hideAuth = false }) => {
@@ -15,6 +16,8 @@ const Header = ({ hideAuth = false }) => {
     const [isChatClosing, setIsChatClosing] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [showSearchHistory, setShowSearchHistory] = useState(false);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState('');
     const dropdownRef = useRef(null);
     const notificationRef = useRef(null);
     const chatRef = useRef(null);
@@ -83,6 +86,22 @@ const Header = ({ hideAuth = false }) => {
         };
     }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
+    // Fetch search history
+    useEffect(() => {
+        if (showSearchHistory && isLoggedIn) {
+            fetchSearchHistory();
+        }
+    }, [showSearchHistory, isLoggedIn]);
+
+    const fetchSearchHistory = async () => {
+        try {
+            const history = await searchService.getSearchHistory();
+            setRecentSearches(history);
+        } catch (error) {
+            console.error('Error fetching search history:', error);
+        }
+    };
+
     const handleLogout = () => {
         authService.logout();
         setIsLoggedIn(false);
@@ -108,6 +127,31 @@ const Header = ({ hideAuth = false }) => {
             setShowDropdown(false);
             setShowSearchHistory(false);
         }
+    };
+
+    const handleClearSearchHistory = async (e) => {
+        e.stopPropagation();
+        try {
+            await searchService.clearSearchHistory();
+            setRecentSearches([]);
+        } catch (error) {
+            console.error('Error clearing search history:', error);
+        }
+    };
+
+    const handleRemoveHistoryItem = async (e, keyword) => {
+        e.stopPropagation();
+        try {
+            await searchService.removeSearchHistoryItem(keyword);
+            setRecentSearches(prev => prev.filter(item => item !== keyword));
+        } catch (error) {
+            console.error('Error removing history item:', error);
+        }
+    };
+
+    const handleSearch = (keyword) => {
+        if (!keyword.trim()) return;
+        window.location.href = `/search?q=${encodeURIComponent(keyword.trim())}`;
     };
 
     const closeChat = () => {
@@ -183,13 +227,6 @@ const Header = ({ hideAuth = false }) => {
         { id: 2, user: "Admin", text: "Chào mừng bạn đã tham gia SkillForum!", time: "1 ngày trước", unread: false }
     ];
 
-    const recentSearches = [
-        "cấu trúc dữ liệu và giải thuật",
-        "tự học reactjs",
-        "lỗi undefined is not a function",
-        "khóa học nodejs backend"
-    ];
-
     return (
         <header className="header">
             <div className="header-container">
@@ -207,10 +244,12 @@ const Header = ({ hideAuth = false }) => {
                             type="text"
                             className="search-input"
                             placeholder="Search..."
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
                             onFocus={() => setShowSearchHistory(true)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    window.location.href = `/search?q=${encodeURIComponent(e.target.value)}`;
+                                    handleSearch(searchKeyword);
                                 }
                             }}
                         />
@@ -218,24 +257,28 @@ const Header = ({ hideAuth = false }) => {
                             <div className="search-history-dropdown">
                                 <div className="search-history-header">
                                     <span>Lịch sử tìm kiếm</span>
-                                    <button className="clear-history-btn" onClick={() => { }}>Xóa</button>
+                                    <button className="clear-history-btn" onClick={handleClearSearchHistory}>Xóa</button>
                                 </div>
                                 <ul className="search-history-list">
-                                    {recentSearches.map((term, index) => (
-                                        <li key={index} className="search-history-item" onClick={() => { window.location.href = `/search?q=${encodeURIComponent(term)}`; }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <polyline points="12 6 12 12 16 14"></polyline>
-                                            </svg>
-                                            <span className="search-term">{term}</span>
-                                            <button className="remove-item-btn" onClick={(e) => { e.stopPropagation(); }} title="Xóa">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    {recentSearches.length > 0 ? (
+                                        recentSearches.map((term, index) => (
+                                            <li key={index} className="search-history-item" onClick={() => handleSearch(term)}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <polyline points="12 6 12 12 16 14"></polyline>
                                                 </svg>
-                                            </button>
-                                        </li>
-                                    ))}
+                                                <span className="search-term">{term}</span>
+                                                <button className="remove-item-btn" onClick={(e) => handleRemoveHistoryItem(e, term)} title="Xóa">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </button>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="search-history-empty">Không có lịch sử tìm kiếm</li>
+                                    )}
                                 </ul>
                             </div>
                         )}

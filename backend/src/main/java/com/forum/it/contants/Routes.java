@@ -14,6 +14,7 @@ public final class Routes {
         public static final String REGISTER = "/register";
         public static final String REFRESH = "/token";
         public static final String CHANGE_PASSWORD = "/change-password";
+        public static final String REQUEST_OTP = "/request-otp";
     }
 
     public static final class User {
@@ -145,6 +146,13 @@ public final class Routes {
     public static final class File {
         public static final String BASE = API_V1 + "/files";
         public static final String UPLOAD = "/upload";
+    }
+
+    public static final class Search {
+        public static final String BASE = API_V1 + "/search";
+        public static final String HISTORY = "/history";
+        public static final String CLEAR_HISTORY = "/history/clear";
+        public static final String REMOVE_HISTORY_ITEM = "/history/remove";
     }
 
     private Routes() {
