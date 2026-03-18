@@ -26,7 +26,7 @@ import lombok.experimental.FieldDefaults;
 @RequestMapping(Routes.Auth.BASE)
 public class AccountController {
 
-    AccountService accountService;
+    final AccountService accountService;
 
     @PostMapping(Routes.Auth.REGISTER)
     public ApiResponses<AuthResponse> register(@RequestBody @Valid CreateUserRequest request) {
@@ -57,4 +57,5 @@ public class AccountController {
         accountService.changePassword(request);
         return ApiResponses.success("Password changed successfully", null);
     }
+
 }

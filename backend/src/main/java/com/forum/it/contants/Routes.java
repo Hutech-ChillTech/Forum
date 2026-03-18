@@ -12,13 +12,13 @@ public final class Routes {
         public static final String LOGIN = "/login";
         public static final String LOGOUT = "/logout";
         public static final String REGISTER = "/register";
-        public static final String REFRESH = "/refresh-token";
+        public static final String REFRESH = "/token";
         public static final String CHANGE_PASSWORD = "/change-password";
-        public static final String ME = "/me";
     }
 
     public static final class User {
         public static final String BASE = API_V1 + "/users";
+        public static final String ME = "/me";
         public static final String GET_ALL = "";
         public static final String CREATE = "";
         public static final String GET_BY_ID = "/{id}";
