@@ -23,12 +23,11 @@ const authService = {
     return data.result;
   },
 
-  async login({ email, password }) {
-    const token = localStorage.getItem("token");
-    const tokenType = localStorage.getItem("tokenType") || "Bearer";
+  async login({ email, password, otp }) {
     const response = await api.post(`${API_BASE_URL}/api/v1/auth/login`, {
       email,
-      password
+      password,
+      otp
     });
     const data = await response.json();
     if (!response.ok) {
@@ -38,12 +37,19 @@ const authService = {
   },
 
   async register(userData) {
-    const response = await api.post(`${API_BASE_URL}/api/v1/auth/register`, {
-      userData
-    });
+    const response = await api.post(`${API_BASE_URL}/api/v1/auth/register`, userData);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || "Đăng ký thất bại");
+    }
+    return data.result;
+  },
+
+  async requestOtp(email) {
+    const response = await api.post(`${API_BASE_URL}/api/v1/auth/request-otp`, { email });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Gửi mã OTP thất bại");
     }
     return data.result;
   },

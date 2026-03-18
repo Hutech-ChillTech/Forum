@@ -27,9 +27,7 @@ const MainLayout = () => {
                     <Sidebar />
                 </aside>
 
-                <main className="home-main">
-                    <Outlet context={{ setSelectedPostId }} />
-                </main>
+                <Outlet context={{ setSelectedPostId }} />
             </div>
 
             <button className="ai-chat-fab" onClick={() => setIsChatOpen(!isChatOpen)} title="Chat với AI">

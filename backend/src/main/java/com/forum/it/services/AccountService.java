@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.LoginRequest;
+import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.entities.user.Account;
@@ -52,6 +53,8 @@ public class AccountService {
     AuthenticationManager authenticationManager;
     RedisService redisService;
     SecurityContextHelper securityContextHelper;
+    OtpService otpService;
+    EmailService emailService;
 
     @Value("${jwt.refresh-token.expiration}")
     @NonFinal
@@ -105,6 +108,12 @@ public class AccountService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        // 1. Kiểm tra Mật khẩu trước (Bước 1 của 2FA)
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -112,9 +121,17 @@ public class AccountService {
             throw new AppException(ErrorCode.INVALID_PASSWORD);
         }
 
-        Account account = accountRepository.findByEmail(request.getEmail());
-        if (account == null) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        // 2. Nếu mật khẩu đúng, kiểm tra xem đã có mã OTP chưa
+        if (request.getOtp() == null || request.getOtp().isBlank()) {
+            // Nếu chưa có OTP gửi kèm -> Tạo mã và yêu cầu nhập (Ném lỗi để UI bắt được)
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendOtpEmail(request.getEmail(), otp);
+            throw new AppException(ErrorCode.OTP_REQUIRED);
+        }
+
+        // 3. Nếu đã có OTP gửi kèm -> Xác thực mã OTP (Bước 2 của 2FA)
+        if (!otpService.verifyOtp(request.getEmail(), request.getOtp())) {
+            throw new AppException(ErrorCode.OTP_INVALID);
         }
 
         String roleName = resolveRole(account);
@@ -134,6 +151,14 @@ public class AccountService {
                 .issuedAt(iat)
                 .expiredAt(exp)
                 .build();
+    }
+
+    public void requestOtp(OtpRequest request) {
+        if (!accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        String otp = otpService.generateOtp(request.getEmail());
+        emailService.sendOtpEmail(request.getEmail(), otp);
     }
 
     /**

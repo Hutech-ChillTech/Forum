@@ -1,146 +1,301 @@
 /* Search.css */
 
-.search-layout {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: var(--bg-color);
-}
-
-.search-container {
-    display: grid;
-    grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
-    max-width: var(--container-max-width);
-    margin: 56px auto 0;
-    padding: 24px 16px;
-    gap: 24px;
-    flex: 1;
-}
-
-/* Sidebar Placeholder */
-.search-sidebar {
-    position: sticky;
-    top: 80px;
-    width: var(--left-sidebar-width);
-    height: calc(100vh - 80px);
-}
-
-.search-main {
+.search-main-content {
     flex: 1;
     min-width: 0;
+    padding-right: 24px;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    height: fit-content;
+}
+
+.btn-primary:hover {
+    background-color: #0052cc;
+    transform: translateY(-1px);
 }
 
 .search-header {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 16px;
-    margin-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .search-header-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    gap: 16px;
 }
 
 .search-title {
-    font-size: 27px;
-    font-weight: 400;
+    font-size: 28px;
+    font-weight: 700;
     margin: 0;
     color: var(--text-color);
+    line-height: 1.2;
 }
 
 .search-subtitle {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--text-secondary);
-    margin: 0 0 16px 0;
+    margin: 0;
 }
 
-.search-tips {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
+/* Results Content Styles */
+.results-section {
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
     color: var(--text-color);
-    background-color: var(--secondary-bg);
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
 }
 
-.search-tips code {
-    background-color: var(--sidebar-item-hover);
-    padding: 2px 4px;
-    border-radius: 12px;
-    font-family: ui-monospace, "Cascadia Mono", monospace;
+.tags-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.advanced-search-link {
-    color: #0052cc;
+.tag-item {
     text-decoration: none;
 }
 
-.advanced-search-link:hover {
-    color: #0066FF;
+.tag-item .tag {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    color: var(--primary-color);
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
-/* Empty State */
-.empty-state {
-    padding: 48px 24px;
-    text-align: center;
-    background: var(--secondary-bg);
-    border: 1px dashed var(--border-color);
+.tag-item:hover .tag {
+    background-color: var(--sidebar-item-hover);
+    border-color: var(--primary-color);
+}
+
+.users-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.user-search-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    font-size: 15px;
+    background-color: var(--card-bg);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-search-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.user-search-card .user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary-color), #3385ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-color);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-handle {
+    font-size: 13px;
     color: var(--text-secondary);
+}
+
+/* Question Card list for search */
+.questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 /* Right Sidebar */
 .search-right-sidebar {
+    width: var(--right-sidebar-width);
+    flex-shrink: 0;
+}
+
+.sidebar-widget {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
     position: sticky;
     top: 80px;
-    width: var(--right-sidebar-width);
-    height: fit-content;
 }
 
-.related-tags-list {
-    padding: 16px;
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.widget-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.clear-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.clear-btn:hover {
+    text-decoration: underline;
+}
+
+.history-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
 }
 
-.related-tag-item {
+.history-item-container {
     display: flex;
     align-items: center;
-    gap: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.history-item-container:hover {
+    background-color: var(--secondary-bg);
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
     text-decoration: none;
+    font-size: 14px;
+    color: var(--text-color);
+    flex: 1;
+    min-width: 0;
 }
 
-.tag-multiplier {
-    font-size: 12px;
-    color: #6a737c;
+.history-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Respond */
+.history-item svg {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.remove-item-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.remove-item-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    opacity: 1;
+}
+
+.empty-history {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 10px;
+    margin: 0;
+}
+
+/* Fix for the horizontal layout in Search.jsx */
+/* The parent is .home-main in MainLayout */
+/* We need to make it flex to show content and sidebar side-by-side */
+.search-results-wrapper {
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 60px 40px;
+    text-align: center;
+    background: var(--secondary-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: 16px;
+}
+
 @media (max-width: 1100px) {
-    .search-container {
-        grid-template-columns: var(--left-sidebar-width) 1fr;
-    }
-
     .search-right-sidebar {
         display: none;
     }
-}
 
-@media (max-width: 768px) {
-    .search-sidebar {
-        display: none;
-    }
-
-    .search-tips {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+    .search-main-content {
+        padding-right: 0;
     }
 }
