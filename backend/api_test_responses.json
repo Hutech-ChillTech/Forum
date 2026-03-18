@@ -1,0 +1,259 @@
+{
+  "POST /api/v1/auth/register (success)": {
+    "code": 1000,
+    "result": {
+      "accessToken": "<access-token>",
+      "refreshToken": "<refresh-token>",
+      "tokenType": "Bearer",
+      "authenticated": true,
+      "issuedAt": 1670000000000,
+      "expiredAt": 1670003600000
+    },
+    "timstamp": 1670000000123
+  },
+
+  "POST /api/v1/auth/login (success)": {
+    "code": 1000,
+    "result": {
+      "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZG9l...",
+      "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZG9l...",
+      "tokenType": "Bearer",
+      "authenticated": true,
+      "issuedAt": 1773733366000,
+      "expiredAt": 1773733486000
+    },
+    "timstamp": 1773733366472
+  },
+
+  "POST /api/v1/auth/login (error - invalid credentials)": {
+    "code": 1401,
+    "message": "INVALID_CREDENTIALS",
+    "timstamp": 1773733367000
+  },
+
+  "POST /api/v1/auth/refresh-token (success)": {
+    "code": 1000,
+    "result": {
+      "accessToken": "<new-access-token>",
+      "refreshToken": "<new-refresh-token>",
+      "tokenType": "Bearer",
+      "authenticated": true,
+      "issuedAt": 1773733367000,
+      "expiredAt": 1773736967000
+    },
+    "timstamp": 1773733367123
+  },
+
+  "POST /api/v1/auth/refresh-token (error - invalid)": {
+    "code": 401,
+    "message": "ACCESS_TOKEN_INVALID",
+    "timstamp": 1773733368000
+  },
+
+  "GET /api/v1/users (success)": {
+    "code": 1000,
+    "result": {
+      "users": [
+        {
+          "id": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+          "userName": "jdoe01",
+          "email": "jdoe01@example.com",
+          "fullName": "John Doe",
+          "avatarURL": "/uploads/avatar.jpg",
+          "status": "ACTIVE"
+        }
+      ],
+      "currentPage": 0,
+      "totalItems": 1,
+      "totalPages": 1,
+      "pageSize": 20
+    },
+    "timstamp": 1670000001000
+  },
+
+  "POST /api/v1/users (success)": {
+    "code": 1000,
+    "result": {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "userName": "newuser",
+      "email": "newuser@example.com",
+      "fullName": "New User",
+      "status": "PENDING"
+    },
+    "timstamp": 1670000002000
+  },
+
+  "POST /api/v1/posts (success)": {
+    "code": 1000,
+    "result": {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "title": "Hello from Postman",
+      "content": "This is a sample post created via Postman.",
+      "imageURL": null,
+      "authorId": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+      "status": "DRAFT",
+      "createdAt": "2026-03-17T12:00:00Z"
+    },
+    "timstamp": 1670000003000
+  },
+
+  "GET /api/v1/posts (success)": {
+    "code": 1000,
+    "result": {
+      "posts": [
+        {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "title": "Hello from Postman",
+          "excerpt": "This is a sample post...",
+          "author": {
+            "id": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+            "userName": "jdoe01"
+          },
+          "status": "PUBLISHED",
+          "createdAt": "2026-03-17T12:00:00Z",
+          "tags": ["java", "spring"],
+          "reactionsCount": 5,
+          "commentsCount": 2
+        }
+      ],
+      "currentPage": 0,
+      "totalItems": 1,
+      "totalPages": 1,
+      "pageSize": 20
+    },
+    "timstamp": 1670000004000
+  },
+
+  "GET /api/v1/posts/{id} (success)": {
+    "code": 1000,
+    "result": {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "title": "Hello from Postman",
+      "content": "This is a sample post created via Postman.",
+      "imageURL": null,
+      "authorId": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+      "status": "PUBLISHED",
+      "createdAt": "2026-03-17T12:00:00Z",
+      "tags": ["java", "spring"]
+    },
+    "timstamp": 1670000005000
+  },
+
+  "PUT /api/v1/posts/{id} (success)": {
+    "code": 1000,
+    "result": {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "title": "Updated title",
+      "content": "Updated content body...",
+      "status": "PUBLISHED"
+    },
+    "timstamp": 1670000006000
+  },
+
+  "PATCH /api/v1/posts/{id}/status (success)": {
+    "code": 1000,
+    "result": {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "status": "PUBLISHED"
+    },
+    "timstamp": 1670000007000
+  },
+
+  "POST /api/v1/comments (success)": {
+    "code": 1000,
+    "result": {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "postId": "22222222-2222-2222-2222-222222222222",
+      "content": "Nice post!",
+      "authorId": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+      "createdAt": "2026-03-17T12:05:00Z"
+    },
+    "timstamp": 1670000008000
+  },
+
+  "GET /api/v1/comments/post/{postId} (success)": {
+    "code": 1000,
+    "result": {
+      "comments": [
+        {
+          "id": "33333333-3333-3333-3333-333333333333",
+          "content": "Nice post!",
+          "author": {
+            "id": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+            "userName": "jdoe01"
+          },
+          "createdAt": "2026-03-17T12:05:00Z"
+        }
+      ],
+      "currentPage": 0,
+      "totalItems": 1,
+      "totalPages": 1,
+      "pageSize": 20
+    },
+    "timstamp": 1670000009000
+  },
+
+  "POST /api/v1/posts/{postId}/reactions (success)": {
+    "code": 1000,
+    "result": {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "postId": "22222222-2222-2222-2222-222222222222",
+      "react": "LIKE",
+      "userId": "3298a82e-9939-4f55-ba2a-214d85a8893c"
+    },
+    "timstamp": 1670000010000
+  },
+
+  "POST /api/v1/posts/{postId}/shares (success)": {
+    "code": 1000,
+    "result": {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "postId": "22222222-2222-2222-2222-222222222222",
+      "platform": "FACEBOOK",
+      "sharedAt": "2026-03-17T12:10:00Z"
+    },
+    "timstamp": 1670000011000
+  },
+
+  "POST /api/v1/files/upload (success)": {
+    "code": 1000,
+    "result": {
+      "url": "/uploads/9a8b7c6d-1234.png"
+    },
+    "timstamp": 1670000012000
+  },
+
+  "POST /api/v1/messages (success)": {
+    "code": 1000,
+    "result": {
+      "id": "66666666-6666-6666-6666-666666666666",
+      "senderId": "3298a82e-9939-4f55-ba2a-214d85a8893c",
+      "receiverId": "77777777-7777-7777-7777-777777777777",
+      "message": "Hello from Postman",
+      "sentAt": "2026-03-17T12:15:00Z"
+    },
+    "timstamp": 1670000013000
+  },
+
+  "GET /api/v1/notifications (success)": {
+    "code": 1000,
+    "result": {
+      "notifications": [
+        {
+          "id": "88888888-8888-8888-8888-888888888888",
+          "text": "User X liked your post",
+          "read": false
+        }
+      ],
+      "totalItems": 1,
+      "totalPages": 1
+    },
+    "timstamp": 1670000014000
+  },
+
+  "Generic error (401 - invalid token)": {
+    "code": 401,
+    "message": "ACCESS_TOKEN_INVALID",
+    "timstamp": 1773733368000
+  }
+}

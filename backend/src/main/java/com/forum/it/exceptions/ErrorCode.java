@@ -25,11 +25,13 @@ public enum ErrorCode {
     USER_EXISTED(1001, "User already exists", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(1002, "User not found", HttpStatus.NOT_FOUND),
     EMAIL_ALREADY_EXISTS(1008, "Email already exists", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_FOUND(1010, "Email not found", HttpStatus.NOT_FOUND),
     USERNAME_ALREADY_EXISTS(1009, "Username already exists", HttpStatus.BAD_REQUEST),
     ACCOUNT_NOT_FOUND(1010, "Account not found", HttpStatus.NOT_FOUND),
+    ACCOUNT_NOT_EXIST(1010, "Account does not exist", HttpStatus.NOT_FOUND),
     USER_BANNED(1016, "User is banned and cannot perform this action", HttpStatus.FORBIDDEN),
     USER_DELETED(1017, "User account has been deleted", HttpStatus.FORBIDDEN),
-
+    USER_CREDENTIALS_INVALID(1018, "Invalid credentials", HttpStatus.UNAUTHORIZED),
     // ── Post ──────────────────────────────────────────────────────────────────
     POST_NOT_FOUND(2001, "Post not found", HttpStatus.NOT_FOUND),
     POST_DUPLICATE_TITLE(2002, "You already have a post with this title", HttpStatus.BAD_REQUEST),

@@ -1,14 +1,13 @@
 package com.forum.it.services;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.Integer;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
@@ -108,7 +107,7 @@ public class AccountService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         } catch (Exception e) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD);
+            throw new AppException(ErrorCode.ACCOUNT_NOT_EXIST);
         }
 
         Account account = accountRepository.findByEmail(request.getEmail());
