@@ -39,11 +39,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostService {
 
-    private final PostRepository      postRepository;
-    private final UserRepository      userRepository;
-    private final TagRepository       tagRepository;
-    private final PostTagRepository   postTagRepository;
-    private final CommentRepository   commentRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
+    private final CommentRepository commentRepository;
     private final SecurityContextHelper securityContextHelper;
 
     /**
