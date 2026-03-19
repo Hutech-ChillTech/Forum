@@ -324,7 +324,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                 </div>
 
                 {/* Actions Menu (Three Dots) */}
-                {(userProfile?.userId === userId || userProfile?.role === 'ADMIN' || userProfile?.role === 'MODERATOR') && (
+                {(userProfile?.userId === post.userId || userProfile?.role === 'ADMIN' || userProfile?.role === 'MODERATOR') && (
                     <div className="post-menu-container" style={{ marginLeft: 'auto', position: 'relative' }}>
                         <button
                             className="post-menu-trigger"
@@ -368,7 +368,40 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                     border: '1px solid var(--border-color)'
                                 }}
                             >
+                                {userProfile?.userId === post.userId && (
+                                    <button
+                                        className="menu-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowMenu(false);
+                                            window.dispatchEvent(new CustomEvent('openEditPost', { detail: post }));
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 16px',
+                                            background: 'none',
+                                            border: 'none',
+                                            textAlign: 'left',
+                                            color: 'var(--text-color)',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            fontWeight: '500'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        Chỉnh sửa
+                                    </button>
+                                )}
                                 <button
+                                    className="menu-item"
                                     onClick={handleDeletePost}
                                     disabled={isDeleting}
                                     style={{
@@ -394,7 +427,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                         <line x1="10" y1="11" x2="10" y2="17"></line>
                                         <line x1="14" y1="11" x2="14" y2="17"></line>
                                     </svg>
-                                    {isDeleting ? "Đang xóa..." : "Xóa bài viết"}
+                                    {isDeleting ? "Đang xóa..." : "Xóa"}
                                 </button>
                                 {/* Future: Edit post could go here */}
                             </div>
