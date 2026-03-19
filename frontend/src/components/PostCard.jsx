@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageGrid from './ImageGrid';
+import postService from '../service/postService';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
 import { API_BASE_URL } from '../utils/apiFetch.js';
@@ -8,6 +9,7 @@ import { API_BASE_URL } from '../utils/apiFetch.js';
 const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     const navigate = useNavigate();
     const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
     const [isFollowed, setIsFollowed] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -16,12 +18,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     const [commentLoading, setCommentLoading] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeleted, setIsDeleted] = useState(false);
     // Map backend fields to local variables
     const id = post.postId || post.id || post.postID;
     const author = post.userName || post.author;
     const avatar = post.userAvatarURL || post.avatar;
     const time = post.createdAt || post.timestamp || post.time || post.askedTime;
-    const commentCount = post.commentCount !== undefined ? post.commentCount : (post.comments !== undefined ? post.comments : 0);
+    const commentCount = post.commentCount !== undefined ? post.commentCount : 0;
     const content = post.content || post.excerpt || "";
     const title = post.title;
 
@@ -155,6 +160,59 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
         }
     };
 
+    const handleDeletePost = async (e) => {
+        e.stopPropagation();
+        if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
+
+        try {
+            setIsDeleting(true);
+            await postService.deletePost(id);
+            // After success, we can either hide the card or refresh
+            // For now, let's just make the card disappear by modifying its state if we had a list,
+            // but since this is a child component, we should ideally inform the parent.
+            // A simple way is to hide it locally for now if we can't refresh easily.
+            setIsDeleted(true);
+
+            // Set flag to force fresh data from server and clear all caches
+            sessionStorage.setItem('FORCE_REFRESH_POSTS', 'true');
+            sessionStorage.removeItem('home_posts_cache');
+            sessionStorage.removeItem('home_page_cache');
+            sessionStorage.removeItem('home_scroll_pos');
+            sessionStorage.removeItem('posts_page_cache');
+            sessionStorage.removeItem('posts_page_num');
+            sessionStorage.removeItem('posts_scroll_pos');
+
+            window.location.reload(); // Refresh to update list
+        } catch (err) {
+            console.error('Failed to delete post:', err);
+            // If the post is already gone (404), we should still refresh the UI
+            if (err.message?.includes('404') || err.status === 404) {
+                sessionStorage.removeItem('home_posts_cache');
+                sessionStorage.removeItem('home_page_cache');
+                sessionStorage.removeItem('home_scroll_pos');
+                sessionStorage.removeItem('posts_page_cache');
+                sessionStorage.removeItem('posts_page_num');
+                sessionStorage.removeItem('posts_scroll_pos');
+                window.location.reload();
+            } else {
+                alert("Lỗi khi xóa bài viết: " + err.message);
+            }
+        } finally {
+            setIsDeleting(false);
+            setShowMenu(false);
+        }
+    };
+
+    if (isDeleted) return null;
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        if (!showMenu) return;
+        const closeMenu = () => setShowMenu(false);
+        window.addEventListener('click', closeMenu);
+        return () => window.removeEventListener('click', closeMenu);
+    }, [showMenu]);
+
 
     // Regroup blocks to bundle consecutive images
     const groupedBlocks = (() => {
@@ -189,6 +247,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
         }
     };
 
+    const userId = post.userId;
+
+    const handleAuthorClick = (e) => {
+        e.stopPropagation();
+        if (userId) {
+            navigate(`/profile?id=${userId}`);
+        }
+    };
+
     return (
         <div
             className="user-post-card"
@@ -212,18 +279,31 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
             }}
         >
             <div className="post-header" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div className="post-avatar-small" style={{ marginRight: '12px' }}>
+                <div className="post-avatar-small" onClick={handleAuthorClick} style={{ marginRight: '12px', cursor: 'pointer' }}>
                     {avatar ? (
                         <img src={avatar} alt={author} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                         <span className="post-avatar-initials-small" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>
-                            {author ? author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                            {author ? author.charAt(0).toUpperCase() : 'U'}
                         </span>
                     )}
                 </div>
                 <div className="post-author-info" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="post-author-name" style={{ marginRight: '8px', fontWeight: 'bold', color: 'var(--text-color)' }}>{author}</span>
+                        <span
+                            className="post-author-name"
+                            onClick={handleAuthorClick}
+                            style={{
+                                marginRight: '8px',
+                                fontWeight: 'bold',
+                                color: 'var(--text-color)',
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+                            onMouseLeave={(e) => e.target.style.color = 'var(--text-color)'}
+                        >
+                            {author}
+                        </span>
                         {!hideFollowButton && (
                             <button onClick={(e) => { e.stopPropagation(); setIsFollowed(!isFollowed); }} style={{ background: 'none', border: 'none', color: isFollowed ? 'var(--text-secondary)' : 'var(--primary-color)', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px', zIndex: 2 }}>
                                 {isFollowed ? (
@@ -242,6 +322,85 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                     </div>
                     <span className="post-time" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatTime(time)}</span>
                 </div>
+
+                {/* Actions Menu (Three Dots) */}
+                {(userProfile?.userId === userId || userProfile?.role === 'ADMIN' || userProfile?.role === 'MODERATOR') && (
+                    <div className="post-menu-container" style={{ marginLeft: 'auto', position: 'relative' }}>
+                        <button
+                            className="post-menu-trigger"
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                padding: '8px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+
+                        {showMenu && (
+                            <div
+                                className="post-dropdown-menu"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: '100%',
+                                    backgroundColor: 'var(--card-bg)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                    borderRadius: '8px',
+                                    padding: '8px 0',
+                                    zIndex: 100,
+                                    minWidth: '150px',
+                                    border: '1px solid var(--border-color)'
+                                }}
+                            >
+                                <button
+                                    onClick={handleDeletePost}
+                                    disabled={isDeleting}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 16px',
+                                        textAlign: 'left',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#ff4d4f',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontWeight: '500'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                    {isDeleting ? "Đang xóa..." : "Xóa bài viết"}
+                                </button>
+                                {/* Future: Edit post could go here */}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {title && (
@@ -349,7 +508,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                         <div key={comment.commentId} className="comment-group" style={{ marginTop: '16px' }}>
                                             {/* Parent Comment */}
                                             <div className="comment-item" style={{ display: 'flex', gap: '12px' }}>
-                                                <div className="comment-user-avatar">
+                                                <div
+                                                    className="comment-user-avatar"
+                                                    onClick={() => navigate(`/profile?id=${comment.userId}`)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
                                                     {comment.userAvatarURL ? (
                                                         <img src={comment.userAvatarURL} alt="avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
                                                     ) : (
@@ -359,7 +522,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                                     )}
                                                 </div>
                                                 <div className="comment-content-wrapper" style={{ flex: 1 }}>
-                                                    <span className="comment-username" style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-color)' }}>{comment.userName}</span>
+                                                    <span
+                                                        className="comment-username"
+                                                        onClick={() => navigate(`/profile?id=${comment.userId}`)}
+                                                        style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-color)', cursor: 'pointer' }}
+                                                        onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+                                                        onMouseLeave={(e) => e.target.style.color = 'var(--text-color)'}
+                                                    >
+                                                        {comment.userName}
+                                                    </span>
                                                     <div className="comment-bubble" style={{ fontSize: '14px', marginTop: '4px' }}>
                                                         <p style={{ margin: 0, color: 'var(--text-color)' }}>{comment.content}</p>
                                                         <div className="comment-actions" style={{ display: 'flex', gap: '12px', marginTop: '8px', alignItems: 'center' }}>
@@ -410,7 +581,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                                         <div className="replies-list" style={{ marginTop: '12px', borderLeft: '2px solid var(--border-color)', paddingLeft: '16px' }}>
                                                             {comment.replies.map(reply => (
                                                                 <div key={reply.commentId} className="reply-item" style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                                                                    <div className="reply-user-avatar">
+                                                                    <div
+                                                                        className="reply-user-avatar"
+                                                                        onClick={() => navigate(`/profile?id=${reply.userId}`)}
+                                                                        style={{ cursor: 'pointer' }}
+                                                                    >
                                                                         {reply.userAvatarURL ? (
                                                                             <img src={reply.userAvatarURL} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
                                                                         ) : (
@@ -420,7 +595,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                                                         )}
                                                                     </div>
                                                                     <div className="reply-content-wrapper" style={{ flex: 1 }}>
-                                                                        <span className="reply-username" style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--text-color)' }}>{reply.userName}</span>
+                                                                        <span
+                                                                            className="reply-username"
+                                                                            onClick={() => navigate(`/profile?id=${reply.userId}`)}
+                                                                            style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--text-color)', cursor: 'pointer' }}
+                                                                            onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+                                                                            onMouseLeave={(e) => e.target.style.color = 'var(--text-color)'}
+                                                                        >
+                                                                            {reply.userName}
+                                                                        </span>
                                                                         <div className="reply-bubble" style={{ fontSize: '13px', marginTop: '2px' }}>
                                                                             <p style={{ margin: 0, color: 'var(--text-color)' }}>{reply.content}</p>
                                                                             <div className="reply-actions" style={{ display: 'flex', gap: '10px', marginTop: '4px', alignItems: 'center' }}>

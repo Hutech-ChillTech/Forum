@@ -96,10 +96,7 @@
     width: 128px;
     height: 128px;
     border-radius: 12px;
-    background: #ccd9ff;
-    background-image: repeating-linear-gradient(45deg, #e6f0ff 25%, transparent 25%, transparent 75%, #e6f0ff 75%, #e6f0ff), repeating-linear-gradient(45deg, #e6f0ff 25%, transparent 25%, transparent 75%, #e6f0ff 75%, #e6f0ff);
-    background-position: 0 0, 10px 10px;
-    background-size: 20px 20px;
+    background: var(--secondary-bg);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -59,8 +59,9 @@ const Home = () => {
         const cachedPosts = sessionStorage.getItem(HOME_CACHE_KEY);
         const cachedPage = sessionStorage.getItem(HOME_PAGE_KEY);
         const cachedScroll = sessionStorage.getItem(HOME_SCROLL_KEY);
+        const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
 
-        if (cachedPosts && cachedPage && JSON.parse(cachedPosts).length > 0) {
+        if (!forceRefresh && cachedPosts && cachedPage && JSON.parse(cachedPosts).length > 0) {
             setUserPosts(JSON.parse(cachedPosts));
             setPage(parseInt(cachedPage));
             setInitialLoading(false);
@@ -97,6 +98,9 @@ const Home = () => {
     // Save full state to sessionStorage before navigating away
     useEffect(() => {
         const handleSave = () => {
+            const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+            if (forceRefresh) return; // Don't cache stale state during deletion reload
+
             if (userPosts.length > 0 || (!initialLoading && page > 0)) {
                 sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(userPosts));
                 sessionStorage.setItem(HOME_PAGE_KEY, page.toString());

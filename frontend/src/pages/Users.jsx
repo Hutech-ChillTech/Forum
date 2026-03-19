@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import userService from '../service/userService';
 import '../styles/Users.css';
 
@@ -46,8 +47,7 @@ const Users = () => {
   };
 
   const getInitials = (name) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
   return (
@@ -99,17 +99,17 @@ const Users = () => {
                 ) : users.map(user => (
                   <div key={user.userId} className="user-card">
                     <div className="user-card-header">
-                      <div className="user-avatar-medium">
+                      <Link to={"/profile?id=" + user.userId} className="user-avatar-medium" style={{ textDecoration: 'none' }}>
                         {user.avatarURL ? (
                           <img src={user.avatarURL} alt={user.userName} />
                         ) : (
                           <span className="avatar-initials-medium">{getInitials(user.fullName || user.userName)}</span>
                         )}
-                      </div>
+                      </Link>
                       <div className="user-details">
-                        <a href={"/profile?id=" + user.userId} className="user-name-link">
+                        <Link to={"/profile?id=" + user.userId} className="user-name-link">
                           {user.fullName || user.userName}
-                        </a>
+                        </Link>
                         <span className="user-location">@{user.userName}</span>
                         <div className="user-reputation">
                           <span className={"status-small " + (user.status || '').toLowerCase()}>

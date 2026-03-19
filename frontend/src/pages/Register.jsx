@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/Register.css";
 import authService from "../service/authService";
@@ -17,9 +17,13 @@ const Register = () => {
     dateOfBirth: "",
   });
 
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  const otpInputsRef = useRef([]);
 
   // Validate form
   const validateForm = () => {
@@ -111,9 +115,28 @@ const Register = () => {
     }
   };
 
-  // Handle form submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Handle OTP digit change
+  const handleOtpChange = (index, value) => {
+    if (isNaN(value)) return;
+
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.substring(value.length - 1);
+    setOtpDigits(newDigits);
+
+    if (value && index < 5) {
+      otpInputsRef.current[index + 1].focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      otpInputsRef.current[index - 1].focus();
+    }
+  };
+
+  // Handle form submit (Step 1 or final if OTP included)
+  const handleSubmit = async (e, otpCode = "") => {
+    if (e) e.preventDefault();
     setSuccessMessage("");
 
     if (!validateForm()) {
@@ -131,6 +154,7 @@ const Register = () => {
         gender: formData.gender || null,
         phone: formData.phone || null,
         dateOfBirth: formData.dateOfBirth || null,
+        otp: otpCode
       };
 
       await authService.register(userData);
@@ -138,6 +162,8 @@ const Register = () => {
       setSuccessMessage(
         "Đăng ký thành công! Chuyển hướng đến trang đăng nhập...",
       );
+      setShowOtpModal(false);
+
       setFormData({
         userName: "",
         email: "",
@@ -150,12 +176,36 @@ const Register = () => {
       });
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      setErrors((prev) => ({
-        ...prev,
-        submit: error.message || "Đăng ký thất bại. Vui lòng thử lại.",
-      }));
+      if (error.message.includes("OTP is required")) {
+        setShowOtpModal(true);
+        setSuccessMessage("Một mã OTP đã được gửi đến email của bạn.");
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          submit: error.message || "Đăng ký thất bại. Vui lòng thử lại.",
+          otp: otpCode ? (error.message || "Mã OTP không chính xác") : ""
+        }));
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    const otpCode = otpDigits.join("");
+    if (otpCode.length !== 6) {
+      setErrors(prev => ({ ...prev, otp: "Vui lòng nhập đủ 6 chữ số" }));
+      return;
+    }
+    handleSubmit(null, otpCode);
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await authService.requestOtp(formData.email);
+      setSuccessMessage("Mã OTP mới đã được gửi!");
+    } catch (error) {
+      setErrors(prev => ({ ...prev, otp: error.message || "Gửi lại OTP thất bại" }));
     }
   };
 
@@ -179,7 +229,7 @@ const Register = () => {
             <div className="register-form-card">
               <h2>Đăng Ký</h2>
 
-              {successMessage && (
+              {successMessage && !showOtpModal && (
                 <div className="success-message">{successMessage}</div>
               )}
 
@@ -357,6 +407,55 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <div className="otp-modal-overlay">
+          <div className="otp-modal">
+            <h2>Xác thực Email</h2>
+            <p>Vui lòng nhập mã 6 số đã được gửi tới <strong>{formData.email}</strong> để hoàn tất đăng ký.</p>
+
+            <div className="otp-inputs">
+              {otpDigits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  maxLength="1"
+                  className="otp-digit"
+                  value={digit}
+                  ref={(el) => (otpInputsRef.current[idx] = el)}
+                  onChange={(e) => handleOtpChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(idx, e)}
+                  autoFocus={idx === 0}
+                />
+              ))}
+            </div>
+
+            {errors.otp && <p className="error-message" style={{ justifyContent: "center", marginBottom: "20px" }}>{errors.otp}</p>}
+            {successMessage && <p style={{ color: "#4CD964", fontSize: "12px", marginBottom: "20px", textAlign: "center" }}>{successMessage}</p>}
+
+            <div className="otp-actions">
+              <button
+                className={`verify-btn ${isSubmitting ? "loading" : ""}`}
+                onClick={handleVerifyOtp}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "" : "Xác nhận đăng ký"}
+              </button>
+              <button className="resend-btn" onClick={handleResendOtp} disabled={isSubmitting}>
+                Gửi lại mã OTP
+              </button>
+              <button
+                className="resend-btn"
+                style={{ textDecoration: "none", opacity: 0.6 }}
+                onClick={() => setShowOtpModal(false)}
+              >
+                Hủy bỏ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

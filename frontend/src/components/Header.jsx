@@ -208,12 +208,7 @@ const Header = ({ hideAuth = false }) => {
 
     // Get user initials for avatar
     const getInitials = (name) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        return name ? name.charAt(0).toUpperCase() : 'U';
     };
 
     const dummyNotifications = [

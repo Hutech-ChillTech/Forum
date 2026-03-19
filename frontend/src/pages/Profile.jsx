@@ -1,88 +1,105 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PostCard from '../components/PostCard';
+import PostDetailModal from '../components/PostDetailModal';
 import postService from '../service/postService';
+import userService from '../service/userService';
+import authService from '../service/authService';
 import '../styles/Profile.css';
 
 const Profile = () => {
-    const [userData, setUserData] = useState(() => {
-        const savedProfile = localStorage.getItem('userProfile');
-        if (savedProfile) {
-            try {
-                const parsed = JSON.parse(savedProfile);
-                return {
-                    name: parsed.fullName || parsed.username || "User",
-                    memberSince: "1 năm, 1 tháng",
-                    lastSeen: "tuần này",
-                    reputation: 1,
-                    reached: 0,
-                    answers: 0,
-                    questions: 0,
-                    communities: [{ name: "Stack Overflow", count: 1 }],
-                    badges: []
-                };
-            } catch (e) {
-                console.error('Error parsing user profile in Profile:', e);
-            }
-        }
-        return {
-            name: "User",
-            memberSince: "1 năm, 1 tháng",
-            lastSeen: "tuần này",
-            reputation: 1,
-            reached: 0,
-            answers: 0,
-            questions: 0,
-            communities: [{ name: "Stack Overflow", count: 1 }],
-            badges: []
-        };
+    const [searchParams] = useSearchParams();
+    const userId = searchParams.get('id');
+    const currentUser = authService.getUser();
+    const isOwnProfile = !userId || userId === currentUser?.userId;
+
+    const [userData, setUserData] = useState({
+        name: "User",
+        memberSince: "Đang tải...",
+        lastSeen: "Đang tải...",
+        reputation: 1,
+        reached: 0,
+        answers: 0,
+        questions: 0,
+        communities: [{ name: "Skill Forum", count: 1 }],
+        badges: [],
+        avatarURL: null
     });
 
     const [userPosts, setUserPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedPostId, setSelectedPostId] = useState(null);
 
+    // Fetch user info and posts
+    // ... (rest of useEffects same)
     useEffect(() => {
-        const handleProfileUpdate = (e) => {
-            const profile = e.detail;
-            setUserData(prev => ({
-                ...prev,
-                name: profile.fullName || profile.displayName
-            }));
-        };
-
-        window.addEventListener('userProfileUpdated', handleProfileUpdate);
-        return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-    }, []);
-
-    // Fetch user posts from API
-    useEffect(() => {
-        const fetchUserPosts = async () => {
-            const savedProfile = localStorage.getItem('userProfile');
-            if (!savedProfile) return;
-
+        const fetchProfileData = async () => {
+            setLoading(true);
             try {
-                const parsed = JSON.parse(savedProfile);
-                if (parsed.userId) {
-                    setLoading(true);
-                    const data = await postService.getPostsByUser(parsed.userId);
-                    // data.posts because of buildPageResponse in backend
-                    const posts = data.posts || [];
-                    setUserPosts(posts);
+                let targetUser;
+                let targetUserId;
 
-                    // Update stats
+                if (userId) {
+                    targetUser = await userService.getUserById(userId);
+                    targetUserId = userId;
+                } else {
+                    const savedProfile = localStorage.getItem('userProfile');
+                    if (savedProfile) {
+                        targetUser = JSON.parse(savedProfile);
+                        targetUserId = targetUser.userId;
+                    } else {
+                        // Redirect to login or show error
+                        return;
+                    }
+                }
+
+                if (targetUser) {
                     setUserData(prev => ({
                         ...prev,
-                        questions: posts.length
+                        name: targetUser.fullName || targetUser.userName || targetUser.displayName || "User",
+                        avatarURL: targetUser.avatarURL || targetUser.userAvatarURL,
+                        memberSince: targetUser.createdAt ? new Date(targetUser.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' }) : "Recently",
+                        // Mock fields as they might not be in backend yet
+                        lastSeen: "Today",
+                        reputation: targetUser.reputation || 1,
                     }));
                 }
+
+                if (targetUserId) {
+                    const postData = await postService.getPostsByUser(targetUserId);
+                    const posts = postData.posts || [];
+                    setUserPosts(posts);
+                    setUserData(prev => ({ ...prev, questions: posts.length }));
+                }
             } catch (err) {
-                console.error('Failed to fetch user posts:', err);
+                console.error('Failed to fetch profile data:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchUserPosts();
-    }, []);
+        fetchProfileData();
+    }, [userId]);
+
+    useEffect(() => {
+        const handleProfileUpdate = (e) => {
+            if (isOwnProfile) {
+                const profile = e.detail;
+                setUserData(prev => ({
+                    ...prev,
+                    name: profile.fullName || profile.displayName,
+                    avatarURL: profile.avatarURL
+                }));
+            }
+        };
+
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+    }, [isOwnProfile]);
+
+    const getInitial = (name) => {
+        return name ? name.charAt(0).toUpperCase() : 'U';
+    };
 
     return (
         <>
@@ -91,18 +108,26 @@ const Profile = () => {
                 {/* User Header */}
                 <div className="profile-header">
                     <div className="profile-avatar-large">
-                        {/* The pattern is handled by CSS background */}
+                        {userData.avatarURL ? (
+                            <img src={userData.avatarURL} alt={userData.name} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                        ) : (
+                            <span className="avatar-initials-large-display" style={{ fontSize: '48px', color: 'var(--primary-color)', fontWeight: 'bold' }}>
+                                {getInitial(userData.name)}
+                            </span>
+                        )}
                     </div>
                     <div className="profile-header-info">
                         <div className="profile-name-row">
                             <h1 className="profile-name">{userData.name}</h1>
-                            <a href="/settings" className="btn-network-profile" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 20h9"></path>
-                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                </svg>
-                                Chỉnh sửa hồ sơ
-                            </a>
+                            {isOwnProfile && (
+                                <a href="/settings" className="btn-network-profile" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    Chỉnh sửa hồ sơ
+                                </a>
+                            )}
                         </div>
                         <div className="profile-meta">
                             <svg viewBox="0 0 18 18">
@@ -190,11 +215,16 @@ const Profile = () => {
                                     <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>Đang tải bài viết...</div>
                                 ) : userPosts.length > 0 ? (
                                     userPosts.map(post => (
-                                        <PostCard key={post.postId || post.id} post={post} hideFollowButton={true} />
+                                        <PostCard
+                                            key={post.postId || post.id}
+                                            post={post}
+                                            hideFollowButton={true}
+                                            onOpenModal={(id) => setSelectedPostId(id)}
+                                        />
                                     ))
                                 ) : (
                                     <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', backgroundColor: 'var(--secondary-bg)', borderRadius: '12px' }}>
-                                        Bạn chưa có bài viết nào.
+                                        {isOwnProfile ? "Bạn chưa có bài viết nào." : "Người dùng này chưa có bài viết nào."}
                                     </div>
                                 )}
                             </div>
@@ -202,6 +232,13 @@ const Profile = () => {
                     </div>
                 </div>
             </main>
+
+            {selectedPostId && (
+                <PostDetailModal
+                    postId={selectedPostId}
+                    onClose={() => setSelectedPostId(null)}
+                />
+            )}
         </>
     );
 };
