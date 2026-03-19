@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.*;
 
 @Service
 @RequiredArgsConstructor
@@ -64,5 +65,20 @@ public class RedisService {
      */
     public boolean hasKey(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    @CachePut(value = "otps", key = "#email")
+    public String saveOtp(String email, String otpValue) {
+        return otpValue;
+    }
+
+    @Cacheable(value = "otps", key = "#email")
+    public String getOtp(String email) {
+        return null;
+    }
+
+    @CacheEvict(value = "otps", key = "#email")
+    public void deleteOtp(String email) {
+
     }
 }
