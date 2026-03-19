@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,16 +40,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostService {
 
-    private final PostRepository      postRepository;
-    private final UserRepository      userRepository;
-    private final TagRepository       tagRepository;
-    private final PostTagRepository   postTagRepository;
-    private final CommentRepository   commentRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
+    private final CommentRepository commentRepository;
     private final SecurityContextHelper securityContextHelper;
 
     /**
      * userId is resolved from the JWT — NOT from the request body.
      */
+    @CacheEvict(value = "posts", allEntries = true)
     public PostResponse createPost(CreatePostRequest request) {
         UUID userId = securityContextHelper.getCurrentUserId();
         User user = userRepository.findById(userId)
@@ -91,6 +93,7 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "posts", key = "#postId")
     public PostResponse getPostById(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -128,6 +131,7 @@ public class PostService {
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
     }
 
+    @CachePut(value = "posts", key = "#postId")
     public PostResponse updatePost(UUID postId, UpdatePostRequest request) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -178,6 +182,7 @@ public class PostService {
         return new PostResponse(updatedPost, postTagRepository.findTagNamesByPostId(postId));
     }
 
+    @CacheEvict(value = "posts", key = "#postId")
     public void deletePost(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));

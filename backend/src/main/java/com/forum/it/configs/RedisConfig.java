@@ -28,8 +28,9 @@ public class RedisConfig {
 
                 return RedisCacheManager.builder(connectionFactory)
                                 .cacheDefaults(config)
-                                .withCacheConfiguration("users", config.entryTtl(Duration.ofHours(24)))
-                                .withCacheConfiguration("courses", config.entryTtl(Duration.ofMinutes(30)))
+                                .withCacheConfiguration("users", config.entryTtl(Duration.ofHours(12)))
+                                .withCacheConfiguration("posts", config.entryTtl(Duration.ofHours(12)))
+                                .withCacheConfiguration("otps", config.entryTtl(Duration.ofMinutes(1)))
                                 .build();
         }
 
