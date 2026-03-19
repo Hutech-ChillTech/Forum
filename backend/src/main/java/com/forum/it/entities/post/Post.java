@@ -68,4 +68,11 @@ public class Post {
 
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Comment> comments;
+
+    @Column(nullable = false)
+    private Integer likeCount = 0;
+
+    public int getLikeCount() {
+        return likeCount == null ? 0 : likeCount;
+    }
 }

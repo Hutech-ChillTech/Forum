@@ -1,7 +1,6 @@
 package com.forum.it.services;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.Integer;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,12 +30,13 @@ import com.forum.it.repositories.UserRepository;
 import com.forum.it.sercurites.JwtTokenProvider;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.utils.SecurityContextHelper;
-
+import lombok.extern.slf4j.Slf4j;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -52,9 +52,9 @@ public class AccountService {
     RedisService redisService;
     SecurityContextHelper securityContextHelper;
 
-    @Value("${JWT_REFRESH_TOKEN_EXPIRATION}")
+    @Value("${jwt.refresh-token.expiration}")
     @NonFinal
-    Integer REFRESH_TOKEN_TTL;
+    long REFRESH_TOKEN_TTL;
 
     @Transactional
     public AuthResponse register(CreateUserRequest request) {
@@ -123,8 +123,12 @@ public class AccountService {
         long iat = jwtTokenProvider.getIssuedAtTime(accessToken);
         long exp = jwtTokenProvider.getExpirationTime(accessToken);
 
-        redisService.setValueWithTTL("RT:" + account.getEmail(), refreshToken, REFRESH_TOKEN_TTL,
-                TimeUnit.MILLISECONDS);
+        try {
+            redisService.setValueWithTTL("RT:" + account.getEmail(), refreshToken, REFRESH_TOKEN_TTL,
+                    TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.warn("Redis is unavailable. Refresh token not stored in Redis: {}", e.getMessage());
+        }
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -140,8 +144,12 @@ public class AccountService {
      * raw Authorization header value is available.
      */
     public void blacklistToken(String email) {
-        redisService.setValueWithTTL("REVOKED_AT:" + email, String.valueOf(System.currentTimeMillis()),
-                REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+        try {
+            redisService.setValueWithTTL("REVOKED_AT:" + email, String.valueOf(System.currentTimeMillis()),
+                    REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.warn("Redis is unavailable. Failed to blacklist token: {}", e.getMessage());
+        }
     }
 
     /**
@@ -153,7 +161,11 @@ public class AccountService {
         UserPrincipal principal = securityContextHelper.getCurrentUser();
         String email = principal.getEmail();
 
-        redisService.deleteValue("RT:" + email);
+        try {
+            redisService.deleteValue("RT:" + email);
+        } catch (Exception e) {
+            log.warn("Redis is unavailable. Failed to delete RT from Redis: {}", e.getMessage());
+        }
         blacklistToken(email);
     }
 
@@ -162,7 +174,13 @@ public class AccountService {
         String token = request.getRefreshToken();
         String userEmail = jwtTokenProvider.extractUsername(token);
 
-        String storedToken = redisService.getValue("RT: " + userEmail);
+        String storedToken = null;
+        try {
+            storedToken = redisService.getValue("RT: " + userEmail);
+        } catch (Exception e) {
+            log.warn("Redis is unavailable. Cannot verify RT from Redis: {}", e.getMessage());
+        }
+
         if (storedToken == null || !storedToken.equals(token) || !jwtTokenProvider.isTokenValid(token, userEmail)) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
@@ -182,7 +200,11 @@ public class AccountService {
         long iat = jwtTokenProvider.getIssuedAtTime(newAccessToken);
         long exp = jwtTokenProvider.getExpirationTime(newAccessToken);
         // Rotate: invalidate old refresh token immediately
-        redisService.setValueWithTTL("RT:" + userEmail, newRefreshToken, REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+        try {
+            redisService.setValueWithTTL("RT:" + userEmail, newRefreshToken, REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.warn("Redis is unavailable. Failed to update RT in Redis: {}", e.getMessage());
+        }
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)

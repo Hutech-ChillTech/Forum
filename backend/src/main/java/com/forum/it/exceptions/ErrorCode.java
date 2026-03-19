@@ -42,9 +42,6 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST),
     COMMENT_WRONG_POST(3003, "Parent comment does not belong to the same post", HttpStatus.BAD_REQUEST),
 
-    // ── Reaction ──────────────────────────────────────────────────────────────
-    ALREADY_REACTED(4001, "You have already reacted to this post", HttpStatus.BAD_REQUEST),
-    REACTION_NOT_FOUND(4002, "Reaction not found", HttpStatus.NOT_FOUND),
 
     // ── Share ─────────────────────────────────────────────────────────────────
     SHARE_NOT_FOUND(5001, "Share not found", HttpStatus.NOT_FOUND),

@@ -12,22 +12,22 @@ const reactionService = {
     return data.result ?? data;
   },
 
-  async removeReaction(postId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/reactions`, {
-      method: "DELETE" });
-    if (!response.ok) throw new Error("Failed to remove reaction");
+  async toggleLike(postId) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to toggle like");
+    return data.result ?? data;
   },
 
-  async getReactions(postId, page = 0, size = 50) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/reactions?page=${page}&size=${size}`);
-    if (!response.ok) throw new Error("Failed to fetch reactions");
-    const data = await response.json(); return data.result ?? data;
-  },
-
-  async countReactions(postId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/reactions/count`);
-    if (!response.ok) throw new Error("Failed to count reactions");
-    const data = await response.json(); return data.result ?? data;
-  } };
+  async getLikeInfo(postId) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/like/info`);
+    if (!response.ok) throw new Error("Failed to fetch like info");
+    const data = await response.json();
+    return data.result ?? data;
+  }
+};
 
 export default reactionService;

@@ -22,6 +22,9 @@ public class PostResponse {
     private List<String> tags;
     private LocalDate createdAt;
     private LocalDate updatedAt;
+    
+    private long likeCount;
+    private boolean isLiked;
 
     public PostResponse() {
     }
@@ -140,5 +143,21 @@ public class PostResponse {
 
     public void setUpdatedAt(LocalDate updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public long getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(long likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public boolean isLiked() {
+        return isLiked;
+    }
+
+    public void setLiked(boolean isLiked) {
+        this.isLiked = isLiked;
     }
 }

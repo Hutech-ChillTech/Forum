@@ -26,6 +26,7 @@ import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
+import com.forum.it.repositories.PostLikeRepository;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.PostTagRepository;
 import com.forum.it.repositories.TagRepository;
@@ -44,7 +45,20 @@ public class PostService {
     private final TagRepository       tagRepository;
     private final PostTagRepository   postTagRepository;
     private final CommentRepository   commentRepository;
+    private final PostLikeRepository  postLikeRepository;
     private final SecurityContextHelper securityContextHelper;
+
+    private PostResponse buildPostResponse(Post post) {
+        PostResponse response = new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
+        response.setLikeCount(post.getLikeCount());
+        try {
+            UUID currentUserId = securityContextHelper.getCurrentUserId();
+            response.setLiked(postLikeRepository.existsByUserUserIdAndPostPostId(currentUserId, post.getPostId()));
+        } catch (Exception e) {
+            response.setLiked(false);
+        }
+        return response;
+    }
 
     /**
      * userId is resolved from the JWT — NOT from the request body.
@@ -74,27 +88,27 @@ public class PostService {
         post.setUser(user);
 
         Post savedPost = postRepository.save(post);
-        List<String> tagNames = handleTags(savedPost, request.getTagNames());
-        return new PostResponse(savedPost, tagNames);
+        handleTags(savedPost, request.getTagNames());
+        return buildPostResponse(savedPost);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPublishedPosts(Pageable pageable) {
         return postRepository.findPublishedPosts(pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPosts(Pageable pageable) {
         return postRepository.findAll(pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     @Transactional(readOnly = true)
     public PostResponse getPostById(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-        return new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
+        return buildPostResponse(post);
     }
 
     @Transactional(readOnly = true)
@@ -103,13 +117,13 @@ public class PostService {
             throw new ResourceNotFoundException("User", "id", userId);
         }
         return postRepository.findByUserUserId(userId, pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPostsByStatus(PostStatus status, Pageable pageable) {
         return postRepository.findByStatus(status, pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     @Transactional(readOnly = true)
@@ -118,14 +132,14 @@ public class PostService {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
         return postRepository.searchPosts(keyword.trim(), pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getRecentPosts(int days, Pageable pageable) {
         LocalDate since = LocalDate.now().minusDays(days);
         return postRepository.findRecentPosts(since, pageable)
-                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+                .map(this::buildPostResponse);
     }
 
     public PostResponse updatePost(UUID postId, UpdatePostRequest request) {
@@ -159,15 +173,12 @@ public class PostService {
 
         Post updatedPost = postRepository.save(post);
 
-        List<String> tagNames;
         if (request.getTagNames() != null) {
             postTagRepository.deleteByPostPostId(postId);
-            tagNames = handleTags(updatedPost, request.getTagNames());
-        } else {
-            tagNames = postTagRepository.findTagNamesByPostId(postId);
+            handleTags(updatedPost, request.getTagNames());
         }
 
-        return new PostResponse(updatedPost, tagNames);
+        return buildPostResponse(updatedPost);
     }
 
     public PostResponse updatePostStatus(UUID postId, PostStatus status) {
@@ -175,7 +186,7 @@ public class PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         post.setStatus(status);
         Post updatedPost = postRepository.save(post);
-        return new PostResponse(updatedPost, postTagRepository.findTagNamesByPostId(postId));
+        return buildPostResponse(updatedPost);
     }
 
     public void deletePost(UUID postId) {

@@ -46,7 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String email = jwtTokenProvider.extractUsername(jwt);
 
-            String revokedAtStr = redisService.getValue("REVOKED_AT:" + email);
+            String revokedAtStr = null;
+            try {
+                revokedAtStr = redisService.getValue("REVOKED_AT:" + email);
+            } catch (Exception e) {
+                log.warn("Redis is unavailable. Skipping revocation check: {}", e.getMessage());
+            }
+
             if (revokedAtStr != null) {
                 long revokedAt = Long.parseLong(revokedAtStr);
                 long tokenIssuedAt = jwtTokenProvider.getIssuedAtTime(jwt);

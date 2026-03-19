@@ -69,12 +69,9 @@ public final class Routes {
         public static final String COUNT_BY_USER = "/count/user/{userId}";
     }
 
-    public static final class Reaction {
-        public static final String BASE = API_V1 + "/posts/{postId}/reactions";
-        public static final String REACT = "";
-        public static final String REMOVE = "";
-        public static final String MY_REACT = "/me";
-        public static final String COUNT = "/count";
+    public static final class PostLike {
+        public static final String BASE = API_V1 + "/posts/{postId}/like";
+        public static final String INFO = "/info";
     }
 
     public static final class Share {

@@ -1,13 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageGrid from './ImageGrid';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
+import reactionService from '../service/reactionService';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 
 const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     const navigate = useNavigate();
-    const [isLiked, setIsLiked] = useState(false);
+    if (!post) return null;
+
+    // Map backend fields to local variables - Moved to top to avoid ReferenceError in hooks
+    const id = post.postId || post.id || post.postID;
+    const author = post.userName || post.author;
+    const userProfile = authService.getUser();
+    console.log('[PostCard] id:', id, 'userProfile:', userProfile);
+    const avatar = post.userAvatarURL || post.avatar;
+    const time = post.createdAt || post.timestamp || post.time || post.askedTime;
+    const commentCount = post.commentCount !== undefined ? post.commentCount : (post.comments !== undefined ? post.comments : 0);
+    const content = post.content || post.excerpt || "";
+    const title = post.title;
+
+    const [isLiked, setIsLiked] = useState(post.liked || post.isLiked || false);
+    const [likeCount, setLikeCount] = useState(post.likeCount || post.likes || 0);
+    useEffect(() => {
+        if (!id) return;
+        const fetchLikeInfo = async () => {
+            console.log('[PostCard] Fetching like info for post:', id);
+            try {
+                const info = await reactionService.getLikeInfo(id);
+                if (info) {
+                    setLikeCount(info.likeCount);
+                    setIsLiked(info.liked || info.isLiked);
+                }
+            } catch (err) {
+                console.error('Failed to fetch like info:', err);
+            }
+        };
+        fetchLikeInfo();
+    }, [id]);
+
     const [isSaved, setIsSaved] = useState(false);
     const [isFollowed, setIsFollowed] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -16,15 +48,9 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     const [commentLoading, setCommentLoading] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    // Map backend fields to local variables
-    const id = post.postId || post.id || post.postID;
-    const author = post.userName || post.author;
-    const avatar = post.userAvatarURL || post.avatar;
-    const time = post.createdAt || post.timestamp || post.time || post.askedTime;
-    const commentCount = post.commentCount !== undefined ? post.commentCount : (post.comments !== undefined ? post.comments : 0);
-    const content = post.content || post.excerpt || "";
-    const title = post.title;
-
+    const [isProcessingLike, setIsProcessingLike] = useState(false);
+    const processingActionRef = useRef(false);
+    
     const [localCommentCount, setLocalCommentCount] = useState(commentCount);
 
     // Parse raw content into blocks if contentBlocks doesn't exist
@@ -93,9 +119,66 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
         }
     }, [isExpanded, id]);
 
+    const handleLike = async (e) => {
+        e.stopPropagation();
+        
+        // Prevent concurrent requests synchronously using a ref, 
+        // because React state updates (isProcessingLike) are asynchronous.
+        if (processingActionRef.current) return;
+        
+        console.log('[PostCard] handleLike clicked. id:', id, 'userProfile:', userProfile);
+        if (!userProfile?.userId) {
+            alert("Vui lòng đăng nhập để thích bài viết");
+            return;
+        }
+
+        // Keep track of original state for revert
+        const originalIsLiked = isLiked;
+        const originalLikeCount = likeCount;
+
+        // Optimistic UI update
+        const newIsLiked = !isLiked;
+        const newLikeCount = newIsLiked ? likeCount + 1 : likeCount - 1;
+        
+        setIsLiked(newIsLiked);
+        setLikeCount(newLikeCount);
+        
+        setIsProcessingLike(true);
+        processingActionRef.current = true;
+
+        try {
+            const result = await reactionService.toggleLike(id);
+            // Sync with server result
+            if (result) {
+                setLikeCount(result.likeCount);
+                setIsLiked(result.liked || result.isLiked);
+            }
+        } catch (err) {
+            console.error('Failed to toggle like:', err);
+            // If the error is a 409 Conflict (Data integrity violation), it means 
+            // a concurrent request succeeded. We should fetch the true state instead of reverting.
+            if (err.message && err.message.toLowerCase().includes('duplicate')) {
+                try {
+                    const info = await reactionService.getLikeInfo(id);
+                    setLikeCount(info.likeCount);
+                    setIsLiked(info.isLiked);
+                } catch (fetchErr) {
+                    setIsLiked(originalIsLiked);
+                    setLikeCount(originalLikeCount);
+                }
+            } else {
+                // Revert to original state for genuine errors
+                setIsLiked(originalIsLiked);
+                setLikeCount(originalLikeCount);
+            }
+        } finally {
+            setIsProcessingLike(false);
+            processingActionRef.current = false;
+        }
+    };
+
     const [replyingToCommentId, setReplyingToCommentId] = useState(null);
     const [replyContent, setReplyContent] = useState('');
-    const userProfile = authService.getUser();
 
     // Listen for comments added anywhere (especially in the Pop-up modal)
     useEffect(() => {
@@ -275,11 +358,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
             }
 
             <div className="post-actions" style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                                <button className="post-action-btn" onClick={handleLike} disabled={isProcessingLike} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: isProcessingLike ? 'wait' : 'pointer', fontSize: '14px', fontWeight: '500', opacity: isProcessingLike ? 0.7 : 1 }}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                         <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                     </svg>
-                    <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
+                    <span>{likeCount}</span>
                 </button>
                 <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
