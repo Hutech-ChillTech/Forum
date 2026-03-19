@@ -10,6 +10,7 @@ import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.request.LoginRequest;
+import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.services.AccountService;
@@ -26,7 +27,7 @@ import lombok.experimental.FieldDefaults;
 @RequestMapping(Routes.Auth.BASE)
 public class AccountController {
 
-    AccountService accountService;
+    final AccountService accountService;
 
     @PostMapping(Routes.Auth.REGISTER)
     public ApiResponses<AuthResponse> register(@RequestBody @Valid CreateUserRequest request) {
@@ -36,6 +37,12 @@ public class AccountController {
     @PostMapping(Routes.Auth.LOGIN)
     public ApiResponses<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
         return ApiResponses.success(accountService.login(request), null);
+    }
+
+    @PostMapping(Routes.Auth.REQUEST_OTP)
+    public ApiResponses<String> requestOtp(@RequestBody @Valid OtpRequest request) {
+        accountService.requestOtp(request);
+        return ApiResponses.success("OTP has been sent to your email", null);
     }
 
     @PostMapping(Routes.Auth.LOGOUT)
@@ -57,4 +64,5 @@ public class AccountController {
         accountService.changePassword(request);
         return ApiResponses.success("Password changed successfully", null);
     }
+
 }

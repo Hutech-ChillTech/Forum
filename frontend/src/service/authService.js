@@ -1,12 +1,33 @@
+import api from "../service/api";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+
+
 const authService = {
-  async login({ email, password }) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+
+  async getProfile() {
+    const token = localStorage.getItem("token");
+    const tokenType = localStorage.getItem("tokenType") || "Bearer";
+    const response = await api.get(`${API_BASE_URL}/api/v1/users/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${tokenType} ${token}`,
+      },
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Lấy thông tin cá nhân thất bại");
+    }
+    return data.result;
+  },
+
+  async login({ email, password, otp }) {
+    const response = await api.post(`${API_BASE_URL}/api/v1/auth/login`, {
+      email,
+      password,
+      otp
     });
     const data = await response.json();
     if (!response.ok) {
@@ -16,11 +37,7 @@ const authService = {
   },
 
   async register(userData) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
+    const response = await api.post(`${API_BASE_URL}/api/v1/auth/register`, userData);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || "Đăng ký thất bại");
@@ -28,14 +45,24 @@ const authService = {
     return data.result;
   },
 
+  async requestOtp(email) {
+    const response = await api.post(`${API_BASE_URL}/api/v1/auth/request-otp`, { email });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Gửi mã OTP thất bại");
+    }
+    return data.result;
+  },
+
   async logout() {
     const token = localStorage.getItem("token");
+    const tokenType = localStorage.getItem("tokenType") || "Bearer";
     if (!token) return;
     await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `${tokenType} ${token}`,
       },
     });
     localStorage.removeItem("token");
@@ -43,7 +70,7 @@ const authService = {
   },
 
   async refreshToken(refreshToken) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh-token`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
@@ -71,9 +98,10 @@ const authService = {
 
   async changePassword(changePasswordData) {
     const token = localStorage.getItem("token");
+    const tokenType = localStorage.getItem("tokenType") || "Bearer";
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `${tokenType} ${token}` },
       body: JSON.stringify(changePasswordData),
     });
     const data = await response.json();
@@ -82,6 +110,7 @@ const authService = {
   },
   saveSession(authResult) {
     localStorage.setItem("token", authResult.accessToken);
+    localStorage.setItem("tokenType", authResult.tokenType || "Bearer");
     if (authResult.refreshToken) {
       localStorage.setItem("refreshToken", authResult.refreshToken);
     }
@@ -114,7 +143,7 @@ const authService = {
       localStorage.setItem("userProfile", JSON.stringify(userProfile));
       // Also keep 'user' key for backward compatibility if needed
       localStorage.setItem("user", JSON.stringify(userProfile));
-      
+
       // Dispatch event to update Header and other components immediately
       window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: userProfile }));
     } catch (e) {

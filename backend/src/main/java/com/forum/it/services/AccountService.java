@@ -1,18 +1,18 @@
 package com.forum.it.services;
 
 import java.util.concurrent.TimeUnit;
-import java.lang.Integer;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.LoginRequest;
+import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.entities.user.Account;
@@ -31,6 +31,7 @@ import com.forum.it.repositories.UserRepository;
 import com.forum.it.sercurites.JwtTokenProvider;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.utils.SecurityContextHelper;
+import com.forum.it.dtos.response.UserResponse;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -51,8 +52,10 @@ public class AccountService {
     AuthenticationManager authenticationManager;
     RedisService redisService;
     SecurityContextHelper securityContextHelper;
+    OtpService otpService;
+    EmailService emailService;
 
-    @Value("${JWT_REFRESH_TOKEN_EXPIRATION}")
+    @Value("${jwt.refresh-token.expiration}")
     @NonFinal
     Integer REFRESH_TOKEN_TTL;
 
@@ -104,16 +107,30 @@ public class AccountService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        // 1. Kiểm tra Mật khẩu trước (Bước 1 của 2FA)
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         } catch (Exception e) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD);
+            throw new AppException(ErrorCode.ACCOUNT_NOT_EXIST);
         }
 
-        Account account = accountRepository.findByEmail(request.getEmail());
-        if (account == null) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        // 2. Nếu mật khẩu đúng, kiểm tra xem đã có mã OTP chưa
+        if (request.getOtp() == null || request.getOtp().isBlank()) {
+            // Nếu chưa có OTP gửi kèm -> Tạo mã và yêu cầu nhập (Ném lỗi để UI bắt được)
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendOtpEmail(request.getEmail(), otp);
+            throw new AppException(ErrorCode.OTP_REQUIRED);
+        }
+
+        // 3. Nếu đã có OTP gửi kèm -> Xác thực mã OTP (Bước 2 của 2FA)
+        if (!otpService.verifyOtp(request.getEmail(), request.getOtp())) {
+            throw new AppException(ErrorCode.OTP_INVALID);
         }
 
         String roleName = resolveRole(account);
@@ -133,6 +150,14 @@ public class AccountService {
                 .issuedAt(iat)
                 .expiredAt(exp)
                 .build();
+    }
+
+    public void requestOtp(OtpRequest request) {
+        if (!accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        String otp = otpService.generateOtp(request.getEmail());
+        emailService.sendOtpEmail(request.getEmail(), otp);
     }
 
     /**
@@ -160,20 +185,20 @@ public class AccountService {
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         String token = request.getRefreshToken();
-        String userEmail = jwtTokenProvider.extractUsername(token);
+        String userEmail = null;
 
-        String storedToken = redisService.getValue("RT: " + userEmail);
+        try {
+            userEmail = jwtTokenProvider.extractUsername(token);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+        String storedToken = redisService.getValue("RT:" + userEmail);
         if (storedToken == null || !storedToken.equals(token) || !jwtTokenProvider.isTokenValid(token, userEmail)) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
         Account account = accountRepository.findByEmail(userEmail);
-        if (account == null
-                || account.getRefreshToken() == null
-                || !account.getRefreshToken().equals(token)
-                || !jwtTokenProvider.isTokenValid(token, userEmail)) {
-            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
-        }
 
         String roleName = resolveRole(account);
         String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
@@ -215,6 +240,20 @@ public class AccountService {
         }
 
         accountRepository.save(account);
+    }
+
+    public UserResponse getProfile() {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
+
+        if (principal == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Account account = accountRepository.findByEmail(principal.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        return new UserResponse(account.getUser());
     }
 
     // ── private ───────────────────────────────────────────────────────────────

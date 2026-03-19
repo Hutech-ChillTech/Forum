@@ -1,148 +1,189 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import Sidebar from '../components/Sidebar';
+import { useSearchParams, Link, useOutletContext } from 'react-router-dom';
+import PostCard from '../components/PostCard';
+import searchService from '../service/searchService';
 import '../styles/Search.css';
 
 const Search = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
+    const { setSelectedPostId } = useOutletContext();
 
-    // Mock data for search results
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState({ users: [], tags: [], posts: [] });
+    const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // In a real app, you would fetch search results from your API here
-        // For now, we'll just mock some data if there is a query
         if (query) {
-            setResults([
-                {
-                    id: 1,
-                    title: `Result for: ${query} in Java`,
-                    content: 'I am trying to implement something and I got this error. How can I fix it? This issue usually happens when...',
-                    author: 'John Doe',
-                    votes: 12,
-                    answers: 3,
-                    views: 450,
-                    tags: ['java', 'spring-boot'],
-                    askedTime: '2 days ago'
-                },
-                {
-                    id: 2,
-                    title: `Understanding ${query} behavior`,
-                    content: 'Can someone explain to me how this works in modern web development? I have read the documentation but...',
-                    author: 'JaneSmith',
-                    votes: 5,
-                    answers: 1,
-                    views: 120,
-                    tags: ['javascript', 'reactjs'],
-                    askedTime: '5 hours ago'
-                }
-            ]);
-        } else {
-            setResults([]);
+            handleSearch();
         }
+        fetchHistory();
     }, [query]);
 
+    const handleSearch = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await searchService.globalSearch(query);
+            setResults(data);
+            fetchHistory();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchHistory = async () => {
+        try {
+            const data = await searchService.getSearchHistory();
+            setHistory(data);
+        } catch (err) {
+            console.error('Error fetching search history:', err);
+        }
+    };
+
+    const handleClearHistory = async () => {
+        try {
+            await searchService.clearSearchHistory();
+            setHistory([]);
+        } catch (err) {
+            console.error('Error clearing history:', err);
+        }
+    };
+
+    const handleRemoveHistoryItem = async (e, keyword) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            await searchService.removeSearchHistoryItem(keyword);
+            setHistory(prev => prev.filter(item => item !== keyword));
+        } catch (err) {
+            console.error('Error removing history item:', err);
+        }
+    };
+
+    const isEmpty = !results.users.length && !results.tags.length && !results.posts.length;
+
     return (
-        <div className="search-layout">
-            <Header hideAuth={false} />
-
-            <div className="search-container">
-                {/* Left Sidebar */}
-                <aside className="search-sidebar">
-                    <Sidebar activePage="" />
-                </aside>
-
-                <main className="search-main">
-                    <div className="search-header">
-                        <div className="search-header-top">
-                            <h1 className="search-title">Search Results</h1>
-                            <a href="/posts" className="btn-primary">Ask Question</a>
-                        </div>
-                        <p className="search-subtitle">Results for {query ? `"${query}"` : 'nothing'}</p>
-
-                        <div className="search-tips">
-                            <span>Search multiple tags with <code>[tag1] [tag2]</code></span>
-                            <a href="#" className="advanced-search-link">Advanced Search Tips</a>
-                        </div>
+        <div className="search-results-wrapper">
+            <div className="search-main-content">
+                <div className="search-header">
+                    <div className="search-header-top">
+                        <h1 className="search-title">Kết quả tìm kiếm</h1>
+                        <Link to="/posts" className="btn-primary">Đặt câu hỏi</Link>
                     </div>
+                    <p className="search-subtitle">
+                        {query ? `Kết quả cho "${query}"` : 'Vui lòng nhập từ khóa để tìm kiếm'}
+                    </p>
+                </div>
 
-                    <div className="questions-toolbar">
-                        <div className="questions-count">{results.length} results</div>
-                        <div className="questions-filters">
-                            <button className="filter-btn active">Relevance</button>
-                            <button className="filter-btn">Newest</button>
-                            <button className="filter-btn">More</button>
-                        </div>
+                {loading ? (
+                    <div className="search-loading">Đang tìm kiếm...</div>
+                ) : error ? (
+                    <div className="search-error">{error}</div>
+                ) : isEmpty ? (
+                    <div className="empty-state">
+                        <p>Không tìm thấy kết quả nào cho <strong>"{query}"</strong></p>
+                        <p style={{ marginTop: '8px', color: 'var(--text-secondary)' }}>
+                            Thử sử dụng các từ khóa khác hoặc kiểm tra lại chính tả.
+                        </p>
                     </div>
+                ) : (
+                    <div className="search-results-content">
+                        {/* Tags Section */}
+                        {results.tags.length > 0 && (
+                            <section className="results-section">
+                                <h2 className="section-title">Thẻ ({results.tags.length})</h2>
+                                <div className="tags-grid">
+                                    {results.tags.map(tag => (
+                                        <Link key={tag.tagId} to={`/posts?tag=${tag.name}`} className="tag-item">
+                                            <span className="tag">{tag.name}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
-                    <div className="questions-list">
-                        {results.length > 0 ? (
-                            results.map((question) => (
-                                <div key={question.id} className="question-card">
-                                    <div className="question-stats">
-                                        <div className="stat-item">
-                                            <div className="stat-value">{question.votes}</div>
-                                            <div className="stat-label">votes</div>
-                                        </div>
-                                        <div className="stat-item">
-                                            <div className="stat-value">{question.answers}</div>
-                                            <div className="stat-label">answers</div>
-                                        </div>
-                                        <div className="stat-item">
-                                            <div className="stat-value">{question.views}</div>
-                                            <div className="stat-label">views</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="question-content">
-                                        <h3 className="question-title">
-                                            <a href={`/posts/${question.id}`}>{question.title}</a>
-                                        </h3>
-                                        <p className="question-excerpt">{question.content}</p>
-                                        <div className="question-footer">
-                                            <div className="question-tags">
-                                                {question.tags.map((tag, index) => (
-                                                    <span key={index} className="tag">{tag}</span>
-                                                ))}
+                        {/* Users Section */}
+                        {results.users.length > 0 && (
+                            <section className="results-section">
+                                <h2 className="section-title">Người dùng ({results.users.length})</h2>
+                                <div className="users-list">
+                                    {results.users.map(user => (
+                                        <div key={user.userId} className="user-search-card">
+                                            <div className="user-avatar">
+                                                {user.avatarURL ? (
+                                                    <img src={user.avatarURL} alt={user.userName} />
+                                                ) : (
+                                                    <span>{user.userName[0].toUpperCase()}</span>
+                                                )}
                                             </div>
-                                            <div className="question-meta">
-                                                <span className="question-author">{question.author}</span>
-                                                <span className="question-time">asked {question.askedTime}</span>
+                                            <div className="user-info">
+                                                <Link to={`/profile/${user.userId}`} className="user-name">
+                                                    {user.fullName || user.userName}
+                                                </Link>
+                                                <span className="user-handle">@{user.userName}</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Posts Section */}
+                        {results.posts.length > 0 && (
+                            <section className="results-section">
+                                <h2 className="section-title">Bài viết ({results.posts.length})</h2>
+                                <div className="questions-list">
+                                    {results.posts.map((post, idx) => (
+                                        <PostCard
+                                            key={post.postId || post.id || idx}
+                                            post={post}
+                                            onOpenModal={(id) => setSelectedPostId(id)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            <aside className="search-right-sidebar">
+                <div className="sidebar-widget">
+                    <div className="widget-header">
+                        <h3 className="widget-title">Lịch sử tìm kiếm</h3>
+                        {history.length > 0 && (
+                            <button className="clear-btn" onClick={handleClearHistory}>Xóa</button>
+                        )}
+                    </div>
+                    <div className="history-list">
+                        {history.length > 0 ? (
+                            history.map((term, index) => (
+                                <div key={index} className="history-item-container">
+                                    <Link to={`/search?q=${encodeURIComponent(term)}`} className="history-item">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        <span>{term}</span>
+                                    </Link>
+                                    <button className="remove-item-btn" onClick={(e) => handleRemoveHistoryItem(e, term)} title="Xóa">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
                                 </div>
                             ))
                         ) : (
-                            <div className="empty-state">
-                                <p>We couldn't find anything for <strong>"{query}"</strong></p>
-                                <p style={{ marginTop: '8px', color: '#6a737c' }}>Try removing filters or using more general keywords.</p>
-                            </div>
+                            <p className="empty-history">Trống</p>
                         )}
                     </div>
-                </main>
-
-                <aside className="search-right-sidebar">
-                    <div className="sidebar-widget">
-                        <h3 className="widget-title">Related Tags</h3>
-                        <div className="related-tags-list">
-                            <a href="#" className="related-tag-item">
-                                <span className="tag">java</span>
-                                <span className="tag-multiplier">× 12K</span>
-                            </a>
-                            <a href="#" className="related-tag-item">
-                                <span className="tag">spring</span>
-                                <span className="tag-multiplier">× 8K</span>
-                            </a>
-                        </div>
-                    </div>
-                </aside>
-            </div>
-
-            <Footer />
+                </div>
+            </aside>
         </div>
     );
 };
