@@ -75,6 +75,16 @@ class UserService {
     return await response.json();
   }
 
+  async updateUserRole(userId, role) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/users/${userId}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    });
+    if (!response.ok) throw new Error('Failed to update user role');
+    return await response.json();
+  }
 }
+
 
 export default new UserService();

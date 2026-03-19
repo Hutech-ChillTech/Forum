@@ -62,11 +62,13 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/saved" element={<Saved />} />
-          <Route path="/admin" element={<Admin />} />
         </Route>
+
+        <Route path="/admin" element={<Admin />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
       </Routes>
     </Router>
   );

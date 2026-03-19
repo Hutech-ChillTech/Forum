@@ -34,6 +34,8 @@ public class UserResponse implements Serializable {
 
     private UserStatus verifyStatus;
     private AccountStatus status;
+    private String role;
+
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate createdAt;
