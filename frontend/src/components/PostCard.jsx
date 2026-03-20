@@ -4,6 +4,8 @@ import ImageGrid from './ImageGrid';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
 import reactionService from '../service/reactionService';
+import chatService from '../service/chatService';
+import userService from '../service/userService';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 
 const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
@@ -49,6 +51,12 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [isProcessingLike, setIsProcessingLike] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [searchUser, setSearchUser] = useState('');
+    const [isSharing, setIsSharing] = useState(false);
+
     const processingActionRef = useRef(false);
     
     const [localCommentCount, setLocalCommentCount] = useState(commentCount);
@@ -179,6 +187,62 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
 
     const [replyingToCommentId, setReplyingToCommentId] = useState(null);
     const [replyContent, setReplyContent] = useState('');
+
+    const fetchUsers = async () => {
+        try {
+            const data = await userService.getAllUsers(0, 50);
+            // Assuming data is { result: { content: [...] } } or Similar to postService
+            const usersList = data.result?.content || data.content || data.result || [];
+            // Filter out current user
+            const filteredUsers = usersList.filter(u => u.userId !== userProfile?.userId);
+            setUsers(filteredUsers);
+        } catch (err) {
+            console.error('Failed to fetch users:', err);
+        }
+    };
+
+    const handleShareOpen = (e) => {
+        e.stopPropagation();
+        setIsShareModalOpen(true);
+        if (users.length === 0) {
+            fetchUsers();
+        }
+    };
+
+    const handleCopyLink = (e) => {
+        e.stopPropagation();
+        const postLink = window.location.origin + '/posts/' + id;
+        navigator.clipboard.writeText(postLink);
+        alert('Đã sao chép liên kết bài viết!');
+    };
+
+    const toggleUserSelection = (userId) => {
+        setSelectedUsers(prev => 
+            prev.includes(userId) 
+                ? prev.filter(id => id !== userId) 
+                : [...prev, userId]
+        );
+    };
+
+    const handleSendShare = async () => {
+        if (selectedUsers.length === 0) return;
+        setIsSharing(true);
+        const postLink = `/posts/${id}`;
+        
+        try {
+            for (const userId of selectedUsers) {
+                chatService.sendPostLink(userId, postLink);
+            }
+            alert(`Đã chia sẻ bài viết tới ${selectedUsers.length} người dùng!`);
+            setIsShareModalOpen(false);
+            setSelectedUsers([]);
+        } catch (err) {
+            console.error('Failed to share post:', err);
+            alert('Lỗi khi chia sẻ bài viết');
+        } finally {
+            setIsSharing(false);
+        }
+    };
 
     // Listen for comments added anywhere (especially in the Pop-up modal)
     useEffect(() => {
@@ -370,11 +434,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                     </svg>
                     <span>{localCommentCount}</span>
                 </button>
-                <button className="post-action-btn" onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(window.location.origin + '/posts/' + (id || ''));
-                    alert('Đã sao chép liên kết bài viết!');
-                }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                <button className="post-action-btn" onClick={handleShareOpen} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
                     </svg>
@@ -533,6 +593,174 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                     </div>
                 )
             }
+            {/* Share Modal */}
+            {isShareModalOpen && (
+                <div 
+                    className="share-modal-overlay" 
+                    onClick={() => setIsShareModalOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        cursor: 'default'
+                    }}
+                >
+                    <div 
+                        className="share-modal-content" 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            backgroundColor: 'var(--card-bg)',
+                            borderRadius: '12px',
+                            padding: '24px',
+                            width: '400px',
+                            maxWidth: '90%',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                            border: '1px solid var(--border-color)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0 }}>Chia sẻ bài viết</h3>
+                            <button 
+                                onClick={() => setIsShareModalOpen(false)}
+                                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', color: 'var(--text-secondary)' }}>Liên kết bài viết</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <input 
+                                    type="text" 
+                                    readOnly 
+                                    value={window.location.origin + '/posts/' + id}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        backgroundColor: 'var(--secondary-bg)',
+                                        color: 'var(--text-color)',
+                                        fontSize: '14px'
+                                    }}
+                                />
+                                <button 
+                                    onClick={handleCopyLink}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        backgroundColor: 'var(--primary-color)',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Sao chép
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', color: 'var(--text-secondary)' }}>Gửi cho bạn bè</label>
+                            <input 
+                                type="text" 
+                                placeholder="Tìm kiếm người dùng..."
+                                value={searchUser}
+                                onChange={(e) => setSearchUser(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    marginBottom: '12px',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: 'var(--input-bg)',
+                                    color: 'var(--text-color)'
+                                }}
+                            />
+                            <div style={{ 
+                                maxHeight: '200px', 
+                                overflowY: 'auto', 
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                padding: '4px'
+                            }}>
+                                {users
+                                    .filter(u => u.fullName?.toLowerCase().includes(searchUser.toLowerCase()) || u.userName?.toLowerCase().includes(searchUser.toLowerCase()))
+                                    .map(user => (
+                                    <div 
+                                        key={user.userId} 
+                                        onClick={() => toggleUserSelection(user.userId)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '8px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedUsers.includes(user.userId) ? 'var(--secondary-bg)' : 'transparent',
+                                            marginBottom: '2px'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            backgroundColor: 'var(--primary-color)',
+                                            color: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 'bold',
+                                            fontSize: '12px',
+                                            marginRight: '12px'
+                                        }}>
+                                            {user.avatar ? <img src={user.avatar} style={{width: '100%', height: '100%', borderRadius: '50%'}} /> : (user.fullName || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '14px', fontWeight: '500' }}>{user.fullName}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>@{user.userName}</div>
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedUsers.includes(user.userId)}
+                                            readOnly
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                    </div>
+                                ))}
+                                {users.length === 0 && <div style={{padding: '20px', textAlign: 'center', color: 'var(--text-secondary)'}}>Đang tải danh sách người dùng...</div>}
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleSendShare}
+                            disabled={selectedUsers.length === 0 || isSharing}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: 'var(--primary-color)',
+                                color: 'white',
+                                cursor: (selectedUsers.length === 0 || isSharing) ? 'not-allowed' : 'pointer',
+                                fontWeight: 'bold',
+                                opacity: (selectedUsers.length === 0 || isSharing) ? 0.6 : 1
+                            }}
+                        >
+                            {isSharing ? 'Đang gửi...' : `Gửi cho ${selectedUsers.length} người`}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };
