@@ -28,4 +28,6 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
     @Modifying
     @Query("DELETE FROM Reaction r WHERE r.user.userId = :userId AND r.post.postId = :postId")
     void deleteByUserUserIdAndPostPostId(@Param("userId") UUID userId, @Param("postId") UUID postId);
+
+    void deleteByPostPostId(UUID postId);
 }

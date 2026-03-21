@@ -17,4 +17,6 @@ public interface SavedPostRepository extends JpaRepository<SavedPost, UUID> {
     boolean existsByUserUserIdAndPostPostId(UUID userId, UUID postId);
 
     void deleteByUserUserIdAndPostPostId(UUID userId, UUID postId);
+
+    void deleteByPostPostId(UUID postId);
 }

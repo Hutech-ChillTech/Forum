@@ -113,15 +113,15 @@ const Search = () => {
                                 <div className="users-list">
                                     {results.users.map(user => (
                                         <div key={user.userId} className="user-search-card">
-                                            <div className="user-avatar">
+                                            <Link to={`/profile?id=${user.userId}`} className="user-avatar" style={{ textDecoration: 'none' }}>
                                                 {user.avatarURL ? (
                                                     <img src={user.avatarURL} alt={user.userName} />
                                                 ) : (
                                                     <span>{user.userName[0].toUpperCase()}</span>
                                                 )}
-                                            </div>
+                                            </Link>
                                             <div className="user-info">
-                                                <Link to={`/profile/${user.userId}`} className="user-name">
+                                                <Link to={`/profile?id=${user.userId}`} className="user-name">
                                                     {user.fullName || user.userName}
                                                 </Link>
                                                 <span className="user-handle">@{user.userName}</span>

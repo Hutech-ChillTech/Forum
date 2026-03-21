@@ -68,6 +68,18 @@ public class AccountService {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
 
+        // 1. Kiểm tra OTP
+        if (request.getOtp() == null || request.getOtp().isBlank()) {
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendOtpEmail(request.getEmail(), otp);
+            throw new AppException(ErrorCode.OTP_REQUIRED);
+        }
+
+        // 2. Xác thực OTP
+        if (!otpService.verifyOtp(request.getEmail(), request.getOtp())) {
+            throw new AppException(ErrorCode.OTP_INVALID);
+        }
+
         User user = new User();
         user.setUserName(request.getUserName());
         user.setEmail(request.getEmail());
@@ -85,7 +97,7 @@ public class AccountService {
         account.setEmail(request.getEmail());
         account.setPassword(savedUser.getPassword());
         account.setProvider("LOCAL");
-        account.setIsVerify(AccountVerifyCheck.UNVERIFY);
+        account.setIsVerify(AccountVerifyCheck.VERIFY); // Set verified after OTP
         account.setUser(savedUser);
 
         Account savedAccount = accountRepository.save(account);
@@ -112,25 +124,11 @@ public class AccountService {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
 
-        // 1. Kiểm tra Mật khẩu trước (Bước 1 của 2FA)
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         } catch (Exception e) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_EXIST);
-        }
-
-        // 2. Nếu mật khẩu đúng, kiểm tra xem đã có mã OTP chưa
-        if (request.getOtp() == null || request.getOtp().isBlank()) {
-            // Nếu chưa có OTP gửi kèm -> Tạo mã và yêu cầu nhập (Ném lỗi để UI bắt được)
-            String otp = otpService.generateOtp(request.getEmail());
-            emailService.sendOtpEmail(request.getEmail(), otp);
-            throw new AppException(ErrorCode.OTP_REQUIRED);
-        }
-
-        // 3. Nếu đã có OTP gửi kèm -> Xác thực mã OTP (Bước 2 của 2FA)
-        if (!otpService.verifyOtp(request.getEmail(), request.getOtp())) {
-            throw new AppException(ErrorCode.OTP_INVALID);
         }
 
         String roleName = resolveRole(account);
@@ -153,9 +151,6 @@ public class AccountService {
     }
 
     public void requestOtp(OtpRequest request) {
-        if (!accountRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-        }
         String otp = otpService.generateOtp(request.getEmail());
         emailService.sendOtpEmail(request.getEmail(), otp);
     }

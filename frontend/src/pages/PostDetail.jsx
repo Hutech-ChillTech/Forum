@@ -141,7 +141,7 @@ const PostDetail = () => {
                 <div className="question-meta-bar">
                     <div className="meta-info">
                         <span className="meta-label">Tác giả:</span>
-                        <span className="meta-value">{authorName}</span>
+                        <Link to={`/profile?id=${post.userId}`} className="meta-value" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>{authorName}</Link>
                     </div>
                     <div className="meta-info">
                         <span className="meta-label">Đã đăng:</span>
@@ -163,7 +163,7 @@ const PostDetail = () => {
 
                     {/* Content Cell */}
                     <div className="post-cell">
-                        <div className="post-author-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '10px' }}>
+                        <Link to={`/profile?id=${post.userId}`} className="post-author-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '10px', textDecoration: 'none' }}>
                             <div className="author-avatar">
                                 {authorAvatar ? <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : authorName[0].toUpperCase()}
                             </div>
@@ -171,7 +171,7 @@ const PostDetail = () => {
                                 <span style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>{authorName}</span>
                                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thành viên</span>
                             </div>
-                        </div>
+                        </Link>
 
                         <div className="post-body">
                             {contentBlocks.map((block, i) => {
@@ -223,11 +223,11 @@ const PostDetail = () => {
                     <div className="comments-thread">
                         {comments.map(comment => (
                             <div key={comment.commentId} className="comment-item" style={{ marginBottom: '20px' }}>
-                                <div className="comment-user-avatar">
-                                    {comment.userAvatarURL ? <img src={comment.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)' }}>{comment.userName?.[0] || 'U'}</div>}
-                                </div>
+                                <Link to={`/profile?id=${comment.userId}`} className="comment-user-avatar" style={{ textDecoration: 'none' }}>
+                                    {comment.userAvatarURL ? <img src={comment.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>{comment.userName?.[0] || 'U'}</div>}
+                                </Link>
                                 <div className="comment-content-wrapper">
-                                    <span className="comment-username">{comment.userName}</span>
+                                    <Link to={`/profile?id=${comment.userId}`} className="comment-username" style={{ textDecoration: 'none', fontWeight: 'bold' }}>{comment.userName}</Link>
                                     <div className="comment-bubble">
                                         <p>{comment.content}</p>
                                         <div className="comment-actions">
@@ -252,17 +252,14 @@ const PostDetail = () => {
                                     </div>
 
                                     {comment.replies && comment.replies.map(reply => (
-                                        <div key={reply.commentId} className="comment-item nested" style={{ marginTop: '12px' }}>
+                                        <Link to={`/profile?id=${reply.userId}`} className="comment-item nested" style={{ marginTop: '12px', textDecoration: 'none' }}>
                                             <div className="comment-user-avatar" style={{ scale: '0.8' }}>
-                                                {reply.userAvatarURL ? <img src={reply.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)' }}>{reply.userName?.[0] || 'U'}</div>}
+                                                {reply.userAvatarURL ? <img src={reply.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>{reply.userName?.[0] || 'U'}</div>}
                                             </div>
                                             <div className="comment-content-wrapper">
-                                                <span className="comment-username">{reply.userName}</span>
-                                                <div className="comment-bubble">
-                                                    <p>{reply.content}</p>
-                                                </div>
+                                                <span className="comment-username" style={{ fontWeight: 'bold' }}>{reply.userName}</span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>

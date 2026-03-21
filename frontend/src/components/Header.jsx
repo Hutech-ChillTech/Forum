@@ -15,6 +15,7 @@ const Header = ({ hideAuth = false }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [isChatClosing, setIsChatClosing] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [postToEdit, setPostToEdit] = useState(null);
     const [showSearchHistory, setShowSearchHistory] = useState(false);
     const [recentSearches, setRecentSearches] = useState([]);
     const [searchKeyword, setSearchKeyword] = useState('');
@@ -63,6 +64,12 @@ const Header = ({ hideAuth = false }) => {
         };
 
         const handleOpenCreatePost = () => {
+            setPostToEdit(null);
+            setIsCreateOpen(true);
+        };
+
+        const handleOpenEditPost = (e) => {
+            setPostToEdit(e.detail);
             setIsCreateOpen(true);
         };
 
@@ -76,12 +83,14 @@ const Header = ({ hideAuth = false }) => {
         };
 
         window.addEventListener('openCreatePost', handleOpenCreatePost);
+        window.addEventListener('openEditPost', handleOpenEditPost);
         window.addEventListener('userProfileUpdated', handleProfileUpdate);
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('openCreatePost', handleOpenCreatePost);
+            window.removeEventListener('openEditPost', handleOpenEditPost);
             window.removeEventListener('userProfileUpdated', handleProfileUpdate);
         };
     }, [showNotifications, showChat, showDropdown, showSearchHistory]);
@@ -208,12 +217,7 @@ const Header = ({ hideAuth = false }) => {
 
     // Get user initials for avatar
     const getInitials = (name) => {
-        return name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        return name ? name.charAt(0).toUpperCase() : 'U';
     };
 
     const dummyNotifications = [
@@ -501,7 +505,11 @@ const Header = ({ hideAuth = false }) => {
 
             <CreatePostModal
                 isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    setPostToEdit(null);
+                }}
+                postToEdit={postToEdit}
                 onPostCreated={(newPost) => {
                     const event = new CustomEvent('globalPostCreated', { detail: newPost });
                     window.dispatchEvent(event);
