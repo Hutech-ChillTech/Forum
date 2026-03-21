@@ -19,6 +19,7 @@ public class PostResponse {
     private String userName;
     private String userAvatarURL;
     private int commentCount;
+    private int countLike;
     private List<String> tags;
     private LocalDate createdAt;
     private LocalDate updatedAt;
@@ -36,6 +37,7 @@ public class PostResponse {
         this.userName = post.getUser().getUserName();
         this.userAvatarURL = post.getUser().getAvatarURL();
         this.commentCount = post.getComments() != null ? post.getComments().size() : 0;
+        this.countLike = post.getCountLike();
         this.tags = tagNames != null ? tagNames : new ArrayList<>();
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
@@ -116,6 +118,14 @@ public class PostResponse {
 
     public void setCommentCount(int commentCount) {
         this.commentCount = commentCount;
+    }
+
+    public int getCountLike() {
+        return countLike;
+    }
+
+    public void setCountLike(int countLike) {
+        this.countLike = countLike;
     }
 
     public List<String> getTags() {

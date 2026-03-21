@@ -56,7 +56,6 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/posts" element={<Posts />} />
-          <Route path="/posts/:id" element={<PostDetail />} />
           <Route 
             path="/posts/review" 
             element={
@@ -73,6 +72,8 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/saved" element={<Saved />} />
         </Route>
+        
+        <Route path="/posts/:id" element={<PostDetail />} />
 
         <Route 
           path="/admin" 
