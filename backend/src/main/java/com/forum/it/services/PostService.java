@@ -27,8 +27,12 @@ import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
+import com.forum.it.repositories.NotificationRepository;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.PostTagRepository;
+import com.forum.it.repositories.ReactionRepository;
+import com.forum.it.repositories.SavedPostRepository;
+import com.forum.it.repositories.ShareRepository;
 import com.forum.it.repositories.TagRepository;
 import com.forum.it.repositories.UserRepository;
 import com.forum.it.utils.SecurityContextHelper;
@@ -45,6 +49,10 @@ public class PostService {
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final CommentRepository commentRepository;
+    private final ReactionRepository reactionRepository;
+    private final SavedPostRepository savedPostRepository;
+    private final ShareRepository shareRepository;
+    private final NotificationRepository notificationRepository;
     private final SecurityContextHelper securityContextHelper;
 
     /**
@@ -72,7 +80,7 @@ public class PostService {
         post.setTitle(request.getTitle().trim());
         post.setContent(request.getContent().trim());
         post.setImageURL(request.getImageURL());
-        post.setStatus(PostStatus.PUBLISHED);
+        post.setStatus(PostStatus.PENDING);
         post.setUser(user);
 
         Post savedPost = postRepository.save(post);
@@ -194,6 +202,11 @@ public class PostService {
         }
 
         postTagRepository.deleteByPostPostId(postId);
+        commentRepository.deleteByPostPostId(postId);
+        reactionRepository.deleteByPostPostId(postId);
+        savedPostRepository.deleteByPostPostId(postId);
+        shareRepository.deleteByPostPostId(postId);
+        notificationRepository.deleteByPostPostId(postId);
         postRepository.delete(post);
     }
 
@@ -201,6 +214,11 @@ public class PostService {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         postTagRepository.deleteByPostPostId(postId);
+        commentRepository.deleteByPostPostId(postId);
+        reactionRepository.deleteByPostPostId(postId);
+        savedPostRepository.deleteByPostPostId(postId);
+        shareRepository.deleteByPostPostId(postId);
+        notificationRepository.deleteByPostPostId(postId);
         postRepository.delete(post);
     }
 

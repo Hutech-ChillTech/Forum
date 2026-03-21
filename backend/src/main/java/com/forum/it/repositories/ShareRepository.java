@@ -20,4 +20,6 @@ public interface ShareRepository extends JpaRepository<Share, UUID> {
 
     @Query("SELECT COUNT(s) FROM Share s WHERE s.post.postId = :postId")
     long countByPostPostId(@Param("postId") UUID postId);
+
+    void deleteByPostPostId(UUID postId);
 }

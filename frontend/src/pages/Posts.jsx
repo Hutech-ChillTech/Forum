@@ -21,6 +21,11 @@ const Posts = () => {
 
   // Helper for initialLoading state determination
   function initialLoadingInitially() {
+    const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+    if (forceRefresh) {
+      sessionStorage.removeItem('FORCE_REFRESH_POSTS'); // Clear it
+      return true;
+    }
     const cachedPosts = sessionStorage.getItem(POSTS_CACHE_KEY);
     return !(cachedPosts && JSON.parse(cachedPosts).length > 0);
   }
@@ -102,7 +107,9 @@ const Posts = () => {
     const cachedPage = sessionStorage.getItem(POSTS_PAGE_KEY);
     const cachedScroll = sessionStorage.getItem(POSTS_SCROLL_KEY);
 
-    if (cachedPosts && cachedPage && JSON.parse(cachedPosts).length > 0) {
+    const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+
+    if (!forceRefresh && cachedPosts && cachedPage && JSON.parse(cachedPosts).length > 0) {
       setPosts(JSON.parse(cachedPosts));
       setPage(parseInt(cachedPage));
       setInitialLoading(false);
@@ -137,6 +144,9 @@ const Posts = () => {
   // Save state before navigating away
   useEffect(() => {
     const handleSave = () => {
+      const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+      if (forceRefresh) return; // Don't cache stale state during deletion reload
+
       if (posts.length > 0) {
         sessionStorage.setItem(POSTS_CACHE_KEY, JSON.stringify(posts));
         sessionStorage.setItem(POSTS_PAGE_KEY, page.toString());

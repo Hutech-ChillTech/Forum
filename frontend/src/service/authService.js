@@ -23,11 +23,10 @@ const authService = {
     return data.result;
   },
 
-  async login({ email, password, otp }) {
+  async login({ email, password }) {
     const response = await api.post(`${API_BASE_URL}/api/v1/auth/login`, {
       email,
-      password,
-      otp
+      password
     });
     const data = await response.json();
     if (!response.ok) {

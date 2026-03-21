@@ -1,18 +1,65 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import postService from '../service/postService';
 import authService from '../service/authService';
 import fileService from '../service/fileService';
 import { API_BASE_URL } from '../utils/apiFetch';
 import '../styles/CreatePostModal.css';
 
-const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
+const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) => {
     const [title, setTitle] = useState('');
     const [blocks, setBlocks] = useState([{ id: Date.now(), type: 'text', content: '' }]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const fileInputRef = useRef(null);
 
     // Get real user data
     const user = authService.getUser() || { fullName: "User", avatar: null };
+
+    // Reset or load post on open
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (postToEdit) {
+            setIsEditMode(true);
+            setTitle(postToEdit.title || '');
+
+            // Basic parser for content blocks
+            // This is a simplified version of the reverse of the block-to-string logic
+            const content = postToEdit.content || '';
+            const newBlocks = [];
+
+            // Split by image and code markers
+            // Example image: \n![image](url)\n
+            // Example code: \n```\ncode\n```\n
+            const parts = content.split(/(\n!\[image\]\(.*?\)\n|\n```\n[\s\S]*?\n```\n)/g);
+
+            parts.forEach((part, index) => {
+                if (!part) return;
+
+                if (part.startsWith('\n![image](')) {
+                    const url = part.match(/\((.*?)\)/)?.[1];
+                    if (url) newBlocks.push({ id: Date.now() + index, type: 'image', content: url });
+                } else if (part.startsWith('\n```\n')) {
+                    const code = part.replace('\n```\n', '').replace('\n```\n', '');
+                    newBlocks.push({ id: Date.now() + index, type: 'code', content: code.trim() });
+                } else {
+                    const text = part.trim();
+                    if (text || index === 0) {
+                        newBlocks.push({ id: Date.now() + index, type: 'text', content: text });
+                    }
+                }
+            });
+
+            if (newBlocks.length === 0) {
+                newBlocks.push({ id: Date.now(), type: 'text', content: '' });
+            }
+            setBlocks(newBlocks);
+        } else {
+            setIsEditMode(false);
+            setTitle('');
+            setBlocks([{ id: Date.now(), type: 'text', content: '' }]);
+        }
+    }, [isOpen, postToEdit]);
 
     const handleAddCode = () => {
         setBlocks([...blocks, { id: Date.now(), type: 'code', content: '' }, { id: Date.now() + 1, type: 'text', content: '' }]);
@@ -120,26 +167,35 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
                 return;
             }
 
-            const createdPost = await postService.createPost({
+            const postData = {
                 userId: userProfile.userId,
                 title: title.trim(),
                 content: fullContent,
                 imageURL: firstImage,
                 tagNames: []
-            });
+            };
+
+            let resultPost;
+            if (isEditMode && postToEdit) {
+                resultPost = await postService.updatePost(postToEdit.postId || postToEdit.id, postData);
+            } else {
+                resultPost = await postService.createPost(postData);
+            }
 
             // Clear Home page cache so it fetches fresh data next time
             sessionStorage.removeItem('home_posts_cache');
             sessionStorage.removeItem('home_page_cache');
+            sessionStorage.setItem('FORCE_REFRESH_POSTS', 'true');
 
-            if (onPostCreated) onPostCreated(createdPost);
+            if (onPostCreated) onPostCreated(resultPost);
 
             setTitle('');
             setBlocks([{ id: Date.now(), type: 'text', content: '' }]);
             onClose();
+            if (isEditMode) window.location.reload();
         } catch (err) {
-            console.error('Create post error:', err);
-            alert('Lỗi khi đăng bài: ' + err.message);
+            console.error('Post action error:', err);
+            alert('Lỗi: ' + err.message);
         }
     };
 
@@ -154,7 +210,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">TẠO BÀI VIẾT MỚI</h2>
+                    <h2 className="modal-title">{isEditMode ? 'CHỈNH SỬA BÀI VIẾT   ' : 'TẠO BÀI VIẾT MỚI'}</h2>
                     <button className="modal-close" onClick={onClose}>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -235,7 +291,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
                     <div className="post-form-footer">
                         <button type="submit" className="btn-submit-post" disabled={isUploading || !title.trim()}>
-                            {isUploading ? 'ĐANG TẢI ẢNH...' : 'ĐĂNG BÀI'}
+                            {isUploading ? 'ĐANG TẢI...' : (isEditMode ? 'LƯU THAY ĐỔI' : 'ĐĂNG BÀI')}
                         </button>
                     </div>
                 </form>

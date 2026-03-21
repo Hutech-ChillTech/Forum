@@ -141,6 +141,7 @@ const Home = () => {
         });
       }
 
+<<<<<<< HEAD
       setHasMore(newPosts.length >= size);
     } catch (err) {
       console.error("Failed to fetch posts:", err);
@@ -169,6 +170,101 @@ const Home = () => {
         name: profile.fullName || profile.displayName,
         avatar: profile.avatar || null,
       });
+=======
+    // Restore state from sessionStorage on mount
+    useEffect(() => {
+        const cachedPosts = sessionStorage.getItem(HOME_CACHE_KEY);
+        const cachedPage = sessionStorage.getItem(HOME_PAGE_KEY);
+        const cachedScroll = sessionStorage.getItem(HOME_SCROLL_KEY);
+        const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+
+        if (!forceRefresh && cachedPosts && cachedPage && JSON.parse(cachedPosts).length > 0) {
+            setUserPosts(JSON.parse(cachedPosts));
+            setPage(parseInt(cachedPage));
+            setInitialLoading(false);
+
+            // Wait longer for images and components to render
+            const timer = setTimeout(() => {
+                if (cachedScroll) {
+                    window.scrollTo({
+                        top: parseInt(cachedScroll),
+                        behavior: 'instant'
+                    });
+                }
+            }, 300); // 300ms is usually enough for most of the layout to stabilize
+
+            return () => clearTimeout(timer);
+        } else {
+            fetchPosts(0, true);
+        }
+    }, []);
+
+    // Effect to continuously track scroll position
+    useEffect(() => {
+        const handleScroll = () => {
+            // Only save if we are not in initial loading
+            if (!initialLoading) {
+                sessionStorage.setItem(HOME_SCROLL_KEY, window.scrollY.toString());
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [initialLoading]);
+
+    // Save full state to sessionStorage before navigating away
+    useEffect(() => {
+        const handleSave = () => {
+            const forceRefresh = sessionStorage.getItem('FORCE_REFRESH_POSTS') === 'true';
+            if (forceRefresh) return; // Don't cache stale state during deletion reload
+
+            if (userPosts.length > 0 || (!initialLoading && page > 0)) {
+                sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(userPosts));
+                sessionStorage.setItem(HOME_PAGE_KEY, page.toString());
+            }
+        };
+
+        window.addEventListener('beforeunload', handleSave);
+        return () => {
+            handleSave();
+            window.removeEventListener('beforeunload', handleSave);
+        };
+    }, [userPosts, page, initialLoading]);
+
+    const fetchPosts = async (pageNum, isInitial = false) => {
+        try {
+            if (isInitial) setInitialLoading(true);
+            else setLoading(true);
+
+            const size = 10; // Load 10 posts per batch for a better balance
+            const data = await postService.getPublishedPosts(pageNum, size);
+
+            let newPosts = [];
+            if (data && data.posts) {
+                newPosts = data.posts;
+            } else if (Array.isArray(data)) {
+                newPosts = data;
+            }
+
+            if (isInitial) {
+                setUserPosts(newPosts);
+            } else {
+                setUserPosts(prev => {
+                    const existingIds = new Set(prev.map(p => String(p.postId || p.id || p.postID)));
+                    const uniqueNewPosts = newPosts.filter(p => !existingIds.has(String(p.postId || p.id || p.postID)));
+                    return [...prev, ...uniqueNewPosts];
+                });
+            }
+
+            setHasMore(newPosts.length >= size);
+        } catch (err) {
+            console.error('Failed to fetch posts:', err);
+            setError('Không thể tải bài viết. Vui lòng thử lại sau.');
+        } finally {
+            setInitialLoading(false);
+            setLoading(false);
+        }
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
     };
     window.addEventListener("userProfileUpdated", handleProfileUpdate);
     return () =>

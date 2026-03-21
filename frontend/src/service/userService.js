@@ -91,13 +91,28 @@ class UserService {
     return await response.json();
   }
 
+<<<<<<< HEAD
   async getOnlineStatus(userId) {
     const response = await apiFetch(
       `${API_BASE_URL}/api/v1/users/${userId}/online`,
     );
     if (!response.ok) return { online: false };
+=======
+  async updateUserRole(userId, role) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/users/${userId}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    });
+    if (!response.ok) throw new Error('Failed to update user role');
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
     return await response.json();
   }
 }
 
+<<<<<<< HEAD
 export default new UserService();
+=======
+
+export default new UserService();
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456

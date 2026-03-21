@@ -38,20 +38,25 @@ public class SearchService {
 
     @Transactional
     public SearchResponse globalSearch(String keyword) {
+        String searchKeyword = keyword;
+        if (keyword.startsWith("@")) {
+            searchKeyword = keyword.substring(1);
+        }
+
         // 1. Search Users
-        List<UserResponse> users = userRepository.searchUsers(keyword).stream()
+        List<UserResponse> users = userRepository.searchUsers(searchKeyword).stream()
                 .limit(5)
                 .map(UserResponse::new)
                 .collect(Collectors.toList());
 
         // 2. Search Tags
-        List<TagResponse> tags = tagRepository.searchTags(keyword).stream()
+        List<TagResponse> tags = tagRepository.searchTags(searchKeyword).stream()
                 .limit(10)
                 .map(TagResponse::new)
                 .collect(Collectors.toList());
 
         // 3. Search Posts
-        List<PostResponse> posts = postRepository.searchPosts(keyword, PageRequest.of(0, 10))
+        List<PostResponse> posts = postRepository.searchPosts(searchKeyword, PageRequest.of(0, 10))
                 .getContent().stream()
                 .map(PostResponse::new)
                 .collect(Collectors.toList());

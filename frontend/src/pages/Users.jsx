@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import userService from "../service/userService";
 import followService from "../service/followService";
 import authService from "../service/authService";
 import "../styles/Users.css";
+=======
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import userService from '../service/userService';
+import '../styles/Users.css';
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +78,7 @@ const Users = () => {
   };
 
   const getInitials = (name) => {
+<<<<<<< HEAD
     if (!name) return "?";
     return name
       .split(" ")
@@ -78,6 +86,9 @@ const Users = () => {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+=======
+    return name ? name.charAt(0).toUpperCase() : 'U';
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
   };
 
   return (
@@ -152,6 +163,7 @@ const Users = () => {
               <div className="user-grid">
                 {users.length === 0 ? (
                   <div className="users-empty">Không có người dùng nào.</div>
+<<<<<<< HEAD
                 ) : (
                   users.map((user) => (
                     <div key={user.userId} className="user-card">
@@ -174,6 +186,26 @@ const Users = () => {
                           </a>
                           <span className="user-location">
                             @{user.userName}
+=======
+                ) : users.map(user => (
+                  <div key={user.userId} className="user-card">
+                    <div className="user-card-header">
+                      <Link to={"/profile?id=" + user.userId} className="user-avatar-medium" style={{ textDecoration: 'none' }}>
+                        {user.avatarURL ? (
+                          <img src={user.avatarURL} alt={user.userName} />
+                        ) : (
+                          <span className="avatar-initials-medium">{getInitials(user.fullName || user.userName)}</span>
+                        )}
+                      </Link>
+                      <div className="user-details">
+                        <Link to={"/profile?id=" + user.userId} className="user-name-link">
+                          {user.fullName || user.userName}
+                        </Link>
+                        <span className="user-location">@{user.userName}</span>
+                        <div className="user-reputation">
+                          <span className={"status-small " + (user.status || '').toLowerCase()}>
+                            {user.status}
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
                           </span>
                           <div className="user-reputation">
                             <span

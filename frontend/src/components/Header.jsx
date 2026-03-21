@@ -13,6 +13,7 @@ import "../styles/Header.css";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 const Header = ({ hideAuth = false }) => {
+<<<<<<< HEAD
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
   const [showDropdown, setShowDropdown] = useState(false);
@@ -34,6 +35,25 @@ const Header = ({ hideAuth = false }) => {
   const notificationRef = useRef(null);
   const chatRef = useRef(null);
   const searchRef = useRef(null);
+=======
+    const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [activeChats, setActiveChats] = useState([]); // List of up to 5 user objects
+    const [maximizedChatId, setMaximizedChatId] = useState(null); // ID/Name of the chat currently open
+    const [isClosing, setIsClosing] = useState(false);
+    const [isChatClosing, setIsChatClosing] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [postToEdit, setPostToEdit] = useState(null);
+    const [showSearchHistory, setShowSearchHistory] = useState(false);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const dropdownRef = useRef(null);
+    const notificationRef = useRef(null);
+    const chatRef = useRef(null);
+    const searchRef = useRef(null);
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
 
   // Get user data from localStorage or use defaults
   const [userData, setUserData] = useState(() => {
@@ -46,6 +66,7 @@ const Header = ({ hideAuth = false }) => {
           username: parsed.username || "user",
           avatar: parsed.avatar || null,
         };
+<<<<<<< HEAD
       } catch (e) {
         console.error("Error parsing user profile in Header:", e);
       }
@@ -54,6 +75,73 @@ const Header = ({ hideAuth = false }) => {
       name: "User",
       username: "user",
       avatar: null,
+=======
+    });
+
+    // Close dropdown when clicking outside and listen for profile updates
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                if (showNotifications) closeNotifications();
+            }
+            if (chatRef.current && !chatRef.current.contains(event.target)) {
+                if (showChat) closeChat();
+            }
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSearchHistory(false);
+            }
+        };
+
+        const handleOpenCreatePost = () => {
+            setPostToEdit(null);
+            setIsCreateOpen(true);
+        };
+
+        const handleOpenEditPost = (e) => {
+            setPostToEdit(e.detail);
+            setIsCreateOpen(true);
+        };
+
+        const handleProfileUpdate = (e) => {
+            const profile = e.detail;
+            setUserData({
+                name: profile.fullName || profile.displayName || "Trần Khánh Linh",
+                username: profile.username || "khanhlinh_1731",
+                avatar: profile.avatar || null
+            });
+        };
+
+        window.addEventListener('openCreatePost', handleOpenCreatePost);
+        window.addEventListener('openEditPost', handleOpenEditPost);
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('openCreatePost', handleOpenCreatePost);
+            window.removeEventListener('openEditPost', handleOpenEditPost);
+            window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+        };
+    }, [showNotifications, showChat, showDropdown, showSearchHistory]);
+
+    // Fetch search history
+    useEffect(() => {
+        if (showSearchHistory && isLoggedIn) {
+            fetchSearchHistory();
+        }
+    }, [showSearchHistory, isLoggedIn]);
+
+    const fetchSearchHistory = async () => {
+        try {
+            const history = await searchService.getSearchHistory();
+            setRecentSearches(history);
+        } catch (error) {
+            console.error('Error fetching search history:', error);
+        }
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
     };
   });
 
@@ -195,12 +283,19 @@ const Header = ({ hideAuth = false }) => {
     }
   }, [showSearchHistory, isLoggedIn]);
 
+<<<<<<< HEAD
   const handleLogout = () => {
     authService.logout();
     setIsLoggedIn(false);
     setShowDropdown(false);
     window.location.href = "/login";
   };
+=======
+    // Get user initials for avatar
+    const getInitials = (name) => {
+        return name ? name.charAt(0).toUpperCase() : 'U';
+    };
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
 
   const toggleNotifications = () => {
     if (showNotifications) {
@@ -443,6 +538,7 @@ const Header = ({ hideAuth = false }) => {
           )}
         </div>
 
+<<<<<<< HEAD
         <div className="header-right">
           {!hideAuth && isLoggedIn ? (
             <>
@@ -806,6 +902,22 @@ const Header = ({ hideAuth = false }) => {
       />
     </header>
   );
+=======
+            <CreatePostModal
+                isOpen={isCreateOpen}
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    setPostToEdit(null);
+                }}
+                postToEdit={postToEdit}
+                onPostCreated={(newPost) => {
+                    const event = new CustomEvent('globalPostCreated', { detail: newPost });
+                    window.dispatchEvent(event);
+                }}
+            />
+        </header>
+    );
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
 };
 
 export default Header;

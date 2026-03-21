@@ -83,6 +83,7 @@ const PostDetail = () => {
 
   if (loading)
     return (
+<<<<<<< HEAD
       <div className="post-detail-layout">
         <Header />
         <div
@@ -98,6 +99,146 @@ const PostDetail = () => {
         </div>
         <Footer />
       </div>
+=======
+        <>
+            {/* Main Content */}
+            <main className="post-detail-main">
+                <div className="question-header-top">
+                    <h1 className="question-header-title">{post.title}</h1>
+                    <button className="btn-primary" onClick={() => window.dispatchEvent(new CustomEvent('openCreatePost'))}>Tạo bài viết</button>
+                </div>
+
+                <div className="question-meta-bar">
+                    <div className="meta-info">
+                        <span className="meta-label">Tác giả:</span>
+                        <Link to={`/profile?id=${post.userId}`} className="meta-value" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>{authorName}</Link>
+                    </div>
+                    <div className="meta-info">
+                        <span className="meta-label">Đã đăng:</span>
+                        <span className="meta-value">{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                </div>
+
+                <div className="post-content-layout">
+                    {/* Vote Column */}
+                    <div className="vote-col">
+                        <button className="vote-btn" onClick={() => setUpvoteState(upvoteState === 1 ? 0 : 1)}>
+                            <svg width="36" height="36" viewBox="0 0 36 36" style={{ color: upvoteState === 1 ? 'var(--primary-color)' : 'currentColor' }}><path d="M2 25h32L18 9 2 25Z" fill="currentColor"></path></svg>
+                        </button>
+                        <div className="vote-count">{post.votes + upvoteState || 0}</div>
+                        <button className="vote-btn" onClick={() => setUpvoteState(upvoteState === -1 ? 0 : -1)}>
+                            <svg width="36" height="36" viewBox="0 0 36 36" style={{ color: upvoteState === -1 ? 'var(--primary-color)' : 'currentColor' }}><path d="M2 11h32L18 27 2 11Z" fill="currentColor"></path></svg>
+                        </button>
+                    </div>
+
+                    {/* Content Cell */}
+                    <div className="post-cell">
+                        <Link to={`/profile?id=${post.userId}`} className="post-author-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', gap: '10px', textDecoration: 'none' }}>
+                            <div className="author-avatar">
+                                {authorAvatar ? <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : authorName[0].toUpperCase()}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>{authorName}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thành viên</span>
+                            </div>
+                        </Link>
+
+                        <div className="post-body">
+                            {contentBlocks.map((block, i) => {
+                                if (block.type === 'text') return <p key={i} style={{ whiteSpace: 'pre-wrap' }}>{block.content}</p>;
+                                if (block.type === 'code') return <pre key={i}><code>{block.content}</code></pre>;
+                                if (block.type === 'image') {
+                                    const src = block.content.startsWith('/uploads/') ? `${API_BASE_URL}${block.content}` : block.content;
+                                    return (
+                                        <div key={i} className="post-vertical-image" style={{ margin: '20px 0' }}>
+                                            <img src={src} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block' }} />
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })}
+                        </div>
+
+                        {post.tags && post.tags.length > 0 && (
+                            <div className="post-tags-container" style={{ marginTop: '24px' }}>
+                                {post.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+                            </div>
+                        )}
+
+                        <div className="post-actions" style={{ marginTop: '30px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+                            <button className="post-action-link" onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Đã copy link!'); }}>Chia sẻ</button>
+                            <button className="post-action-link" onClick={() => setIsSaved(!isSaved)} style={{ color: isSaved ? 'var(--primary-color)' : 'inherit' }}>{isSaved ? 'Đã lưu' : 'Lưu'}</button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Comments */}
+                <div className="comments-section-container">
+                    <h3 style={{ marginBottom: '20px' }}>{comments.length} Bình luận</h3>
+
+                    <div className="comment-editor" style={{ marginBottom: '30px' }}>
+                        <textarea
+                            className="comment-input-area"
+                            placeholder="Viết bình luận của bạn..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            rows="3"
+                            style={{ borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '10px' }}
+                        />
+                        <button className="btn-primary" onClick={() => handleCommentSubmit()} disabled={!newComment.trim() || submittingComment}>
+                            {submittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
+                        </button>
+                    </div>
+
+                    <div className="comments-thread">
+                        {comments.map(comment => (
+                            <div key={comment.commentId} className="comment-item" style={{ marginBottom: '20px' }}>
+                                <Link to={`/profile?id=${comment.userId}`} className="comment-user-avatar" style={{ textDecoration: 'none' }}>
+                                    {comment.userAvatarURL ? <img src={comment.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>{comment.userName?.[0] || 'U'}</div>}
+                                </Link>
+                                <div className="comment-content-wrapper">
+                                    <Link to={`/profile?id=${comment.userId}`} className="comment-username" style={{ textDecoration: 'none', fontWeight: 'bold' }}>{comment.userName}</Link>
+                                    <div className="comment-bubble">
+                                        <p>{comment.content}</p>
+                                        <div className="comment-actions">
+                                            <button onClick={() => setReplyingTo(replyingTo === comment.commentId ? null : comment.commentId)}>Phản hồi</button>
+                                        </div>
+                                        {replyingTo === comment.commentId && (
+                                            <div style={{ marginTop: '12px' }}>
+                                                <textarea
+                                                    className="comment-input-area"
+                                                    value={replyContent}
+                                                    onChange={(e) => setReplyContent(e.target.value)}
+                                                    placeholder="Viết phản hồi..."
+                                                    rows="2"
+                                                    style={{ borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '8px' }}
+                                                />
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button className="btn-primary" style={{ padding: '4px 12px' }} onClick={(e) => handleCommentSubmit(e, comment.commentId)}>Gửi</button>
+                                                    <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>Hủy</button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {comment.replies && comment.replies.map(reply => (
+                                        <Link to={`/profile?id=${reply.userId}`} className="comment-item nested" style={{ marginTop: '12px', textDecoration: 'none' }}>
+                                            <div className="comment-user-avatar" style={{ scale: '0.8' }}>
+                                                {reply.userAvatarURL ? <img src={reply.userAvatarURL} alt="" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)', color: 'var(--primary-color)', fontWeight: 'bold' }}>{reply.userName?.[0] || 'U'}</div>}
+                                            </div>
+                                            <div className="comment-content-wrapper">
+                                                <span className="comment-username" style={{ fontWeight: 'bold' }}>{reply.userName}</span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </main>
+        </>
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
     );
 
   if (error || !post)

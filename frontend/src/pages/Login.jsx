@@ -11,13 +11,9 @@ const Login = () => {
     password: "",
   });
 
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-
-  const otpInputsRef = useRef([]);
 
   // Handle input change for main form
   const handleChange = (e) => {
@@ -32,27 +28,6 @@ const Login = () => {
         ...prev,
         [name]: "",
       }));
-    }
-  };
-
-  // Handle OTP digit change
-  const handleOtpChange = (index, value) => {
-    if (isNaN(value)) return;
-
-    const newDigits = [...otpDigits];
-    newDigits[index] = value.substring(value.length - 1);
-    setOtpDigits(newDigits);
-
-    // Move to next input if value is entered
-    if (value && index < 5) {
-      otpInputsRef.current[index + 1].focus();
-    }
-  };
-
-  const handleKeyDown = (index, e) => {
-    // Move to previous input on backspace if current is empty
-    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      otpInputsRef.current[index - 1].focus();
     }
   };
 
@@ -74,7 +49,7 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle main login submit (Step 1)
+  // Handle main login submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage("");
@@ -87,42 +62,12 @@ const Login = () => {
     try {
       const result = await authService.login({
         email: formData.email,
-        password: formData.password,
-        otp: "", // First attempt with empty OTP
+        password: formData.password
       });
 
-      // If login succeeds directly (unlikely with our current 2FA logic)
       handleLoginSuccess(result);
     } catch (error) {
-      if (error.message.includes("OTP is required")) {
-        setShowOtpModal(true);
-        setSuccessMessage("Một mã OTP đã được gửi đến email của bạn.");
-      } else {
-        setErrors({ submit: error.message || "Đăng nhập thất bại." });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle OTP verification (Step 2)
-  const handleVerifyOtp = async () => {
-    const otpCode = otpDigits.join("");
-    if (otpCode.length !== 6) {
-      setErrors({ otp: "Vui lòng nhập đủ 6 chữ số" });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await authService.login({
-        email: formData.email,
-        password: formData.password,
-        otp: otpCode,
-      });
-      handleLoginSuccess(result);
-    } catch (error) {
-      setErrors({ otp: error.message || "Mã OTP không chính xác" });
+      setErrors({ submit: error.message || "Đăng nhập thất bại." });
     } finally {
       setIsSubmitting(false);
     }
@@ -132,15 +77,6 @@ const Login = () => {
     authService.saveSession(result);
     setSuccessMessage("Đăng nhập thành công!");
     setTimeout(() => navigate("/"), 1000);
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      await authService.requestOtp(formData.email);
-      setSuccessMessage("Mã OTP mới đã được gửi!");
-    } catch (error) {
-      setErrors({ otp: error.message || "Gửi lại OTP thất bại" });
-    }
   };
 
   return (
@@ -185,7 +121,7 @@ const Login = () => {
                 <span>ĐĂNG NHẬP</span>
               </div>
 
-              {successMessage && !showOtpModal && (
+              {successMessage && (
                 <div className="success-message">{successMessage}</div>
               )}
 
@@ -248,6 +184,7 @@ const Login = () => {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
 
       {/* OTP Modal Popup */}
       {showOtpModal && (
@@ -318,6 +255,8 @@ const Login = () => {
           </div>
         </div>
       )}
+=======
+>>>>>>> e787e2f00f81ad9c35983768bd468eb6fc8ce456
     </>
   );
 };
