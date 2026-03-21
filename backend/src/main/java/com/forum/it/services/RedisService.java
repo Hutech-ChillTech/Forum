@@ -4,15 +4,17 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.*;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RedisService {
 
-    private final StringRedisTemplate redisTemplate;
-
-    public RedisService(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
+    final StringRedisTemplate redisTemplate;
 
     /**
      * Save a value to Redis with default expiration (infinite)
@@ -63,5 +65,20 @@ public class RedisService {
      */
     public boolean hasKey(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    @CachePut(value = "otps", key = "#email")
+    public String saveOtp(String email, String otpValue) {
+        return otpValue;
+    }
+
+    @Cacheable(value = "otps", key = "#email")
+    public String getOtp(String email) {
+        return null;
+    }
+
+    @CacheEvict(value = "otps", key = "#email")
+    public void deleteOtp(String email) {
+
     }
 }

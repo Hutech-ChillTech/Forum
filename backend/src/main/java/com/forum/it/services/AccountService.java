@@ -1,36 +1,42 @@
 package com.forum.it.services;
 
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 
+import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.LoginRequest;
+import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.request.RefreshTokenRequest;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.entities.user.Account;
+import com.forum.it.entities.user.AccountRole;
 import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.AccountVerifyCheck;
+import com.forum.it.entities.user.Role;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
 import com.forum.it.exceptions.AppException;
 import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.AccountRepository;
-import com.forum.it.repositories.UserRepository;
-import com.forum.it.sercurites.JwtTokenProvider;
-
-import com.forum.it.entities.user.AccountRole;
-import com.forum.it.entities.user.Role;
 import com.forum.it.repositories.AccountRoleRepository;
 import com.forum.it.repositories.RoleRepository;
+import com.forum.it.repositories.UserRepository;
+import com.forum.it.sercurites.JwtTokenProvider;
+import com.forum.it.sercurites.UserPrincipal;
+import com.forum.it.utils.SecurityContextHelper;
+import com.forum.it.dtos.response.UserResponse;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 
 @Service
 @RequiredArgsConstructor
@@ -44,146 +50,218 @@ public class AccountService {
     PasswordEncoder passwordEncoder;
     JwtTokenProvider jwtTokenProvider;
     AuthenticationManager authenticationManager;
+    RedisService redisService;
+    SecurityContextHelper securityContextHelper;
+    OtpService otpService;
+    EmailService emailService;
+
+    @Value("${jwt.refresh-token.expiration}")
+    @NonFinal
+    Integer REFRESH_TOKEN_TTL;
 
     @Transactional
     public AuthResponse register(CreateUserRequest request) {
-        try {
-            // 1. Validate constraints
-            if (accountRepository.existsByEmail(request.getEmail())) {
-                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
-            }
-            if (userRepository.existsByUserName(request.getUserName())) {
-                throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
-            }
-
-            // 2. Create User Entity
-            User user = new User();
-            user.setUserName(request.getUserName());
-            user.setEmail(request.getEmail());
-            user.setFullName(request.getFullName());
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setGender(request.getGender());
-            user.setPhone(request.getPhone());
-            user.setDateOfBirth(request.getDateOfBirth());
-            user.setVerifyStatus(UserStatus.ACTIVE);
-            user.setStatus(AccountStatus.OFFLINE);
-
-            User savedUser = userRepository.save(user);
-
-            // 3. Create Account Entity linked to User
-            Account account = new Account();
-            account.setEmail(request.getEmail());
-            account.setPassword(savedUser.getPassword());
-            account.setProvider("LOCAL");
-            account.setIsVerify(AccountVerifyCheck.UNVERIFY);
-            account.setUser(savedUser);
-
-            Account savedAccount = accountRepository.save(account);
-
-            // Assign default role USER
-            Role userRole = roleRepository.findByName("USER")
-                    .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
-            AccountRole accountRole = new AccountRole();
-            accountRole.setAccount(savedAccount);
-            accountRole.setRole(userRole);
-            accountRoleRepository.save(accountRole);
-
-            // 4. Generate Token (Optional: Auto login after register)
-            String token = jwtTokenProvider.generateToken(account, userRole.getName());
-
-            return AuthResponse.builder()
-                    .accessToken(token)
-                    .authenticated(true)
-                    .build();
-
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to register user: " + e.getMessage());
+        if (accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+        if (userRepository.existsByUserName(request.getUserName())) {
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+
+        User user = new User();
+        user.setUserName(request.getUserName());
+        user.setEmail(request.getEmail());
+        user.setFullName(request.getFullName());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setGender(request.getGender());
+        user.setPhone(request.getPhone());
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setVerifyStatus(UserStatus.ACTIVE);
+        user.setStatus(AccountStatus.OFFLINE);
+
+        User savedUser = userRepository.save(user);
+
+        Account account = new Account();
+        account.setEmail(request.getEmail());
+        account.setPassword(savedUser.getPassword());
+        account.setProvider("LOCAL");
+        account.setIsVerify(AccountVerifyCheck.UNVERIFY);
+        account.setUser(savedUser);
+
+        Account savedAccount = accountRepository.save(account);
+
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        AccountRole accountRole = new AccountRole();
+        accountRole.setAccount(savedAccount);
+        accountRole.setRole(userRole);
+        accountRoleRepository.save(accountRole);
+
+        String token = jwtTokenProvider.generateToken(account, userRole.getName());
+
+        return AuthResponse.builder()
+                .accessToken(token)
+                .authenticated(true)
+                .build();
     }
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        // 1. Kiểm tra Mật khẩu trước (Bước 1 của 2FA)
         try {
-            // Authenticate user
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-
-            Account account = accountRepository.findByEmail(request.getEmail());
-            if (account == null) {
-                throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-            }
-
-            String roleName = accountRoleRepository.findByAccount_AccountId(account.getAccountId())
-                    .stream().findFirst()
-                    .map(accountRole -> accountRole.getRole().getName())
-                    .orElse("USER");
-
-            String accessToken = jwtTokenProvider.generateToken(account, roleName);
-            String refreshToken = jwtTokenProvider.generateRefreshToken(account);
-
-            account.setRefreshToken(refreshToken);
-            accountRepository.save(account);
-
-            return AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .authenticated(true)
-                    .build();
-
         } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new AppException(ErrorCode.ACCOUNT_NOT_EXIST);
         }
+
+        // 2. Nếu mật khẩu đúng, kiểm tra xem đã có mã OTP chưa
+        if (request.getOtp() == null || request.getOtp().isBlank()) {
+            // Nếu chưa có OTP gửi kèm -> Tạo mã và yêu cầu nhập (Ném lỗi để UI bắt được)
+            String otp = otpService.generateOtp(request.getEmail());
+            emailService.sendOtpEmail(request.getEmail(), otp);
+            throw new AppException(ErrorCode.OTP_REQUIRED);
+        }
+
+        // 3. Nếu đã có OTP gửi kèm -> Xác thực mã OTP (Bước 2 của 2FA)
+        if (!otpService.verifyOtp(request.getEmail(), request.getOtp())) {
+            throw new AppException(ErrorCode.OTP_INVALID);
+        }
+
+        String roleName = resolveRole(account);
+        String accessToken = jwtTokenProvider.generateToken(account, roleName);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(account);
+
+        long iat = jwtTokenProvider.getIssuedAtTime(accessToken);
+        long exp = jwtTokenProvider.getExpirationTime(accessToken);
+
+        redisService.setValueWithTTL("RT:" + account.getEmail(), refreshToken, REFRESH_TOKEN_TTL,
+                TimeUnit.MILLISECONDS);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .authenticated(true)
+                .issuedAt(iat)
+                .expiredAt(exp)
+                .build();
+    }
+
+    public void requestOtp(OtpRequest request) {
+        if (!accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        String otp = otpService.generateOtp(request.getEmail());
+        emailService.sendOtpEmail(request.getEmail(), otp);
+    }
+
+    /**
+     * Blacklists the raw JWT string. Call this from the controller where the
+     * raw Authorization header value is available.
+     */
+    public void blacklistToken(String email) {
+        redisService.setValueWithTTL("REVOKED_AT:" + email, String.valueOf(System.currentTimeMillis()),
+                REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Blacklists the current access token in Redis (TTL = remaining token lifetime)
+     * and clears the refresh token stored on the account.
+     */
+    @Transactional
+    public void logout() {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
+        String email = principal.getEmail();
+
+        redisService.deleteValue("RT:" + email);
+        blacklistToken(email);
     }
 
     @Transactional
-    public void logout() {
-        try {
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principal instanceof UserDetails) {
-                String email = ((UserDetails) principal).getUsername();
-                Account account = accountRepository.findByEmail(email);
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        String token = request.getRefreshToken();
+        String userEmail = null;
 
-                if (account != null) {
-                    account.setRefreshToken(null);
-                    accountRepository.save(account);
-                }
-            } else {
-                throw new AppException(ErrorCode.UNAUTHORIZED);
-            }
+        try {
+            userEmail = jwtTokenProvider.extractUsername(token);
         } catch (Exception e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
+
+        String storedToken = redisService.getValue("RT:" + userEmail);
+        if (storedToken == null || !storedToken.equals(token) || !jwtTokenProvider.isTokenValid(token, userEmail)) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+        Account account = accountRepository.findByEmail(userEmail);
+
+        String roleName = resolveRole(account);
+        String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
+
+        long iat = jwtTokenProvider.getIssuedAtTime(newAccessToken);
+        long exp = jwtTokenProvider.getExpirationTime(newAccessToken);
+        // Rotate: invalidate old refresh token immediately
+        redisService.setValueWithTTL("RT:" + userEmail, newRefreshToken, REFRESH_TOKEN_TTL, TimeUnit.MILLISECONDS);
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .authenticated(true)
+                .issuedAt(iat)
+                .expiredAt(exp)
+                .build();
     }
 
-    public AuthResponse refreshToken(RefreshTokenRequest request) {
-        try {
-            String token = request.getRefreshToken();
-            String userEmail = jwtTokenProvider.extractUsername(token);
-            Account account = accountRepository.findByEmail(userEmail);
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
+        Account account = accountRepository.findByEmail(principal.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
 
-            if (account == null || account.getRefreshToken() == null || !account.getRefreshToken().equals(token)
-                    || !jwtTokenProvider.isTokenValid(token, userEmail))
-                throw new AppException(ErrorCode.UNAUTHORIZED);
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_OLD_PASSWORD);
+        }
 
-            String roleName = accountRoleRepository.findByAccount_AccountId(account.getAccountId()).stream().findFirst()
-                    .map(accountRole -> accountRole.getRole().getName()).orElse("USER");
+        String newHash = passwordEncoder.encode(request.getNewPassword());
+        account.setPassword(newHash);
 
-            String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
-            String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
+        // Keep user password in sync
+        if (account.getUser() != null) {
+            account.getUser().setPassword(newHash);
+            userRepository.save(account.getUser());
+        }
 
-            account.setRefreshToken(newRefreshToken);
-            accountRepository.save(account);
+        accountRepository.save(account);
+    }
 
-            return AuthResponse.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
-                    .authenticated(true)
-                    .build();
+    public UserResponse getProfile() {
+        UserPrincipal principal = securityContextHelper.getCurrentUser();
 
-        } catch (Exception e) {
+        if (principal == null) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
+
+        Account account = accountRepository.findByEmail(principal.getEmail());
+        if (account == null) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        return new UserResponse(account.getUser());
+    }
+
+    // ── private ───────────────────────────────────────────────────────────────
+
+    private String resolveRole(Account account) {
+        return accountRoleRepository.findByAccount_AccountId(account.getAccountId())
+                .stream().findFirst()
+                .map(ar -> ar.getRole().getName())
+                .orElse("USER");
     }
 }
