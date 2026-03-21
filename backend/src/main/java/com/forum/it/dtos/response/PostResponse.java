@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.forum.it.entities.post.Post;
 import com.forum.it.entities.post.PostStatus;
@@ -22,6 +23,8 @@ public class PostResponse {
     private List<String> tags;
     private LocalDate createdAt;
     private LocalDate updatedAt;
+    @JsonProperty("isSaved")
+    private boolean isSaved;
 
     public PostResponse() {
     }
@@ -140,5 +143,13 @@ public class PostResponse {
 
     public void setUpdatedAt(LocalDate updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isIsSaved() {
+        return isSaved;
+    }
+
+    public void setIsSaved(boolean isSaved) {
+        this.isSaved = isSaved;
     }
 }
