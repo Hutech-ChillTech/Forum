@@ -28,9 +28,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository    userRepository;
+    private final UserRepository userRepository;
     private final AccountRepository accountRepository;
-    private final PasswordEncoder   passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public Page<UserResponse> getAll(Pageable pageable) {
@@ -98,11 +98,16 @@ public class UserService {
             }
             user.setEmail(request.getEmail());
         }
-        if (request.getFullName()    != null) user.setFullName(request.getFullName());
-        if (request.getGender()      != null) user.setGender(request.getGender());
-        if (request.getPhone()       != null) user.setPhone(request.getPhone());
-        if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
-        if (request.getAvatarURL()   != null) user.setAvatarURL(request.getAvatarURL());
+        if (request.getFullName() != null)
+            user.setFullName(request.getFullName());
+        if (request.getGender() != null)
+            user.setGender(request.getGender());
+        if (request.getPhone() != null)
+            user.setPhone(request.getPhone());
+        if (request.getDateOfBirth() != null)
+            user.setDateOfBirth(request.getDateOfBirth());
+        if (request.getAvatarURL() != null)
+            user.setAvatarURL(request.getAvatarURL());
 
         return new UserResponse(userRepository.save(user));
     }

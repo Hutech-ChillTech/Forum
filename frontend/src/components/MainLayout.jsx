@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
@@ -10,6 +10,15 @@ import '../styles/Home.css';
 const MainLayout = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [selectedPostId, setSelectedPostId] = useState(null);
+
+    const userProfile = (() => {
+        try { return JSON.parse(localStorage.getItem('userProfile') || '{}'); } 
+        catch (e) { return {}; }
+    })();
+
+    if (userProfile.role === 'ADMIN') {
+        return <Navigate to="/admin" replace />;
+    }
 
     useEffect(() => {
         const handleOpenModal = (e) => {
