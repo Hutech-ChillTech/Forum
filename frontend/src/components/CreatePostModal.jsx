@@ -132,7 +132,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
             sessionStorage.removeItem('home_posts_cache');
             sessionStorage.removeItem('home_page_cache');
 
-            if (onPostCreated) onPostCreated(createdPost);
+            alert('Đăng bài thành công! Bài viết của bạn đang chờ quản trị viên duyệt.');
 
             setTitle('');
             setBlocks([{ id: Date.now(), type: 'text', content: '' }]);

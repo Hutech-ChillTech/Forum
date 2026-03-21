@@ -13,6 +13,8 @@ import Register from './pages/Register';
 import Chat from './pages/Chat';
 import Saved from './pages/Saved';
 import Admin from './pages/Admin';
+import ModeratorReview from './pages/ModeratorReview';
+import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
 import './App.css';
 
@@ -55,6 +57,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/posts" element={<Posts />} />
           <Route path="/posts/:id" element={<PostDetail />} />
+          <Route 
+            path="/posts/review" 
+            element={
+              <ProtectedRoute allowedRoles={['MODERATOR', 'ADMIN']}>
+                <ModeratorReview />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/tags" element={<Tags />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/users" element={<Users />} />
@@ -62,11 +72,20 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/saved" element={<Saved />} />
-          <Route path="/admin" element={<Admin />} />
         </Route>
+
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <Admin />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
       </Routes>
     </Router>
   );
