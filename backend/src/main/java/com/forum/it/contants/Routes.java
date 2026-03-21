@@ -33,6 +33,7 @@ public final class Routes {
         public static final String MY_BOOKMARKS = "/me/bookmarks";
         public static final String MY_SHARES = "/me/shares";
         public static final String STATISTICS = "/statistics";
+        public static final String ONLINE = "/{id}/online";
     }
 
     public static final class Post {
@@ -117,13 +118,29 @@ public final class Routes {
     }
 
     public static final class Chat {
-        public static final String BASE = API_V1 + "/messages";
-        public static final String SEND = "";
-        public static final String INBOX = "/inbox";
-        public static final String SENT = "/sent";
-        public static final String CONVERSATION = "/conversation/{userId}";
+        public static final String BASE          = API_V1 + "/messages";
+        public static final String SEND          = "";
+        public static final String INBOX         = "/inbox";
+        public static final String SENT          = "/sent";
+        public static final String CONVERSATION  = "/conversation/{userId}";
         public static final String CONVERSATIONS = "/conversations";
-        public static final String DELETE = "/{id}";
+        public static final String DELETE        = "/{id}";
+        // Pending message requests
+        public static final String PENDING               = "/pending";
+        public static final String PENDING_CONVERSATION  = "/pending/conversation/{senderId}";
+        public static final String PENDING_ACCEPT        = "/pending/{senderId}/accept";
+        public static final String PENDING_REJECT        = "/pending/{senderId}/reject";
+    }
+
+    public static final class Follow {
+        /** Base = /api/v1/users/{userId} — sub-resource of a user */
+        public static final String BASE      = API_V1 + "/users/{userId}";
+        public static final String FOLLOW    = "/follow";
+        public static final String UNFOLLOW  = "/follow";
+        public static final String STATUS    = "/follow/status";
+        public static final String FOLLOWERS = "/followers";
+        public static final String FOLLOWING = "/following";
+        public static final String FRIENDS   = "/friends";
     }
 
     public static final class Moderation {

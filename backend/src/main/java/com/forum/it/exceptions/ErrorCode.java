@@ -34,6 +34,8 @@ public enum ErrorCode {
     USER_BANNED(1016, "User is banned and cannot perform this action", HttpStatus.FORBIDDEN),
     USER_DELETED(1017, "User account has been deleted", HttpStatus.FORBIDDEN),
     USER_CREDENTIALS_INVALID(1018, "Invalid credentials", HttpStatus.UNAUTHORIZED),
+    EMAIL_SEND_FAILED(1020, "Failed to send email, please try again later", HttpStatus.SERVICE_UNAVAILABLE),
+
     // ── Post ──────────────────────────────────────────────────────────────────
     POST_NOT_FOUND(2001, "Post not found", HttpStatus.NOT_FOUND),
     POST_DUPLICATE_TITLE(2002, "You already have a post with this title", HttpStatus.BAD_REQUEST),
@@ -70,6 +72,13 @@ public enum ErrorCode {
 
     // ── Message / Chat ────────────────────────────────────────────────────────
     MESSAGE_NOT_FOUND(10001, "Message not found", HttpStatus.NOT_FOUND),
+    CANNOT_MESSAGE_SELF(10002, "Cannot send message to yourself", HttpStatus.BAD_REQUEST),
+    PENDING_REQUEST_NOT_FOUND(10003, "No pending message request from this user", HttpStatus.NOT_FOUND),
+
+    // ── Follow ────────────────────────────────────────────────────────────────
+    ALREADY_FOLLOWING(11001, "You are already following this user", HttpStatus.BAD_REQUEST),
+    FOLLOW_NOT_FOUND(11002, "Follow relationship not found", HttpStatus.NOT_FOUND),
+    FOLLOW_SELF(11003, "Cannot follow yourself", HttpStatus.BAD_REQUEST),
 
     // ── Rate Limit ────────────────────────────────────────────────────────────
     RATE_LIMIT_EXCEEDED(429, "Too many requests — please try again later", HttpStatus.TOO_MANY_REQUESTS);

@@ -1,7 +1,7 @@
 package com.forum.it.websocket;
 
 import java.security.Principal;
-import java.util.UUID;
+import java.util.Map;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -13,6 +13,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import com.forum.it.dtos.request.SendMessageRequest;
 import com.forum.it.dtos.response.MessageResponse;
+import com.forum.it.entities.system.MessageStatus;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.services.CommunicationService;
 import com.forum.it.services.PresenceService;
@@ -20,14 +21,27 @@ import com.forum.it.services.PresenceService;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Handles real-time chat messages over STOMP/WebSocket.
+ * Xử lý real-time chat qua STOMP/WebSocket.
  *
- * Flow:
- *  1. Client sends a STOMP message to /app/chat.send
- *  2. Message is saved to the DB via CommunicationService
- *  3. The saved message is pushed to the recipient's private queue:
- *     /user/{receiverId}/queue/messages
- *  4. A copy is echoed back to the sender's queue so they see their own message.
+ * ──────────────────────── Luồng xử lý ─────────────────────────────────────
+ *
+ * 1. Client gửi STOMP frame tới /app/chat.send
+ * 2. CommunicationService.sendMessage() kiểm tra mutual follow:
+ *    - Mutual follow (bạn bè) → status = NORMAL
+ *    - Không mutual follow    → status = PENDING
+ * 3. Routing dựa trên status:
+ *    ┌─ NORMAL  ─────────────────────────────────────────────────────────────┐
+ *    │  Đẩy tới /user/{receiverId}/queue/messages  (inbox chính bên nhận)   │
+ *    │  Echo lại /user/{senderId}/queue/messages   (bên gửi thấy ngay)      │
+ *    └───────────────────────────────────────────────────────────────────────┘
+ *    ┌─ PENDING  ────────────────────────────────────────────────────────────┐
+ *    │  Đẩy tới /user/{receiverId}/queue/pending   (Message Requests)       │
+ *    │  Echo lại /user/{senderId}/queue/messages   (bên gửi vẫn thấy)      │
+ *    └───────────────────────────────────────────────────────────────────────┘
+ *
+ * 4. Presence:
+ *    SessionConnectEvent    → markOnline(userId)
+ *    SessionDisconnectEvent → markOffline(userId)
  */
 @Controller
 @RequiredArgsConstructor
@@ -39,22 +53,21 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload SendMessageRequest request, Principal principal) {
-        // Validate that the sender is the authenticated user
-        // The SecurityContext is populated by WebSocketAuthInterceptor, so
-        // CommunicationService#sendMessage will resolve senderId from SecurityContextHelper.
         MessageResponse saved = communicationService.sendMessage(request);
 
-        // Push to recipient's private queue
-        messagingTemplate.convertAndSendToUser(
-                saved.getReceiverId().toString(),
-                "/queue/messages",
-                saved);
+        String receiverIdStr = saved.getReceiverId().toString();
+        String senderIdStr   = saved.getSenderId().toString();
 
-        // Echo back to sender so their own UI updates immediately
-        messagingTemplate.convertAndSendToUser(
-                saved.getSenderId().toString(),
-                "/queue/messages",
-                saved);
+        if (saved.getStatus() == MessageStatus.NORMAL) {
+            // Hai người là bạn bè → đẩy vào inbox chính của cả hai
+            messagingTemplate.convertAndSendToUser(receiverIdStr, "/queue/messages", saved);
+            messagingTemplate.convertAndSendToUser(senderIdStr,   "/queue/messages", saved);
+        } else {
+            // Người gửi chưa mutual follow → đẩy vào pending queue của người nhận
+            messagingTemplate.convertAndSendToUser(receiverIdStr, "/queue/pending", saved);
+            // Echo lại cho người gửi (họ vẫn thấy tin mình đã gửi)
+            messagingTemplate.convertAndSendToUser(senderIdStr,   "/queue/messages", saved);
+        }
     }
 
     @EventListener
@@ -62,6 +75,8 @@ public class ChatWebSocketController {
         UserPrincipal principal = extractPrincipal(event.getUser());
         if (principal != null) {
             presenceService.markOnline(principal.getUserId());
+            messagingTemplate.convertAndSend("/topic/presence",
+                Map.of("userId", principal.getUserId().toString(), "online", true));
         }
     }
 
@@ -70,6 +85,8 @@ public class ChatWebSocketController {
         UserPrincipal principal = extractPrincipal(event.getUser());
         if (principal != null) {
             presenceService.markOffline(principal.getUserId());
+            messagingTemplate.convertAndSend("/topic/presence",
+                Map.of("userId", principal.getUserId().toString(), "online", false));
         }
     }
 
@@ -83,3 +100,4 @@ public class ChatWebSocketController {
         return null;
     }
 }
+

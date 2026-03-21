@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import PostCard from '../components/PostCard';
-import postService from '../service/postService';
-import '../styles/Posts.css';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useOutletContext } from "react-router-dom";
+import PostCard from "../components/PostCard";
+import postService from "../service/postService";
+import "../styles/Posts.css";
 
-const POSTS_CACHE_KEY = 'posts_page_cache';
-const POSTS_PAGE_KEY = 'posts_page_num';
-const POSTS_SCROLL_KEY = 'posts_scroll_pos';
+const POSTS_CACHE_KEY = "posts_page_cache";
+const POSTS_PAGE_KEY = "posts_page_num";
+const POSTS_SCROLL_KEY = "posts_scroll_pos";
 
 const Posts = () => {
   const { setSelectedPostId } = useOutletContext();
@@ -17,7 +17,7 @@ const Posts = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
-  const [sortFilter, setSortFilter] = useState('createdAt,desc');
+  const [sortFilter, setSortFilter] = useState("createdAt,desc");
 
   // Helper for initialLoading state determination
   function initialLoadingInitially() {
@@ -27,16 +27,19 @@ const Posts = () => {
 
   const observer = useRef();
   // ... (rest of search/fetch logic remains)
-  const lastPostElementRef = useCallback(node => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage(prevPage => prevPage + 1);
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore],
+  );
 
   const fetchPosts = async (pageNum, isInitial = false) => {
     try {
@@ -49,7 +52,11 @@ const Posts = () => {
 
       setError(null);
       const size = 10;
-      const data = await postService.getPublishedPosts(pageNum, size, sortFilter);
+      const data = await postService.getPublishedPosts(
+        pageNum,
+        size,
+        sortFilter,
+      );
 
       let newPosts = [];
       if (data && data.posts) {
@@ -61,17 +68,24 @@ const Posts = () => {
       if (isInitial) {
         setPosts(newPosts);
       } else {
-        setPosts(prev => {
-          const existingIds = new Set(prev.map(p => String(p.postId || p.id || p.postID)));
-          const uniqueNewPosts = newPosts.filter(p => !existingIds.has(String(p.postId || p.id || p.postID)));
+        setPosts((prev) => {
+          const existingIds = new Set(
+            prev.map((p) => String(p.postId || p.id || p.postID)),
+          );
+          const uniqueNewPosts = newPosts.filter(
+            (p) => !existingIds.has(String(p.postId || p.id || p.postID)),
+          );
           return [...prev, ...uniqueNewPosts];
         });
       }
 
       setHasMore(newPosts.length >= size);
-      setTotalItems(data.totalItems || (isInitial ? newPosts.length : totalItems + newPosts.length));
+      setTotalItems(
+        data.totalItems ||
+          (isInitial ? newPosts.length : totalItems + newPosts.length),
+      );
     } catch (e) {
-      setError('Không thể tải bài viết. Vui lòng thử lại.');
+      setError("Không thể tải bài viết. Vui lòng thử lại.");
       console.error(e);
     } finally {
       setLoading(false);
@@ -98,7 +112,7 @@ const Posts = () => {
         if (cachedScroll) {
           window.scrollTo({
             top: parseInt(cachedScroll),
-            behavior: 'instant'
+            behavior: "instant",
           });
         }
       }, 300);
@@ -106,6 +120,7 @@ const Posts = () => {
     } else {
       fetchPosts(0, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortFilter]);
 
   // Continuous scroll tracking
@@ -115,8 +130,8 @@ const Posts = () => {
         sessionStorage.setItem(POSTS_SCROLL_KEY, window.scrollY.toString());
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [initialLoading]);
 
   // Save state before navigating away
@@ -127,10 +142,10 @@ const Posts = () => {
         sessionStorage.setItem(POSTS_PAGE_KEY, page.toString());
       }
     };
-    window.addEventListener('beforeunload', handleSave);
+    window.addEventListener("beforeunload", handleSave);
     return () => {
       handleSave();
-      window.removeEventListener('beforeunload', handleSave);
+      window.removeEventListener("beforeunload", handleSave);
     };
   }, [posts, page]);
 
@@ -147,24 +162,26 @@ const Posts = () => {
         fetchPosts(page);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Listen for new posts created anywhere in the app
   useEffect(() => {
     const onPostCreated = (e) => {
       const newPost = e.detail;
-      setPosts(prev => {
+      setPosts((prev) => {
         const id = String(newPost.postId || newPost.id || newPost.postID);
-        if (prev.some(p => String(p.postId || p.id || p.postID) === id)) return prev;
+        if (prev.some((p) => String(p.postId || p.id || p.postID) === id))
+          return prev;
         const updated = [newPost, ...prev];
         sessionStorage.setItem(POSTS_CACHE_KEY, JSON.stringify(updated));
         return updated;
       });
-      setTotalItems(prev => prev + 1);
+      setTotalItems((prev) => prev + 1);
     };
 
-    window.addEventListener('globalPostCreated', onPostCreated);
-    return () => window.removeEventListener('globalPostCreated', onPostCreated);
+    window.addEventListener("globalPostCreated", onPostCreated);
+    return () => window.removeEventListener("globalPostCreated", onPostCreated);
   }, []);
 
   return (
@@ -172,7 +189,12 @@ const Posts = () => {
       <main className="posts-main">
         <div className="questions-header">
           <h1>Bài viết</h1>
-          <button className="btn-primary" onClick={() => window.dispatchEvent(new CustomEvent('openCreatePost'))}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("openCreatePost"))
+            }
+          >
             Tạo bài viết
           </button>
         </div>
@@ -181,12 +203,12 @@ const Posts = () => {
           <div className="questions-count">{totalItems} bài viết</div>
           <div className="questions-filters">
             {[
-              ['createdAt,desc', 'Mới nhất'],
-              ['createdAt,asc', 'Cũ nhất'],
+              ["createdAt,desc", "Mới nhất"],
+              ["createdAt,asc", "Cũ nhất"],
             ].map(([val, label]) => (
               <button
                 key={val}
-                className={"filter-btn" + (sortFilter === val ? ' active' : '')}
+                className={"filter-btn" + (sortFilter === val ? " active" : "")}
                 onClick={() => {
                   setSortFilter(val);
                   setPage(0);
@@ -202,19 +224,38 @@ const Posts = () => {
         </div>
 
         {initialLoading && posts.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div className="loader" style={{ margin: '0 auto' }}>Đang tải bài viết...</div>
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <div className="loader" style={{ margin: "0 auto" }}>
+              Đang tải bài viết...
+            </div>
           </div>
         ) : error ? (
-          <div style={{ padding: '20px', color: 'red' }}>{error}</div>
+          <div style={{ padding: "20px", color: "red" }}>{error}</div>
         ) : posts.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--card-bg)', borderRadius: '12px' }}>
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              color: "var(--text-secondary)",
+              background: "var(--card-bg)",
+              borderRadius: "12px",
+            }}
+          >
             Chưa có bài viết nào.
           </div>
         ) : (
           <div className="questions-list">
             {posts.map((post, index) => (
-              <div key={post.postId || post.id || index} ref={index === posts.length - 1 ? lastPostElementRef : null}>
+              <div
+                key={post.postId || post.id || index}
+                ref={index === posts.length - 1 ? lastPostElementRef : null}
+              >
                 <PostCard
                   post={post}
                   onOpenModal={(id) => setSelectedPostId(id)}
@@ -223,13 +264,21 @@ const Posts = () => {
             ))}
 
             {loading && (
-              <div style={{ padding: '20px', textAlign: 'center' }}>
-                <div className="loader" style={{ margin: '0 auto' }}>Đang tải thêm...</div>
+              <div style={{ padding: "20px", textAlign: "center" }}>
+                <div className="loader" style={{ margin: "0 auto" }}>
+                  Đang tải thêm...
+                </div>
               </div>
             )}
 
             {!hasMore && posts.length > 0 && (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <div
+                style={{
+                  padding: "40px 20px",
+                  textAlign: "center",
+                  color: "var(--text-secondary)",
+                }}
+              >
                 Bạn đã xem hết bài viết rồi!
               </div>
             )}

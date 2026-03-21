@@ -20,13 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forum.it.contants.Routes;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.UpdateUserRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.UserResponse;
 import com.forum.it.services.AccountService;
+import com.forum.it.services.PresenceService;
 import com.forum.it.services.UserService;
-import com.forum.it.contants.*;
 
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -41,6 +42,7 @@ public class UserController {
 
     final UserService userService;
     final AccountService accountService;
+    final PresenceService presenceService;
 
     @GetMapping(Routes.User.ME)
     public ApiResponses<UserResponse> getProfile() {
@@ -84,6 +86,11 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+    }
+
+    @GetMapping(Routes.User.ONLINE)
+    public ResponseEntity<Map<String, Boolean>> getOnlineStatus(@PathVariable UUID id) {
+        return ResponseEntity.ok(Map.of("online", presenceService.isOnline(id)));
     }
 
     @GetMapping(Routes.User.GET_BY_EMAIL)

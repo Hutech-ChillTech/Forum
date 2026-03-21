@@ -65,6 +65,10 @@ public class SecurityConfig {
                         // .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/search").permitAll()
+                        // Follow — đọc danh sách followers/following/friends là public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/followers").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/following").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/friends").permitAll()
                         // Static resources & File uploads
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/v1/files/**").permitAll()

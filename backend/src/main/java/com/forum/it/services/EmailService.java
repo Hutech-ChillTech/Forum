@@ -1,9 +1,13 @@
 package com.forum.it.services;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import com.forum.it.exceptions.AppException;
+import com.forum.it.exceptions.ErrorCode;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -54,9 +58,9 @@ public class EmailService {
             helper.setText(htmlContent, true);
             mailSender.send(message);
             log.info("OTP email sent successfully to {}", to);
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error("Failed to send OTP email to {}: {}", to, e.getMessage());
-            throw new RuntimeException("Could not send OTP email");
+            throw new AppException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
 }
