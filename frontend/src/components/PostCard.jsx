@@ -1,31 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageGrid from "./ImageGrid";
+import postService from "../service/postService";
 import commentService from "../service/commentService";
 import authService from "../service/authService";
 import { API_BASE_URL } from "../utils/apiFetch.js";
 
-const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
+const PostCard = ({
+  post,
+  hideFollowButton = false,
+  onOpenModal,
+  reviewMode = false,
+  onApprove,
+  onReject,
+}) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentLoading, setCommentLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
   // Map backend fields to local variables
   const id = post.postId || post.id || post.postID;
   const author = post.userName || post.author;
   const avatar = post.userAvatarURL || post.avatar;
   const time = post.createdAt || post.timestamp || post.time || post.askedTime;
-  const commentCount =
-    post.commentCount !== undefined
-      ? post.commentCount
-      : post.comments !== undefined
-        ? post.comments
-        : 0;
+  const commentCount = post.commentCount !== undefined ? post.commentCount : 0;
   const content = post.content || post.excerpt || "";
   const title = post.title;
 
@@ -164,6 +172,60 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     }
   };
 
+  const handleDeletePost = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?"))
+      return;
+
+    try {
+      setIsDeleting(true);
+      await postService.deletePost(id);
+      // After success, we can either hide the card or refresh
+      // For now, let's just make the card disappear by modifying its state if we had a list,
+      // but since this is a child component, we should ideally inform the parent.
+      // A simple way is to hide it locally for now if we can't refresh easily.
+      setIsDeleted(true);
+
+      // Set flag to force fresh data from server and clear all caches
+      sessionStorage.setItem("FORCE_REFRESH_POSTS", "true");
+      sessionStorage.removeItem("home_posts_cache");
+      sessionStorage.removeItem("home_page_cache");
+      sessionStorage.removeItem("home_scroll_pos");
+      sessionStorage.removeItem("posts_page_cache");
+      sessionStorage.removeItem("posts_page_num");
+      sessionStorage.removeItem("posts_scroll_pos");
+
+      window.location.reload(); // Refresh to update list
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      // If the post is already gone (404), we should still refresh the UI
+      if (err.message?.includes("404") || err.status === 404) {
+        sessionStorage.removeItem("home_posts_cache");
+        sessionStorage.removeItem("home_page_cache");
+        sessionStorage.removeItem("home_scroll_pos");
+        sessionStorage.removeItem("posts_page_cache");
+        sessionStorage.removeItem("posts_page_num");
+        sessionStorage.removeItem("posts_scroll_pos");
+        window.location.reload();
+      } else {
+        alert("Lỗi khi xóa bài viết: " + err.message);
+      }
+    } finally {
+      setIsDeleting(false);
+      setShowMenu(false);
+    }
+  };
+
+  if (isDeleted) return null;
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!showMenu) return;
+    const closeMenu = () => setShowMenu(false);
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, [showMenu]);
+
   // Regroup blocks to bundle consecutive images
   const groupedBlocks = (() => {
     const result = [];
@@ -201,6 +263,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
     }
   };
 
+  const userId = post.userId;
+
+  const handleAuthorClick = (e) => {
+    e.stopPropagation();
+    if (userId) {
+      navigate(`/profile?id=${userId}`);
+    }
+  };
+
   return (
     <div
       className="user-post-card"
@@ -231,7 +302,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
           marginBottom: "12px",
         }}
       >
-        <div className="post-avatar-small" style={{ marginRight: "12px" }}>
+        <div
+          className="post-avatar-small"
+          onClick={handleAuthorClick}
+          style={{ marginRight: "12px", cursor: "pointer" }}
+        >
           {avatar ? (
             <img
               src={avatar}
@@ -258,14 +333,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                 fontWeight: "bold",
               }}
             >
-              {author
-                ? author
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)
-                : "U"}
+              {author ? author.charAt(0).toUpperCase() : "U"}
             </span>
           )}
         </div>
@@ -276,75 +344,80 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
           <div style={{ display: "flex", alignItems: "center" }}>
             <span
               className="post-author-name"
+              onClick={handleAuthorClick}
               style={{
                 marginRight: "8px",
                 fontWeight: "bold",
                 color: "var(--text-color)",
+                cursor: "pointer",
               }}
+              onMouseEnter={(e) =>
+                (e.target.style.color = "var(--primary-color)")
+              }
+              onMouseLeave={(e) => (e.target.style.color = "var(--text-color)")}
             >
               {author}
             </span>
-            {!hideFollowButton &&
-              String(post.userId) !== String(userProfile?.userId) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsFollowed(!isFollowed);
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: isFollowed
-                      ? "var(--text-secondary)"
-                      : "var(--primary-color)",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                    padding: "0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    zIndex: 2,
-                  }}
-                >
-                  {isFollowed ? (
-                    <>
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6L9 17l-5-5"></path>
-                      </svg>
-                      Đang theo dõi
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="8.5" cy="7" r="4"></circle>
-                        <line x1="20" y1="8" x2="20" y2="14"></line>
-                        <line x1="23" y1="11" x2="17" y2="11"></line>
-                      </svg>
-                      Theo dõi
-                    </>
-                  )}
-                </button>
-              )}
+            {!hideFollowButton && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFollowed(!isFollowed);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: isFollowed
+                    ? "var(--text-secondary)"
+                    : "var(--primary-color)",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  padding: "0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  zIndex: 2,
+                }}
+              >
+                {isFollowed ? (
+                  <>
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 6L9 17l-5-5"></path>
+                    </svg>
+                    Đang theo dõi
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <line x1="20" y1="8" x2="20" y2="14"></line>
+                      <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Theo dõi
+                  </>
+                )}
+              </button>
+            )}
           </div>
           <span
             className="post-time"
@@ -353,6 +426,167 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
             {formatTime(time)}
           </span>
         </div>
+
+        {/* Actions Menu (Three Dots) */}
+        {(userProfile?.userId === post.userId ||
+          userProfile?.role === "ADMIN" ||
+          userProfile?.role === "MODERATOR") && (
+          <div
+            className="post-menu-container"
+            style={{ marginLeft: "auto", position: "relative" }}
+          >
+            <button
+              className="post-menu-trigger"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                padding: "8px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) =>
+                (e.target.style.backgroundColor = "var(--secondary-bg)")
+              }
+              onMouseLeave={(e) =>
+                (e.target.style.backgroundColor = "transparent")
+              }
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+
+            {showMenu && (
+              <div
+                className="post-dropdown-menu"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  backgroundColor: "var(--card-bg)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  borderRadius: "8px",
+                  padding: "8px 0",
+                  zIndex: 100,
+                  minWidth: "150px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                {userProfile?.userId === post.userId && (
+                  <button
+                    className="menu-item"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      window.dispatchEvent(
+                        new CustomEvent("openEditPost", { detail: post }),
+                      );
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 16px",
+                      background: "none",
+                      border: "none",
+                      textAlign: "left",
+                      color: "var(--text-color)",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontWeight: "500",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.backgroundColor = "var(--secondary-bg)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.backgroundColor = "transparent")
+                    }
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Chỉnh sửa
+                  </button>
+                )}
+                <button
+                  className="menu-item"
+                  onClick={handleDeletePost}
+                  disabled={isDeleting}
+                  style={{
+                    width: "100%",
+                    padding: "10px 16px",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    color: "#ff4d4f",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontWeight: "500",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.target.style.backgroundColor = "var(--secondary-bg)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.target.style.backgroundColor = "transparent")
+                  }
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  {isDeleting ? "Đang xóa..." : "Xóa"}
+                </button>
+                {/* Future: Edit post could go here */}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {title && (
@@ -450,135 +684,220 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
           </div>
         </div>
       )}
-
-      <div
-        className="post-actions"
-        style={{
-          display: "flex",
-          gap: "20px",
-          alignItems: "center",
-          marginTop: "16px",
-          borderTop: "1px solid var(--border-color)",
-          paddingTop: "12px",
-        }}
-      >
-        <button
-          className="post-action-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsLiked(!isLiked);
-          }}
+      {reviewMode ? (
+        <div
+          className="review-actions"
           style={{
-            color: isLiked ? "var(--primary-color)" : "var(--text-secondary)",
-            border: "none",
-            background: "none",
             display: "flex",
+            gap: "12px",
             alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
+            marginTop: "16px",
+            borderTop: "1px solid var(--border-color)",
+            paddingTop: "12px",
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-          </svg>
-          <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
-        </button>
-        <button
-          className="post-action-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
-          style={{
-            color: "var(--text-secondary)",
-            border: "none",
-            background: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-            <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
-          </svg>
-          <span>{localCommentCount}</span>
-        </button>
-        <button
-          className="post-action-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(
-              window.location.origin + "/posts/" + (id || ""),
-            );
-            alert("Đã sao chép liên kết bài viết!");
-          }}
-          style={{
-            color: "var(--text-secondary)",
-            border: "none",
-            background: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <button
+            className="btn-approve"
+            onClick={(e) => {
+              e.stopPropagation();
+              onApprove && onApprove(id);
+            }}
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "none",
+              background: "#10b981",
+              color: "white",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
           >
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-            <polyline points="16 6 12 2 8 6"></polyline>
-            <line x1="12" y1="2" x2="12" y2="15"></line>
-          </svg>
-          <span>Chia sẻ</span>
-        </button>
-        <button
-          className="post-action-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsSaved(!isSaved);
-          }}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 5 11"></polyline>
+            </svg>
+            Duyệt bài
+          </button>
+          <button
+            className="btn-reject"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReject && onReject(id);
+            }}
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "none",
+              background: "#ef4444",
+              color: "white",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Từ chối
+          </button>
+        </div>
+      ) : (
+        <div
+          className="post-actions"
           style={{
-            marginLeft: "auto",
-            color: isSaved ? "var(--primary-color)" : "var(--text-secondary)",
-            border: "none",
-            background: "none",
             display: "flex",
+            gap: "20px",
             alignItems: "center",
-            gap: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
+            marginTop: "16px",
+            borderTop: "1px solid var(--border-color)",
+            paddingTop: "12px",
           }}
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill={isSaved ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <button
+            className="post-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLiked(!isLiked);
+            }}
+            style={{
+              color: isLiked ? "var(--primary-color)" : "var(--text-secondary)",
+              border: "none",
+              background: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
           >
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span>{isSaved ? "Đã lưu" : "Lưu Bài"}</span>
-        </button>
-      </div>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+              <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+            </svg>
+            <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
+          </button>
+          <button
+            className="post-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            style={{
+              color: "var(--text-secondary)",
+              border: "none",
+              background: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+              <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
+            </svg>
+            <span>{localCommentCount}</span>
+          </button>
+          <button
+            className="post-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(
+                window.location.origin + "/posts/" + (id || ""),
+              );
+              alert("Đã sao chép liên kết bài viết!");
+            }}
+            style={{
+              color: "var(--text-secondary)",
+              border: "none",
+              background: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+            <span>Chia sẻ</span>
+          </button>
+          <button
+            className="post-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsSaved(!isSaved);
+            }}
+            style={{
+              marginLeft: "auto",
+              color: isSaved ? "var(--primary-color)" : "var(--text-secondary)",
+              border: "none",
+              background: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill={isSaved ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>{isSaved ? "Đã lưu" : "Lưu Bài"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Inline Comments Section */}
       {isExpanded && (
@@ -708,7 +1027,13 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                       className="comment-item"
                       style={{ display: "flex", gap: "12px" }}
                     >
-                      <div className="comment-user-avatar">
+                      <div
+                        className="comment-user-avatar"
+                        onClick={() =>
+                          navigate(`/profile?id=${comment.userId}`)
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
                         {comment.userAvatarURL ? (
                           <img
                             src={comment.userAvatarURL}
@@ -745,11 +1070,21 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                       >
                         <span
                           className="comment-username"
+                          onClick={() =>
+                            navigate(`/profile?id=${comment.userId}`)
+                          }
                           style={{
                             fontWeight: "bold",
                             fontSize: "13px",
                             color: "var(--text-color)",
+                            cursor: "pointer",
                           }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.color = "var(--primary-color)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.color = "var(--text-color)")
+                          }
                         >
                           {comment.userName}
                         </span>
@@ -903,7 +1238,13 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                   marginTop: "12px",
                                 }}
                               >
-                                <div className="reply-user-avatar">
+                                <div
+                                  className="reply-user-avatar"
+                                  onClick={() =>
+                                    navigate(`/profile?id=${reply.userId}`)
+                                  }
+                                  style={{ cursor: "pointer" }}
+                                >
                                   {reply.userAvatarURL ? (
                                     <img
                                       src={reply.userAvatarURL}
@@ -942,11 +1283,23 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal }) => {
                                 >
                                   <span
                                     className="reply-username"
+                                    onClick={() =>
+                                      navigate(`/profile?id=${reply.userId}`)
+                                    }
                                     style={{
                                       fontWeight: "bold",
                                       fontSize: "12px",
                                       color: "var(--text-color)",
+                                      cursor: "pointer",
                                     }}
+                                    onMouseEnter={(e) =>
+                                      (e.target.style.color =
+                                        "var(--primary-color)")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.target.style.color =
+                                        "var(--text-color)")
+                                    }
                                   >
                                     {reply.userName}
                                   </span>

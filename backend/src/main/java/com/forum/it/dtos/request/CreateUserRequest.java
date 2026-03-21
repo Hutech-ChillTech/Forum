@@ -37,4 +37,6 @@ public class CreateUserRequest {
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
+
+    private String otp;
 }

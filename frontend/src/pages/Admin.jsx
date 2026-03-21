@@ -114,6 +114,17 @@ const Admin = () => {
     }
   };
 
+  const handleUpdateUserRole = async (userId, role) => {
+    try {
+      await userService.updateUserRole(userId, role);
+      setUsers((prev) =>
+        prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
+      );
+    } catch (e) {
+      alert("Lỗi: " + e.message);
+    }
+  };
+
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Xóa bài viết này?")) return;
     try {
@@ -214,6 +225,7 @@ const Admin = () => {
                     <th>Username</th>
                     <th>Họ tên</th>
                     <th>Email</th>
+                    <th>Vai trò</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                   </tr>
@@ -224,6 +236,19 @@ const Admin = () => {
                       <td>{u.userName}</td>
                       <td>{u.fullName}</td>
                       <td>{u.email}</td>
+                      <td>
+                        <select
+                          className="status-select"
+                          value={u.role || "USER"}
+                          onChange={(e) =>
+                            handleUpdateUserRole(u.userId, e.target.value)
+                          }
+                        >
+                          <option value="USER">USER</option>
+                          <option value="MODERATOR">MODERATOR</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </td>
                       <td>
                         <span
                           className={
@@ -254,7 +279,7 @@ const Admin = () => {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="empty-row">
+                      <td colSpan="6" className="empty-row">
                         Không có dữ liệu
                       </td>
                     </tr>

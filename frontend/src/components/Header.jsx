@@ -34,6 +34,23 @@ const Header = ({ hideAuth = false }) => {
   const notificationRef = useRef(null);
   const chatRef = useRef(null);
   const searchRef = useRef(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [activeChats, setActiveChats] = useState([]); // List of up to 5 user objects
+    const [maximizedChatId, setMaximizedChatId] = useState(null); // ID/Name of the chat currently open
+    const [isClosing, setIsClosing] = useState(false);
+    const [isChatClosing, setIsChatClosing] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [postToEdit, setPostToEdit] = useState(null);
+    const [showSearchHistory, setShowSearchHistory] = useState(false);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const dropdownRef = useRef(null);
+    const notificationRef = useRef(null);
+    const chatRef = useRef(null);
+    const searchRef = useRef(null);
 
   // Get user data from localStorage or use defaults
   const [userData, setUserData] = useState(() => {
@@ -166,6 +183,15 @@ const Header = ({ hideAuth = false }) => {
     const handleOpenCreatePost = () => {
       setIsCreateOpen(true);
     };
+        const handleOpenCreatePost = () => {
+            setPostToEdit(null);
+            setIsCreateOpen(true);
+        };
+
+        const handleOpenEditPost = (e) => {
+            setPostToEdit(e.detail);
+            setIsCreateOpen(true);
+        };
 
     const handleProfileUpdate = (e) => {
       const profile = e.detail;
@@ -179,6 +205,10 @@ const Header = ({ hideAuth = false }) => {
     window.addEventListener("openCreatePost", handleOpenCreatePost);
     window.addEventListener("userProfileUpdated", handleProfileUpdate);
     document.addEventListener("mousedown", handleClickOutside);
+        window.addEventListener('openCreatePost', handleOpenCreatePost);
+        window.addEventListener('openEditPost', handleOpenEditPost);
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -186,6 +216,13 @@ const Header = ({ hideAuth = false }) => {
       window.removeEventListener("userProfileUpdated", handleProfileUpdate);
     };
   }, [showNotifications, showChat, showDropdown, showSearchHistory]);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('openCreatePost', handleOpenCreatePost);
+            window.removeEventListener('openEditPost', handleOpenEditPost);
+            window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+        };
+    }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
   // Fetch search history
   useEffect(() => {
@@ -292,6 +329,10 @@ const Header = ({ hideAuth = false }) => {
       .toUpperCase()
       .slice(0, 2);
   };
+    // Get user initials for avatar
+    const getInitials = (name) => {
+        return name ? name.charAt(0).toUpperCase() : 'U';
+    };
 
   const formatNotifTime = (iso) => {
     if (!iso) return "";
@@ -806,6 +847,20 @@ const Header = ({ hideAuth = false }) => {
       />
     </header>
   );
+            <CreatePostModal
+                isOpen={isCreateOpen}
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    setPostToEdit(null);
+                }}
+                postToEdit={postToEdit}
+                onPostCreated={(newPost) => {
+                    const event = new CustomEvent('globalPostCreated', { detail: newPost });
+                    window.dispatchEvent(event);
+                }}
+            />
+        </header>
+    );
 };
 
 export default Header;

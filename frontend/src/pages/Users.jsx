@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import userService from "../service/userService";
 import followService from "../service/followService";
 import authService from "../service/authService";
@@ -156,7 +157,11 @@ const Users = () => {
                   users.map((user) => (
                     <div key={user.userId} className="user-card">
                       <div className="user-card-header">
-                        <div className="user-avatar-medium">
+                        <Link
+                          to={"/profile?id=" + user.userId}
+                          className="user-avatar-medium"
+                          style={{ textDecoration: "none" }}
+                        >
                           {user.avatarURL ? (
                             <img src={user.avatarURL} alt={user.userName} />
                           ) : (
@@ -164,14 +169,14 @@ const Users = () => {
                               {getInitials(user.fullName || user.userName)}
                             </span>
                           )}
-                        </div>
+                        </Link>
                         <div className="user-details">
-                          <a
-                            href={"/profile?id=" + user.userId}
+                          <Link
+                            to={"/profile?id=" + user.userId}
                             className="user-name-link"
                           >
                             {user.fullName || user.userName}
-                          </a>
+                          </Link>
                           <span className="user-location">
                             @{user.userName}
                           </span>
@@ -186,24 +191,24 @@ const Users = () => {
                             </span>
                           </div>
                         </div>
+                        <div className="user-tags">
+                          <span className="user-tag">{user.email}</span>
+                        </div>
+                        {currentUserId &&
+                          String(user.userId) !== String(currentUserId) && (
+                            <button
+                              className={`follow-user-btn${followStates[user.userId]?.isFollowing ? " following" : ""}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleFollowToggle(user);
+                              }}
+                            >
+                              {followStates[user.userId]?.isFollowing
+                                ? "Bỏ theo dõi"
+                                : "Theo dõi"}
+                            </button>
+                          )}
                       </div>
-                      <div className="user-tags">
-                        <span className="user-tag">{user.email}</span>
-                      </div>
-                      {currentUserId &&
-                        String(user.userId) !== String(currentUserId) && (
-                          <button
-                            className={`follow-user-btn${followStates[user.userId]?.isFollowing ? " following" : ""}`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleFollowToggle(user);
-                            }}
-                          >
-                            {followStates[user.userId]?.isFollowing
-                              ? "Bỏ theo dõi"
-                              : "Theo dõi"}
-                          </button>
-                        )}
                     </div>
                   ))
                 )}
