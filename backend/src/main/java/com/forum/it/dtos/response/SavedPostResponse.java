@@ -15,4 +15,5 @@ import lombok.NoArgsConstructor;
 public class SavedPostResponse {
     private UUID postId;
     private LocalDateTime savedAt;
+    private PostResponse post;
 }

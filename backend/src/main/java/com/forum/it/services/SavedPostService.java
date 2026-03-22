@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.forum.it.dtos.response.PostResponse;
 import com.forum.it.dtos.response.SavedPostResponse;
 import com.forum.it.entities.post.SavedPost;
 import com.forum.it.exceptions.AppException;
@@ -23,8 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class SavedPostService {
 
     private final SavedPostRepository savedPostRepository;
-    private final UserRepository      userRepository;
-    private final PostRepository      postRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
 
     public void bookmarkPost(UUID userId, UUID postId) {
         if (savedPostRepository.existsByUserUserIdAndPostPostId(userId, postId)) {
@@ -53,7 +54,7 @@ public class SavedPostService {
         return savedPosts.map(savedPost -> SavedPostResponse.builder()
                 .postId(savedPost.getPost().getPostId())
                 .savedAt(savedPost.getCreatedAt().atStartOfDay())
+                .post(new PostResponse(savedPost.getPost()))
                 .build());
     }
 }
-

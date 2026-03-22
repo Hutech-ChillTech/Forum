@@ -10,8 +10,8 @@
     grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
     max-width: var(--container-max-width);
     margin: 56px auto 0;
-    padding: 24px 16px;
-    gap: 24px;
+    padding: 0 16px;
+    gap: 0;
     flex: 1;
 }
 
@@ -21,6 +21,8 @@
     top: 80px;
     width: var(--left-sidebar-width);
     height: fit-content;
+    padding-top: 24px;
+    padding-right: 24px;
 }
 
 .sidebar-nav {
@@ -88,7 +90,12 @@
 
 /* Main Content */
 .tags-main {
-    min-width: 0;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    min-height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px 40px;
 }
 
 /* Header */

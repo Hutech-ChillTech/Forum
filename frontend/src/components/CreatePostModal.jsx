@@ -29,19 +29,20 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
             const newBlocks = [];
 
             // Split by image and code markers
-            // Example image: \n![image](url)\n
-            // Example code: \n```\ncode\n```\n
-            const parts = content.split(/(\n!\[image\]\(.*?\)\n|\n```\n[\s\S]*?\n```\n)/g);
+            const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?(?:```|$))/g);
 
             parts.forEach((part, index) => {
                 if (!part) return;
 
-                if (part.startsWith('\n![image](')) {
-                    const url = part.match(/\((.*?)\)/)?.[1];
-                    if (url) newBlocks.push({ id: Date.now() + index, type: 'image', content: url });
-                } else if (part.startsWith('\n```\n')) {
-                    const code = part.replace('\n```\n', '').replace('\n```\n', '');
-                    newBlocks.push({ id: Date.now() + index, type: 'code', content: code.trim() });
+                if (index % 2 !== 0) {
+                    if (part.startsWith('![')) {
+                        const url = part.match(/\((.*?)\)/)?.[1];
+                        if (url) newBlocks.push({ id: Date.now() + index, type: 'image', content: url });
+                    } else if (part.startsWith('```')) {
+                        const code = part.replace(/^```[^\n]*\n?|```$/g, '');
+                        // even if empty, we insert it so user can edit it
+                        newBlocks.push({ id: Date.now() + index, type: 'code', content: code });
+                    }
                 } else {
                     const text = part.trim();
                     if (text || index === 0) {
@@ -254,14 +255,18 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
                         {blocks.map((block, index) => {
                             if (block.type === 'text') {
                                 return (
-                                    <textarea
-                                        key={block.id}
-                                        className="post-textarea"
-                                        placeholder={index === 0 ? "Hãy chia sẻ gì đó nhé!" : "Viết tiếp..."}
-                                        value={block.content}
-                                        onChange={(e) => handleBlockChange(block.id, e.target.value)}
-                                        rows={blocks.length > 1 ? 2 : 6}
-                                    />
+                                    <div key={block.id} className="text-block-container" style={{ position: 'relative', marginBottom: '12px' }}>
+                                        <textarea
+                                            className="post-textarea"
+                                            placeholder={index === 0 ? "Hãy chia sẻ gì đó nhé!" : "Viết tiếp..."}
+                                            value={block.content}
+                                            onChange={(e) => handleBlockChange(block.id, e.target.value)}
+                                            rows={blocks.length > 1 ? 2 : 6}
+                                        />
+                                        {blocks.length > 1 && (
+                                            <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕ Gỡ chữ</button>
+                                        )}
+                                    </div>
                                 );
                             } else if (block.type === 'code') {
                                 return (

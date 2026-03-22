@@ -4,6 +4,8 @@ import ImageGrid from './ImageGrid';
 import postService from '../service/postService';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
+import shareService from '../service/shareService';
+import savedPostService from '../service/savedPostService';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 
 const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = false, onApprove, onReject }) => {
@@ -19,12 +21,18 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeleted, setIsDeleted] = useState(false);
+    const [submittingSave, setSubmittingSave] = useState(false);
     // Map backend fields to local variables
     const id = post.postId || post.id || post.postID;
     const author = post.userName || post.author;
     const avatar = post.userAvatarURL || post.avatar;
+    const isSavedInitial = post.isSaved || false;
+    useEffect(() => {
+        setIsSaved(isSavedInitial);
+    }, [isSavedInitial]);
     const time = post.createdAt || post.timestamp || post.time || post.askedTime;
     const commentCount = post.commentCount !== undefined ? post.commentCount : 0;
     const content = post.content || post.excerpt || "";
@@ -37,20 +45,25 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         if (!content) return [];
         const blocks = [];
         // Regex to match images and code blocks anywhere in text
-        const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?```)/g);
+        const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?(?:```|$))/g);
 
-        parts.forEach(part => {
+        parts.forEach((part, index) => {
             if (!part) return;
 
-            const trimmedPart = part.trim();
-            if (trimmedPart.startsWith('![image](')) {
-                const url = trimmedPart.match(/\((.*?)\)/)?.[1];
-                if (url) blocks.push({ type: 'image', content: url });
-            } else if (trimmedPart.startsWith('```')) {
-                const code = trimmedPart.replace(/^```\w*\n?|```$/g, '');
-                blocks.push({ type: 'code', content: code });
-            } else if (trimmedPart) {
-                blocks.push({ type: 'text', content: part }); // Keep original spacing for text
+            if (index % 2 !== 0) { // Regex matched groups
+                if (part.startsWith('![')) {
+                    const url = part.match(/\((.*?)\)/)?.[1];
+                    if (url) blocks.push({ type: 'image', content: url });
+                } else if (part.startsWith('```')) {
+                    const code = part.replace(/^```[^\n]*\n?|```$/g, '');
+                    if (code.trim() !== '') {
+                        blocks.push({ type: 'code', content: code });
+                    }
+                }
+            } else {
+                if (part.trim()) {
+                    blocks.push({ type: 'text', content: part }); // Keep original spacing for text
+                }
             }
         });
         return blocks.length > 0 ? blocks : [{ type: 'text', content: content }];
@@ -205,14 +218,70 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
 
     if (isDeleted) return null;
 
+    const handleToggleSave = async (e) => {
+        e.stopPropagation();
+        if (!authService.isLoggedIn()) {
+            navigate('/login');
+            return;
+        }
+        if (submittingSave) return;
+
+        try {
+            setSubmittingSave(true);
+            if (isSaved) {
+                await savedPostService.unbookmarkPost(id);
+                setIsSaved(false);
+            } else {
+                await savedPostService.bookmarkPost(id);
+                setIsSaved(true);
+            }
+        } catch (err) {
+            console.error('Lỗi khi lưu bài viết:', err);
+            // Optionally, we could show a toast here instead of an alert
+        } finally {
+            setSubmittingSave(false);
+        }
+    };
+
     // Close menu when clicking outside
     useEffect(() => {
-        if (!showMenu) return;
-        const closeMenu = () => setShowMenu(false);
+        if (!showMenu && !showShareMenu) return;
+        const closeMenu = () => {
+            setShowMenu(false);
+            setShowShareMenu(false);
+        };
         window.addEventListener('click', closeMenu);
         return () => window.removeEventListener('click', closeMenu);
-    }, [showMenu]);
+    }, [showMenu, showShareMenu]);
 
+    const handleShare = async (platform) => {
+        const urlToShare = window.location.origin + '/posts/' + (id || '');
+        setShowShareMenu(false);
+
+        try {
+            if (platform !== 'COPY') {
+                await shareService.sharePost(id, { platform });
+            }
+
+            if (platform === 'COPY') {
+                navigator.clipboard.writeText(urlToShare);
+                alert('Đã sao chép liên kết bài viết!');
+            } else if (platform === 'FACEBOOK') {
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
+            } else if (platform === 'MESSENGER') {
+                window.open(`fb-messenger://share?link=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400'); // Note: web messenger sharing might differ
+            } else if (platform === 'LINKEDIN') {
+                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
+            } else if (platform === 'INSTAGRAM') {
+                navigator.clipboard.writeText(urlToShare);
+                alert('Đã sao chép liên kết. Mở ứng dụng Instagram để chia sẻ!');
+            }
+        } catch (err) {
+            console.error('Lỗi khi chia sẻ:', err);
+            // Optionally silently fail or show alert
+            alert('Lỗi khi chia sẻ: ' + err.message);
+        }
+    };
 
     // Regroup blocks to bundle consecutive images
     const groupedBlocks = (() => {
@@ -467,16 +536,16 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
             }
             {reviewMode ? (
                 <div className="review-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                    <button 
-                        className="btn-approve" 
+                    <button
+                        className="btn-approve"
                         onClick={(e) => { e.stopPropagation(); onApprove && onApprove(id); }}
                         style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 5 11"></polyline></svg>
                         Duyệt bài
                     </button>
-                    <button 
-                        className="btn-reject" 
+                    <button
+                        className="btn-reject"
                         onClick={(e) => { e.stopPropagation(); onReject && onReject(id); }}
                         style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
@@ -498,17 +567,94 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                         </svg>
                         <span>{localCommentCount}</span>
                     </button>
-                    <button className="post-action-btn" onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(window.location.origin + '/posts/' + (id || ''));
-                        alert('Đã sao chép liên kết bài viết!');
-                    }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
-                        </svg>
-                        <span>Chia sẻ</span>
-                    </button>
-                    <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsSaved(!isSaved); }} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <div style={{ position: 'relative' }}>
+                        <button className="post-action-btn" onClick={(e) => {
+                            e.stopPropagation();
+                            setShowShareMenu(!showShareMenu);
+                        }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Chia sẻ</span>
+                        </button>
+
+                        {showShareMenu && (
+                            <div
+                                className="post-dropdown-menu"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 'calc(100% + 8px)',
+                                    left: '0',
+                                    backgroundColor: 'var(--card-bg)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                    borderRadius: '8px',
+                                    padding: '8px 0',
+                                    zIndex: 100,
+                                    minWidth: '200px',
+                                    border: '1px solid var(--border-color)'
+                                }}
+                            >
+                                <button
+                                    className="menu-item"
+                                    onClick={(e) => { e.stopPropagation(); handleShare('FACEBOOK'); }}
+                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                                    Chia sẻ lên Facebook
+                                </button>
+                                <button
+                                    className="menu-item"
+                                    onClick={(e) => { e.stopPropagation(); handleShare('MESSENGER'); }}
+                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                    Gửi qua Messenger
+                                </button>
+                                <button
+                                    className="menu-item"
+                                    onClick={(e) => { e.stopPropagation(); handleShare('LINKEDIN'); }}
+                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                                    Chia sẻ lên LinkedIn
+                                </button>
+                                <button
+                                    className="menu-item"
+                                    onClick={(e) => { e.stopPropagation(); handleShare('INSTAGRAM'); }}
+                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                    Đăng lên Instagram
+                                </button>
+                                <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }}></div>
+                                <button
+                                    className="menu-item"
+                                    onClick={(e) => { e.stopPropagation(); handleShare('COPY'); }}
+                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    Sao chép liên kết
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        className="post-action-btn"
+                        onClick={handleToggleSave}
+                        disabled={submittingSave}
+                        style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                    >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                         </svg>

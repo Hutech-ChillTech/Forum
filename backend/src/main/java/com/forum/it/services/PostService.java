@@ -2,11 +2,13 @@ package com.forum.it.services;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,9 @@ import com.forum.it.dtos.request.UpdatePostRequest;
 import com.forum.it.dtos.response.PostResponse;
 import com.forum.it.entities.post.Post;
 import com.forum.it.entities.post.PostStatus;
+import com.forum.it.entities.system.Notification;
+import com.forum.it.entities.system.NotificationStatus;
+import com.forum.it.entities.system.NotificationType;
 import com.forum.it.entities.tag.PostTag;
 import com.forum.it.entities.tag.Tag;
 import com.forum.it.entities.user.AccountStatus;
@@ -58,7 +63,6 @@ public class PostService {
     /**
      * userId is resolved from the JWT — NOT from the request body.
      */
-    @CacheEvict(value = "posts", allEntries = true)
     public PostResponse createPost(CreatePostRequest request) {
         UUID userId = securityContextHelper.getCurrentUserId();
         User user = userRepository.findById(userId)
@@ -90,22 +94,27 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPublishedPosts(Pageable pageable) {
-        return postRepository.findPublishedPosts(pageable)
+        Page<PostResponse> page = postRepository.findPublishedPosts(pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPosts(Pageable pageable) {
-        return postRepository.findAll(pageable)
+        Page<PostResponse> page = postRepository.findAll(pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "posts", key = "#postId")
     public PostResponse getPostById(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-        return new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
+        PostResponse response = new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
+        enrichSavedStatus(Collections.singletonList(response));
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -113,14 +122,18 @@ public class PostService {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", "id", userId);
         }
-        return postRepository.findByUserUserId(userId, pageable)
+        Page<PostResponse> page = postRepository.findByUserUserIdAndStatus(userId, PostStatus.PUBLISHED, pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPostsByStatus(PostStatus status, Pageable pageable) {
-        return postRepository.findByStatus(status, pageable)
+        Page<PostResponse> page = postRepository.findByStatus(status, pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
@@ -128,18 +141,21 @@ public class PostService {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
-        return postRepository.searchPosts(keyword.trim(), pageable)
+        Page<PostResponse> page = postRepository.searchPosts(keyword.trim(), pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getRecentPosts(int days, Pageable pageable) {
         LocalDate since = LocalDate.now().minusDays(days);
-        return postRepository.findRecentPosts(since, pageable)
+        Page<PostResponse> page = postRepository.findRecentPosts(since, pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
     }
 
-    @CachePut(value = "posts", key = "#postId")
     public PostResponse updatePost(UUID postId, UpdatePostRequest request) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -183,14 +199,34 @@ public class PostService {
     }
 
     public PostResponse updatePostStatus(UUID postId, PostStatus status) {
+        if (status == PostStatus.REJECTED) {
+            deletePostByAdmin(postId);
+            return null; // Post is gone
+        }
+
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+
+        PostStatus oldStatus = post.getStatus();
         post.setStatus(status);
         Post updatedPost = postRepository.save(post);
-        return new PostResponse(updatedPost, postTagRepository.findTagNamesByPostId(postId));
+
+        // Notify author if post is approved
+        if (oldStatus == PostStatus.PENDING && status == PostStatus.PUBLISHED) {
+            Notification notification = new Notification();
+            notification.setUser(post.getUser());
+            notification.setPost(post);
+            notification.setType(NotificationType.SYSTEM);
+            notification.setMessage("Bài viết của bạn \"" + post.getTitle() + "\" đã được phê duyệt thành công!");
+            notification.setStatus(NotificationStatus.UNREAD);
+            notificationRepository.save(notification);
+        }
+
+        PostResponse response = new PostResponse(updatedPost, postTagRepository.findTagNamesByPostId(postId));
+        enrichSavedStatus(Collections.singletonList(response));
+        return response;
     }
 
-    @CacheEvict(value = "posts", key = "#postId")
     public void deletePost(UUID postId) {
         Post post = postRepository.findById(Objects.requireNonNull(postId))
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -235,6 +271,28 @@ public class PostService {
     @Transactional(readOnly = true)
     public long countPostsByUser(UUID userId) {
         return postRepository.countByUserId(userId);
+    }
+
+    private void enrichSavedStatus(List<PostResponse> responses) {
+        if (responses == null || responses.isEmpty())
+            return;
+        try {
+            UUID userId = securityContextHelper.getCurrentUserId();
+            if (userId != null) {
+                List<UUID> postIds = responses.stream()
+                        .map(PostResponse::getPostId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                if (postIds.isEmpty())
+                    return;
+
+                Set<UUID> savedPostIds = new java.util.HashSet<>(savedPostRepository.findSavedPostIds(userId, postIds));
+                responses.forEach(r -> r.setIsSaved(savedPostIds.contains(r.getPostId())));
+            }
+        } catch (Exception ignored) {
+            // Not authenticated or other error, just leave isSaved as false
+        }
     }
 
     private List<String> handleTags(Post post, List<String> tagNames) {
