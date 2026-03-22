@@ -66,6 +66,9 @@ public class Post {
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
+    @Column(name = "count_like", nullable = false, columnDefinition = "integer default 0")
+    private int countLike = 0;
+
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Comment> comments;
 }

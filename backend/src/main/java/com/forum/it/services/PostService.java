@@ -84,7 +84,7 @@ public class PostService {
         post.setTitle(request.getTitle().trim());
         post.setContent(request.getContent().trim());
         post.setImageURL(request.getImageURL());
-        post.setStatus(PostStatus.PENDING);
+        post.setStatus(PostStatus.PUBLISHED);
         post.setUser(user);
 
         Post savedPost = postRepository.save(post);
@@ -109,12 +109,16 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    // @Cacheable(value = "posts", key = "#postId")
     public PostResponse getPostById(UUID postId) {
+        System.out.println("DEBUG: Fetching post by ID: " + postId);
         Post post = postRepository.findById(Objects.requireNonNull(postId))
-                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-        PostResponse response = new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
-        enrichSavedStatus(Collections.singletonList(response));
-        return response;
+                .orElseThrow(() -> {
+                    System.err.println("DEBUG: Post not found in DB: " + postId);
+                    return new ResourceNotFoundException("Post", "id", postId);
+                });
+        System.out.println("DEBUG: Post found: " + post.getTitle());
+        return new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId()));
     }
 
     @Transactional(readOnly = true)

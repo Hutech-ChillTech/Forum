@@ -4,17 +4,20 @@ import ImageGrid from './ImageGrid';
 import postService from '../service/postService';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
+import likeService from '../service/likeService';
 import shareService from '../service/shareService';
-import savedPostService from '../service/savedPostService';
+import ShareModal from './ShareModal';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 
 const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = false, onApprove, onReject }) => {
     const navigate = useNavigate();
+    const userProfile = authService.getUser();
     const [isLiked, setIsLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(0);
+    const [likeCount, setLikeCount] = useState(post.countLike || 0);
     const [isSaved, setIsSaved] = useState(false);
     const [isFollowed, setIsFollowed] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
     const [comments, setComments] = useState([]);
     const [commentLoading, setCommentLoading] = useState(false);
@@ -92,6 +95,21 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         return `${Math.floor(diff / 86400)} ngày trước`;
     };
 
+    // Fetch like status
+    useEffect(() => {
+        if (id && userProfile) {
+            const fetchLikeStatus = async () => {
+                try {
+                    const liked = await likeService.getLikeStatus(id);
+                    setIsLiked(liked);
+                } catch (err) {
+                    console.error('Failed to fetch like status:', err);
+                }
+            };
+            fetchLikeStatus();
+        }
+    }, [id, userProfile]);
+
     // Fetch comments when expanded
     useEffect(() => {
         if (isExpanded && id) {
@@ -113,7 +131,6 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
 
     const [replyingToCommentId, setReplyingToCommentId] = useState(null);
     const [replyContent, setReplyContent] = useState('');
-    const userProfile = authService.getUser();
 
     // Listen for comments added anywhere (especially in the Pop-up modal)
     useEffect(() => {
@@ -173,46 +190,45 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         }
     };
 
-    const handleDeletePost = async (e) => {
+    const handleToggleLike = async (e) => {
         e.stopPropagation();
-        if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
+        if (!userProfile) {
+            alert("Vui lòng đăng nhập để thích bài viết!");
+            return;
+        }
+
+        try {
+            // Optimistic update
+            const newIsLiked = !isLiked;
+            setIsLiked(newIsLiked);
+            setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+
+            await likeService.toggleLike(id);
+        } catch (err) {
+            console.error('Failed to toggle like:', err);
+            // Revert on error
+            setIsLiked(isLiked);
+            setLikeCount(likeCount);
+        }
+    };
+
+    const handleDeletePost = async (e) => {
+        if (e) e.stopPropagation();
+        
+        const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?");
+        if (!confirmDelete) return;
 
         try {
             setIsDeleting(true);
             await postService.deletePost(id);
-            // After success, we can either hide the card or refresh
-            // For now, let's just make the card disappear by modifying its state if we had a list,
-            // but since this is a child component, we should ideally inform the parent.
-            // A simple way is to hide it locally for now if we can't refresh easily.
             setIsDeleted(true);
-
-            // Set flag to force fresh data from server and clear all caches
-            sessionStorage.setItem('FORCE_REFRESH_POSTS', 'true');
-            sessionStorage.removeItem('home_posts_cache');
-            sessionStorage.removeItem('home_page_cache');
-            sessionStorage.removeItem('home_scroll_pos');
-            sessionStorage.removeItem('posts_page_cache');
-            sessionStorage.removeItem('posts_page_num');
-            sessionStorage.removeItem('posts_scroll_pos');
-
-            window.location.reload(); // Refresh to update list
+            // Optional: trigger a signal to parent or refresh list
+            window.dispatchEvent(new CustomEvent('postDeleted', { detail: { postId: id } }));
         } catch (err) {
             console.error('Failed to delete post:', err);
-            // If the post is already gone (404), we should still refresh the UI
-            if (err.message?.includes('404') || err.status === 404) {
-                sessionStorage.removeItem('home_posts_cache');
-                sessionStorage.removeItem('home_page_cache');
-                sessionStorage.removeItem('home_scroll_pos');
-                sessionStorage.removeItem('posts_page_cache');
-                sessionStorage.removeItem('posts_page_num');
-                sessionStorage.removeItem('posts_scroll_pos');
-                window.location.reload();
-            } else {
-                alert("Lỗi khi xóa bài viết: " + err.message);
-            }
+            alert('Lỗi khi xóa bài viết: ' + err.message);
         } finally {
             setIsDeleting(false);
-            setShowMenu(false);
         }
     };
 
@@ -305,6 +321,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         }
         return result;
     })();
+
+    const handleShare = (e) => {
+        e.stopPropagation();
+        setIsShareModalOpen(true);
+    };
 
     const handleCardClick = () => {
         if (id) {
@@ -555,11 +576,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                 </div>
             ) : (
                 <div className="post-actions" style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                    <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <button className="post-action-btn" onClick={handleToggleLike} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                             <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                         </svg>
-                        <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
+                        <span>{likeCount}</span>
                     </button>
                     <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
@@ -567,94 +588,32 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                         </svg>
                         <span>{localCommentCount}</span>
                     </button>
-                    <div style={{ position: 'relative' }}>
-                        <button className="post-action-btn" onClick={(e) => {
-                            e.stopPropagation();
-                            setShowShareMenu(!showShareMenu);
-                        }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
-                            </svg>
-                            <span>Chia sẻ</span>
-                        </button>
-
-                        {showShareMenu && (
-                            <div
-                                className="post-dropdown-menu"
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                    position: 'absolute',
-                                    bottom: 'calc(100% + 8px)',
-                                    left: '0',
-                                    backgroundColor: 'var(--card-bg)',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                    borderRadius: '8px',
-                                    padding: '8px 0',
-                                    zIndex: 100,
-                                    minWidth: '200px',
-                                    border: '1px solid var(--border-color)'
-                                }}
-                            >
-                                <button
-                                    className="menu-item"
-                                    onClick={(e) => { e.stopPropagation(); handleShare('FACEBOOK'); }}
-                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                                    Chia sẻ lên Facebook
-                                </button>
-                                <button
-                                    className="menu-item"
-                                    onClick={(e) => { e.stopPropagation(); handleShare('MESSENGER'); }}
-                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                                    Gửi qua Messenger
-                                </button>
-                                <button
-                                    className="menu-item"
-                                    onClick={(e) => { e.stopPropagation(); handleShare('LINKEDIN'); }}
-                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                                    Chia sẻ lên LinkedIn
-                                </button>
-                                <button
-                                    className="menu-item"
-                                    onClick={(e) => { e.stopPropagation(); handleShare('INSTAGRAM'); }}
-                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                                    Đăng lên Instagram
-                                </button>
-                                <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }}></div>
-                                <button
-                                    className="menu-item"
-                                    onClick={(e) => { e.stopPropagation(); handleShare('COPY'); }}
-                                    style={{ width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', color: 'var(--text-color)', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                    Sao chép liên kết
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    <button
-                        className="post-action-btn"
-                        onClick={handleToggleSave}
-                        disabled={submittingSave}
-                        style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}
+                    <button 
+                        className="post-action-btn share-btn" 
+                        onClick={handleShare} 
+                        style={{ 
+                            color: 'var(--text-secondary)', 
+                            border: 'none', 
+                            background: 'none', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            cursor: 'pointer', 
+                            fontSize: '14px', 
+                            fontWeight: '500',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-bg)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                     >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Chia sẻ</span>
+                    </button>
+                    <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsSaved(!isSaved); }} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                         </svg>
@@ -832,6 +791,12 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                     </div>
                 )
             }
+            
+            <ShareModal 
+                post={post} 
+                isOpen={isShareModalOpen} 
+                onClose={() => setIsShareModalOpen(false)} 
+            />
         </div >
     );
 };

@@ -4,5 +4,6 @@ public enum SharePlatform {
     FACEBOOK,
     MESSENGER,
     INSTAGRAM,
-    LINKEDIN
+    LINKEDIN,
+    COPY_LINK
 }
