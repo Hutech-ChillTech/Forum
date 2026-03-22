@@ -5,6 +5,7 @@ import Footer from './Footer';
 import Sidebar from './Sidebar';
 import ChatBox from './ChatBox';
 import PostDetailModal from './PostDetailModal';
+import Toast from './Toast';
 import '../styles/Home.css';
 
 const MainLayout = () => {
@@ -12,7 +13,7 @@ const MainLayout = () => {
     const [selectedPostId, setSelectedPostId] = useState(null);
 
     const userProfile = (() => {
-        try { return JSON.parse(localStorage.getItem('userProfile') || '{}'); } 
+        try { return JSON.parse(localStorage.getItem('userProfile') || '{}'); }
         catch (e) { return {}; }
     })();
 
@@ -20,19 +21,58 @@ const MainLayout = () => {
         return <Navigate to="/admin" replace />;
     }
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     useEffect(() => {
         const handleOpenModal = (e) => {
             setSelectedPostId(e.detail.postId || e.detail.id);
         };
+        const handleToggleMobileMenu = () => {
+            setIsMobileMenuOpen(prev => {
+                const newState = !prev;
+                window.dispatchEvent(new CustomEvent('mobileMenuStateChanged', { detail: { isOpen: newState } }));
+                return newState;
+            });
+        };
         window.addEventListener('openPostModal', handleOpenModal);
-        return () => window.removeEventListener('openPostModal', handleOpenModal);
+        window.addEventListener('toggleMobileMenu', handleToggleMobileMenu);
+        return () => {
+            window.removeEventListener('openPostModal', handleOpenModal);
+            window.removeEventListener('toggleMobileMenu', handleToggleMobileMenu);
+        };
     }, []);
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+        window.dispatchEvent(new CustomEvent('mobileMenuStateChanged', { detail: { isOpen: false } }));
+    }, [window.location.pathname]);
+
+    // Reset mobile menu on screen resize to desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth > 768 && isMobileMenuOpen) {
+                setIsMobileMenuOpen(false);
+                window.dispatchEvent(new CustomEvent('mobileMenuStateChanged', { detail: { isOpen: false } }));
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isMobileMenuOpen]);
 
     return (
         <div className="home-layout">
             <Header />
             <div className="home-container">
-                <aside className="home-sidebar">
+                {/* Mobile overlay backdrop */}
+                {isMobileMenuOpen && (
+                    <div className="mobile-menu-backdrop" onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent('mobileMenuStateChanged', { detail: { isOpen: false } }));
+                    }}></div>
+                )}
+
+                <aside className={`home-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
                     <Sidebar />
                 </aside>
 
@@ -54,6 +94,7 @@ const MainLayout = () => {
             )}
 
             <Footer />
+            <Toast />
         </div>
     );
 };

@@ -24,12 +24,18 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeleted, setIsDeleted] = useState(false);
+    const [submittingSave, setSubmittingSave] = useState(false);
     // Map backend fields to local variables
     const id = post.postId || post.id || post.postID;
     const author = post.userName || post.author;
     const avatar = post.userAvatarURL || post.avatar;
+    const isSavedInitial = post.isSaved || false;
+    useEffect(() => {
+        setIsSaved(isSavedInitial);
+    }, [isSavedInitial]);
     const time = post.createdAt || post.timestamp || post.time || post.askedTime;
     const commentCount = post.commentCount !== undefined ? post.commentCount : 0;
     const content = post.content || post.excerpt || "";
@@ -42,20 +48,25 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         if (!content) return [];
         const blocks = [];
         // Regex to match images and code blocks anywhere in text
-        const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?```)/g);
+        const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?(?:```|$))/g);
 
-        parts.forEach(part => {
+        parts.forEach((part, index) => {
             if (!part) return;
 
-            const trimmedPart = part.trim();
-            if (trimmedPart.startsWith('![image](')) {
-                const url = trimmedPart.match(/\((.*?)\)/)?.[1];
-                if (url) blocks.push({ type: 'image', content: url });
-            } else if (trimmedPart.startsWith('```')) {
-                const code = trimmedPart.replace(/^```\w*\n?|```$/g, '');
-                blocks.push({ type: 'code', content: code });
-            } else if (trimmedPart) {
-                blocks.push({ type: 'text', content: part }); // Keep original spacing for text
+            if (index % 2 !== 0) { // Regex matched groups
+                if (part.startsWith('![')) {
+                    const url = part.match(/\((.*?)\)/)?.[1];
+                    if (url) blocks.push({ type: 'image', content: url });
+                } else if (part.startsWith('```')) {
+                    const code = part.replace(/^```[^\n]*\n?|```$/g, '');
+                    if (code.trim() !== '') {
+                        blocks.push({ type: 'code', content: code });
+                    }
+                }
+            } else {
+                if (part.trim()) {
+                    blocks.push({ type: 'text', content: part }); // Keep original spacing for text
+                }
             }
         });
         return blocks.length > 0 ? blocks : [{ type: 'text', content: content }];
@@ -223,14 +234,70 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
 
     if (isDeleted) return null;
 
+    const handleToggleSave = async (e) => {
+        e.stopPropagation();
+        if (!authService.isLoggedIn()) {
+            navigate('/login');
+            return;
+        }
+        if (submittingSave) return;
+
+        try {
+            setSubmittingSave(true);
+            if (isSaved) {
+                await savedPostService.unbookmarkPost(id);
+                setIsSaved(false);
+            } else {
+                await savedPostService.bookmarkPost(id);
+                setIsSaved(true);
+            }
+        } catch (err) {
+            console.error('Lỗi khi lưu bài viết:', err);
+            // Optionally, we could show a toast here instead of an alert
+        } finally {
+            setSubmittingSave(false);
+        }
+    };
+
     // Close menu when clicking outside
     useEffect(() => {
-        if (!showMenu) return;
-        const closeMenu = () => setShowMenu(false);
+        if (!showMenu && !showShareMenu) return;
+        const closeMenu = () => {
+            setShowMenu(false);
+            setShowShareMenu(false);
+        };
         window.addEventListener('click', closeMenu);
         return () => window.removeEventListener('click', closeMenu);
-    }, [showMenu]);
+    }, [showMenu, showShareMenu]);
 
+    const handleShare = async (platform) => {
+        const urlToShare = window.location.origin + '/posts/' + (id || '');
+        setShowShareMenu(false);
+
+        try {
+            if (platform !== 'COPY') {
+                await shareService.sharePost(id, { platform });
+            }
+
+            if (platform === 'COPY') {
+                navigator.clipboard.writeText(urlToShare);
+                alert('Đã sao chép liên kết bài viết!');
+            } else if (platform === 'FACEBOOK') {
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
+            } else if (platform === 'MESSENGER') {
+                window.open(`fb-messenger://share?link=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400'); // Note: web messenger sharing might differ
+            } else if (platform === 'LINKEDIN') {
+                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
+            } else if (platform === 'INSTAGRAM') {
+                navigator.clipboard.writeText(urlToShare);
+                alert('Đã sao chép liên kết. Mở ứng dụng Instagram để chia sẻ!');
+            }
+        } catch (err) {
+            console.error('Lỗi khi chia sẻ:', err);
+            // Optionally silently fail or show alert
+            alert('Lỗi khi chia sẻ: ' + err.message);
+        }
+    };
 
     // Regroup blocks to bundle consecutive images
     const groupedBlocks = (() => {
@@ -490,16 +557,16 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
             }
             {reviewMode ? (
                 <div className="review-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                    <button 
-                        className="btn-approve" 
+                    <button
+                        className="btn-approve"
                         onClick={(e) => { e.stopPropagation(); onApprove && onApprove(id); }}
                         style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 5 11"></polyline></svg>
                         Duyệt bài
                     </button>
-                    <button 
-                        className="btn-reject" 
+                    <button
+                        className="btn-reject"
                         onClick={(e) => { e.stopPropagation(); onReject && onReject(id); }}
                         style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >

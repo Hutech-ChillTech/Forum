@@ -126,6 +126,9 @@ public class PostController {
             @RequestBody Map<String, String> body) {
         PostStatus status = PostStatus.valueOf(body.get("status"));
         PostResponse response = postService.updatePostStatus(id, status);
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -162,7 +165,8 @@ public class PostController {
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParams = sort.split(",");
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
     }
 

@@ -3,6 +3,7 @@ import CreatePostModal from './CreatePostModal';
 import ChatBox from './ChatBox';
 import authService from '../service/authService';
 import searchService from '../service/searchService';
+import notificationService from '../service/notificationService';
 import '../styles/Header.css';
 
 const Header = ({ hideAuth = false }) => {
@@ -19,6 +20,9 @@ const Header = ({ hideAuth = false }) => {
     const [showSearchHistory, setShowSearchHistory] = useState(false);
     const [recentSearches, setRecentSearches] = useState([]);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
     const notificationRef = useRef(null);
     const chatRef = useRef(null);
@@ -33,7 +37,7 @@ const Header = ({ hideAuth = false }) => {
                 return {
                     name: parsed.fullName || "User",
                     username: parsed.username || "user",
-                    avatar: parsed.avatar || null
+                    avatar: parsed.avatarURL || parsed.avatar || null
                 };
             } catch (e) {
                 console.error('Error parsing user profile in Header:', e);
@@ -76,15 +80,20 @@ const Header = ({ hideAuth = false }) => {
         const handleProfileUpdate = (e) => {
             const profile = e.detail;
             setUserData({
-                name: profile.fullName || profile.displayName || "Trần Khánh Linh",
-                username: profile.username || "khanhlinh_1731",
-                avatar: profile.avatar || null
+                name: profile.fullName || profile.displayName || "User",
+                username: profile.username || "user",
+                avatar: profile.avatarURL || profile.avatar || null
             });
+        };
+
+        const handleMenuStateChange = (e) => {
+            setIsMenuOpen(e.detail.isOpen);
         };
 
         window.addEventListener('openCreatePost', handleOpenCreatePost);
         window.addEventListener('openEditPost', handleOpenEditPost);
         window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        window.addEventListener('mobileMenuStateChanged', handleMenuStateChange);
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
@@ -92,15 +101,30 @@ const Header = ({ hideAuth = false }) => {
             window.removeEventListener('openCreatePost', handleOpenCreatePost);
             window.removeEventListener('openEditPost', handleOpenEditPost);
             window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+            window.removeEventListener('mobileMenuStateChanged', handleMenuStateChange);
         };
     }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
-    // Fetch search history
+    // Fetch search history and notifications
     useEffect(() => {
-        if (showSearchHistory && isLoggedIn) {
-            fetchSearchHistory();
+        if (isLoggedIn) {
+            if (showSearchHistory) fetchSearchHistory();
+            fetchNotifications();
+            const interval = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(interval);
         }
     }, [showSearchHistory, isLoggedIn]);
+
+    const fetchNotifications = async () => {
+        try {
+            const data = await notificationService.getMyNotifications(0, 10);
+            setNotifications(data.content || data || []);
+            const count = await notificationService.countUnread();
+            setUnreadCount(count);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    };
 
     const fetchSearchHistory = async () => {
         try {
@@ -135,6 +159,20 @@ const Header = ({ hideAuth = false }) => {
             setShowChat(false);
             setShowDropdown(false);
             setShowSearchHistory(false);
+            // Optionally mark as read when opened
+            handleMarkAllRead();
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        if (unreadCount > 0) {
+            try {
+                await notificationService.markAllAsRead();
+                setUnreadCount(0);
+                setNotifications(prev => prev.map(n => ({ ...n, status: 'READ' })));
+            } catch (error) {
+                console.error('Error marking read:', error);
+            }
         }
     };
 
@@ -220,21 +258,32 @@ const Header = ({ hideAuth = false }) => {
         return name ? name.charAt(0).toUpperCase() : 'U';
     };
 
-    const dummyNotifications = [
-        { id: 1, text: "Nguyễn Văn A đã thích bài viết của bạn.", time: "5 phút trước", unread: true },
-        { id: 2, text: "Trần Thị B đã bình luận về bài viết của bạn.", time: "1 giờ trước", unread: true },
-        { id: 3, text: "Lê Văn C đã bắt đầu theo dõi bạn.", time: "1 ngày trước", unread: false }
-    ];
-
     const dummyMessages = [
         { id: 1, user: "Nguyễn Văn A", text: "Chào bạn, mình có câu hỏi về React...", time: "2 phút trước", unread: true },
         { id: 2, user: "Admin", text: "Chào mừng bạn đã tham gia SkillForum!", time: "1 ngày trước", unread: false }
     ];
 
     return (
-        <header className="header">
+        <header className="header" onClick={() => {
+            if (isMenuOpen) {
+                window.dispatchEvent(new CustomEvent('toggleMobileMenu'));
+            }
+        }}>
             <div className="header-container">
                 <div className="header-left">
+                    <button className={`mobile-menu-btn ${isMenuOpen ? 'active-menu' : ''}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            window.dispatchEvent(new CustomEvent('toggleMobileMenu'));
+                        }}
+                        aria-label="Menu"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line className="bar1" x1="3" y1="12" x2="21" y2="12"></line>
+                            <line className="bar2" x1="3" y1="6" x2="21" y2="6"></line>
+                            <line className="bar3" x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
                     <a href="/" className="logo">SkillForum</a>
                 </div>
 
@@ -318,28 +367,33 @@ const Header = ({ hideAuth = false }) => {
                                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                         </svg>
-                                        <span className="badge">3</span>
+                                        {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                                     </button>
 
                                     {(showNotifications || isClosing) && (
                                         <div className={`notification-dropdown ${isClosing ? 'closing' : 'opening'}`}>
                                             <div className="notification-header">
                                                 <h3>Thông báo</h3>
-                                                <button className="mark-read-btn">Đánh dấu đã đọc</button>
                                             </div>
                                             <div className="notification-list">
-                                                {dummyNotifications.map(notif => (
-                                                    <div key={notif.id} className={`notification-item ${notif.unread ? 'unread' : ''}`}>
-                                                        <div className="notification-avatar">
-                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                {notifications.length > 0 ? (
+                                                    notifications.map(notif => (
+                                                        <div key={notif.notificationId} className={`notification-item ${notif.status === 'UNREAD' ? 'unread' : ''}`}>
+                                                            <div className="notification-avatar">
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <div className="notification-content">
+                                                                <p>{notif.message}</p>
+                                                                <span className="notification-time">{notif.createdAt}</span>
+                                                            </div>
+                                                            {notif.status === 'UNREAD' && <div className="unread-dot"></div>}
                                                         </div>
-                                                        <div className="notification-content">
-                                                            <p>{notif.text}</p>
-                                                            <span className="notification-time">{notif.time}</span>
-                                                        </div>
-                                                        {notif.unread && <div className="unread-dot"></div>}
-                                                    </div>
-                                                ))}
+                                                    ))
+                                                ) : (
+                                                    <div className="notification-empty">Không có thông báo mới</div>
+                                                )}
                                             </div>
                                             <div className="notification-footer">
                                                 <a href="/notifications">Xem tất cả</a>
