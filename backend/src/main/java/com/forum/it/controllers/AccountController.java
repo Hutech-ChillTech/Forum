@@ -14,6 +14,7 @@ import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.services.AccountService;
+import com.forum.it.dtos.request.RoleRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -42,7 +43,7 @@ public class AccountController {
     @PostMapping(Routes.Auth.REQUEST_OTP)
     public ApiResponses<String> requestOtp(@RequestBody @Valid OtpRequest request) {
         accountService.requestOtp(request);
-        return ApiResponses.success("OTP has been sent to your email", null);
+        return ApiResponses.success(null, null);
     }
 
     @PostMapping(Routes.Auth.LOGOUT)
@@ -51,7 +52,7 @@ public class AccountController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             accountService.logout();
         }
-        return ApiResponses.success("Logout success", null);
+        return ApiResponses.success(null, null);
     }
 
     @PostMapping(Routes.Auth.REFRESH)
@@ -62,7 +63,7 @@ public class AccountController {
     @PostMapping(Routes.Auth.CHANGE_PASSWORD)
     public ApiResponses<String> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
         accountService.changePassword(request);
-        return ApiResponses.success("Password changed successfully", null);
+        return ApiResponses.success(null, null);
     }
 
 }

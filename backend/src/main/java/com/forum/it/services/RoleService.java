@@ -37,11 +37,11 @@ public class RoleService {
 
     @Transactional
     public RoleResponse create(RoleRequest request) {
-        if (roleRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("Role already exists: " + request.getName());
+        if (roleRepository.findByName(request.getRoleName()).isPresent()) {
+            throw new RuntimeException("Role already exists: " + request.getRoleName());
         }
         Role role = new Role();
-        role.setName(request.getName());
+        role.setName(request.getRoleName());
         return new RoleResponse(roleRepository.save(role));
     }
 

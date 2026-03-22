@@ -51,10 +51,10 @@ const Admin = () => {
     } catch (e) { alert('Lỗi: ' + e.message); }
   };
 
-  const handleUpdateUserRole = async (userId, role) => {
+  const handleAssignRole = async (accountId, roleName) => {
     try {
-      await userService.updateUserRole(userId, role);
-      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, role: role } : u));
+      await userService.assignRole(accountId, roleName);
+      setUsers(prev => prev.map(u => u.accountId === accountId ? { ...u, role: roleName } : u));
     } catch (e) { alert('Lỗi: ' + e.message); }
   };
 
@@ -166,7 +166,7 @@ const Admin = () => {
                   style={{ width: '250px' }}
                 />
               </div>
-              
+
               {usersLoading ? (
                 <div className="admin-loading-mini">Đang tải biểu mẫu...</div>
               ) : (
@@ -192,14 +192,13 @@ const Admin = () => {
                           <td style={{ color: '#6b7280' }}>{u.email}</td>
                           <td>
                             <select
-                              value={u.role || 'USER'}
-                              onChange={(e) => handleUpdateUserRole(u.userId, e.target.value)}
+                              value={u.roleName || 'USER'}
+                              onChange={(e) => handleAssignRole(u.accountId, e.target.value)}
                               className="status-select-v2"
                               style={{ padding: '4px 8px', fontSize: '12px' }}
                             >
                               <option value="USER">USER</option>
                               <option value="MODERATOR">MODERATOR</option>
-                              <option value="ADMIN">ADMIN</option>
                             </select>
                           </td>
                           <td>

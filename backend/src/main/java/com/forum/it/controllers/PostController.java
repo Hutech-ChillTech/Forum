@@ -44,33 +44,7 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping(Routes.Post.GET_ALL)
-    public ResponseEntity<Map<String, Object>> getPublishedPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        Pageable pageable = buildPageable(page, size, sort);
-        Page<PostResponse> postsPage = postService.getPublishedPosts(pageable);
-        return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
-    }
-
-    @GetMapping(Routes.Post.GET_ALL_ADMIN)
-    public ResponseEntity<Map<String, Object>> getAllPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        Pageable pageable = buildPageable(page, size, sort);
-        Page<PostResponse> postsPage = postService.getAllPosts(pageable);
-        return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
-    }
-
-    @GetMapping(Routes.Post.GET_BY_ID)
-    public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
-        PostResponse response = postService.getPostById(id);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping(Routes.Post.GET_BY_USER)
+    @GetMapping(Routes.Post.GET_BY_USER_POST)
     public ResponseEntity<Map<String, Object>> getPostsByUser(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -78,17 +52,6 @@ public class PostController {
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
         Pageable pageable = buildPageable(page, size, sort);
         Page<PostResponse> postsPage = postService.getPostsByUserId(userId, pageable);
-        return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
-    }
-
-    @GetMapping(Routes.Post.GET_BY_STATUS)
-    public ResponseEntity<Map<String, Object>> getPostsByStatus(
-            @PathVariable PostStatus status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        Pageable pageable = buildPageable(page, size, sort);
-        Page<PostResponse> postsPage = postService.getPostsByStatus(status, pageable);
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
@@ -135,12 +98,6 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping(Routes.Post.DELETE_ADMIN)
-    public ResponseEntity<Void> deletePostByAdmin(@PathVariable UUID id) {
-        postService.deletePostByAdmin(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping(Routes.Post.STATS_TOTAL)
     public ResponseEntity<Map<String, Long>> getTotalPosts() {
         long total = postService.getTotalPosts();
@@ -162,7 +119,8 @@ public class PostController {
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParams = sort.split(",");
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
     }
 
