@@ -22,6 +22,7 @@ public class UserResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private UUID userId;
+    private UUID accountId;
     private String userName;
     private String fullName;
     private String email;
@@ -34,8 +35,7 @@ public class UserResponse implements Serializable {
 
     private UserStatus verifyStatus;
     private AccountStatus status;
-    private String role;
-
+    private String roleName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate createdAt;

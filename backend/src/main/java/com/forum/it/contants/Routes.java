@@ -7,6 +7,51 @@ public final class Routes {
 
     public static final String API_V1 = "/api/v1";
 
+    public static final class Admin {
+        public static final String BASE = API_V1 + "/internal-mng";
+
+        // User
+        public static final String GET_ALL_USER = "/users";
+        public static final String CREATE_USER = "";
+        public static final String DELETE_USER = "/{id}";
+        public static final String BAN_USER = "/{id}/ban";
+        public static final String UNBAN_USER = "/{id}/unban";
+        public static final String GET_BY_ID_USER = "/{id}";
+        public static final String GET_BY_EMAIL_USER = "/email/{email}";
+
+        // Post
+        public static final String GET_ALL_POSTS = "/posts";
+        public static final String GET_BY_ID_POST = "/posts/{id}";
+        public static final String GET_BY_STATUS_POST = "/posts/status/{status}";
+        public static final String DELETE_POST = "/posts/{id}";
+
+        // Comment
+        public static final String GET_BY_ID_COMMENT = "/comments/{id}";
+        public static final String DELETE_COMMENT = "/comments/{id}";
+
+        // Tag
+        public static final String GET_ALL_TAGS = "/tags";
+        public static final String GET_BY_ID_TAG = "/tags/{id}";
+        public static final String CREATE_TAG = "/tags";
+        public static final String DELETE_TAG = "/tags/{id}";
+
+        // Role
+        public static final String GET_ALL_ROLES = "/roles";
+        public static final String GET_BY_NAME_ROLE = "/roles/{name}";
+        public static final String CREATE_ROLE = "/roles";
+        public static final String DELETE_ROLE = "/roles/{id}";
+        public static final String ASSIGN_ROLE = "/assign-role";
+        public static final String REVOKE_ROLE = "/revoke-role";
+    }
+
+    public static final class Moderation {
+        public static final String BASE = API_V1 + "/admin/moderation";
+        public static final String LOG_ACTION = "";
+        public static final String GET_ALL = "";
+        public static final String BY_ADMIN = "/admin/{adminId}";
+        public static final String BY_TARGET = "/target/{userId}";
+    }
+
     public static final class Auth {
         public static final String BASE = API_V1 + "/auth";
         public static final String LOGIN = "/login";
@@ -15,20 +60,15 @@ public final class Routes {
         public static final String REFRESH = "/token";
         public static final String CHANGE_PASSWORD = "/change-password";
         public static final String REQUEST_OTP = "/request-otp";
+
     }
 
     public static final class User {
         public static final String BASE = API_V1 + "/users";
         public static final String ME = "/me";
-        public static final String GET_ALL = "";
-        public static final String CREATE = "";
-        public static final String GET_BY_ID = "/{id}";
-        public static final String GET_BY_EMAIL = "/email/{email}";
         public static final String UPDATE = "/{id}";
-        public static final String DELETE = "/{id}";
-        public static final String BAN = "/{id}/ban";
-        public static final String UNBAN = "/{id}/unban";
         public static final String SEARCH = "/search";
+        public static final String SEARCH_BY_USERNAME = "/search/name/{name}";
         public static final String ACTIVE = "/active";
         public static final String MY_BOOKMARKS = "/me/bookmarks";
         public static final String MY_SHARES = "/me/shares";
@@ -37,18 +77,14 @@ public final class Routes {
 
     public static final class Post {
         public static final String BASE = API_V1 + "/posts";
-        public static final String GET_ALL = "";
-        public static final String GET_ALL_ADMIN = "/all";
-        public static final String GET_BY_ID = "/{id}";
-        public static final String GET_BY_USER = "/user/{userId}";
-        public static final String GET_BY_STATUS = "/status/{status}";
+        public static final String GET_BY_ID_POST = "/{id}";
+        public static final String GET_BY_USER_POST = "/user/{userId}";
         public static final String SEARCH = "/search";
         public static final String RECENT = "/recent";
         public static final String CREATE = "";
         public static final String UPDATE = "/{id}";
-        public static final String UPDATE_STATUS = "/{id}/status";
         public static final String DELETE = "/{id}";
-        public static final String DELETE_ADMIN = "/{id}/admin";
+        public static final String UPDATE_STATUS = "/{id}/status";
         public static final String BOOKMARK = "/{postId}/bookmarks";
         public static final String STATS_TOTAL = "/statistics/total";
         public static final String STATS_STATUS = "/statistics/status/{status}";
@@ -60,12 +96,9 @@ public final class Routes {
         public static final String BY_POST = "/post/{postId}";
         public static final String BY_POST_ALL = "/post/{postId}/all";
         public static final String BY_USER = "/user/{userId}";
-        public static final String GET_BY_ID = "/{id}";
         public static final String REPLIES = "/{id}/replies";
         public static final String CREATE = "";
         public static final String UPDATE = "/{id}";
-        public static final String DELETE = "/{id}";
-        public static final String DELETE_ADMIN = "/{id}/admin";
         public static final String COUNT_BY_POST = "/count/post/{postId}";
         public static final String COUNT_BY_USER = "/count/user/{userId}";
     }
@@ -86,24 +119,15 @@ public final class Routes {
 
     public static final class Tag {
         public static final String BASE = API_V1 + "/tags";
-        public static final String GET_ALL = "";
-        public static final String GET_BY_ID = "/{id}";
+        public static final String GET_ALL = "/tags";
         public static final String BY_NAME = "/name/{name}";
         public static final String BY_POST = "/post/{postId}";
-        public static final String CREATE = "";
-        public static final String DELETE = "/{id}";
         public static final String POPULAR = "/popular";
         public static final String SEARCH = "/search";
     }
 
     public static final class Role {
         public static final String BASE = API_V1 + "/roles";
-        public static final String GET_ALL = "";
-        public static final String BY_NAME = "/{name}";
-        public static final String CREATE = "";
-        public static final String DELETE = "/{id}";
-        public static final String ASSIGN = "/assign";
-        public static final String REVOKE = "/revoke";
     }
 
     public static final class Notification {
@@ -124,14 +148,6 @@ public final class Routes {
         public static final String CONVERSATION = "/conversation/{userId}";
         public static final String CONVERSATIONS = "/conversations";
         public static final String DELETE = "/{id}";
-    }
-
-    public static final class Moderation {
-        public static final String BASE = API_V1 + "/admin/moderation";
-        public static final String LOG_ACTION = "";
-        public static final String GET_ALL = "";
-        public static final String BY_ADMIN = "/admin/{adminId}";
-        public static final String BY_TARGET = "/target/{userId}";
     }
 
     public static final class WebSocket {

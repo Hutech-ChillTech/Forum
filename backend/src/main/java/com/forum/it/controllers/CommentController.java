@@ -65,12 +65,6 @@ public class CommentController {
         return ResponseEntity.ok(buildPageResponse(commentsPage, "comments"));
     }
 
-    @GetMapping(Routes.Comment.GET_BY_ID)
-    public ResponseEntity<CommentResponse> getCommentById(@PathVariable UUID id) {
-        CommentResponse response = commentService.getCommentById(id);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping(Routes.Comment.REPLIES)
     public ResponseEntity<List<CommentResponse>> getReplies(@PathVariable UUID id) {
         List<CommentResponse> replies = commentService.getReplies(id);
@@ -96,18 +90,6 @@ public class CommentController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping(Routes.Comment.DELETE)
-    public ResponseEntity<Void> deleteComment(@PathVariable UUID id) {
-        commentService.deleteComment(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping(Routes.Comment.DELETE_ADMIN)
-    public ResponseEntity<Void> deleteCommentByAdmin(@PathVariable UUID id) {
-        commentService.deleteCommentByAdmin(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping(Routes.Comment.COUNT_BY_POST)
     public ResponseEntity<Map<String, Long>> countByPost(@PathVariable UUID postId) {
         long count = commentService.countCommentsByPostId(postId);
@@ -123,7 +105,8 @@ public class CommentController {
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParams = sort.split(",");
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
     }
 

@@ -32,6 +32,8 @@ import com.forum.it.sercurites.JwtTokenProvider;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.utils.SecurityContextHelper;
 import com.forum.it.dtos.response.UserResponse;
+import com.forum.it.dtos.request.RoleRequest;
+import com.forum.it.repositories.AccountRoleRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -253,10 +255,43 @@ public class AccountService {
 
     // ── private ───────────────────────────────────────────────────────────────
 
-    private String resolveRole(Account account) {
+    @Transactional
+    public String resolveRole(Account account) {
         return accountRoleRepository.findByAccount_AccountId(account.getAccountId())
                 .stream().findFirst()
                 .map(ar -> ar.getRole().getName())
                 .orElse("USER");
+    }
+
+    @Transactional
+    public String resolveRoleByEmail(String email) {
+        String cacheKey = "ROLE_CACHE:" + email;
+        String cacheRole = redisService.getValue(cacheKey);
+        if (cacheRole != null) {
+            return cacheRole;
+        }
+
+        Account account = accountRepository.findByEmail(email);
+        String actualRole = (account != null) ? resolveRole(account) : "USER";
+        redisService.setValueWithTTL(cacheKey, actualRole, 1, TimeUnit.HOURS);
+        return actualRole;
+    }
+
+    @Transactional
+    public void assignRole(RoleRequest account) {
+        String roleName = account.getRoleName();
+        Account existingAccount = accountRepository.findById(account.getAccountId())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Role newRole = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        accountRoleRepository.deleteByAccount_AccountId(account.getAccountId());
+
+        AccountRole accountRole = new AccountRole();
+        accountRole.setAccount(existingAccount);
+        accountRole.setRole(newRole);
+        accountRoleRepository.save(accountRole);
+
+        redisService.deleteValue("ROLE_CACHE:" + existingAccount.getEmail());
     }
 }

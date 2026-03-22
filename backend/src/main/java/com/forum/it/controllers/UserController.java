@@ -1,26 +1,16 @@
 package com.forum.it.controllers;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.UpdateUserRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.UserResponse;
@@ -47,55 +37,6 @@ public class UserController {
         return ApiResponses.success(accountService.getProfile(), null);
     }
 
-    @PostMapping(Routes.User.CREATE)
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
-        UserResponse response = userService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @GetMapping(Routes.User.GET_ALL)
-    public ResponseEntity<Map<String, Object>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
-        Page<UserResponse> usersPage = userService.getAll(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("users", usersPage.getContent());
-        response.put("currentPage", usersPage.getNumber());
-        response.put("totalItems", usersPage.getTotalElements());
-        response.put("totalPages", usersPage.getTotalPages());
-        response.put("pageSize", usersPage.getSize());
-
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping(Routes.User.GET_BY_ID)
-    public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
-        try {
-            UserResponse response = userService.getById(id);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-    }
-
-    @GetMapping(Routes.User.GET_BY_EMAIL)
-    public ResponseEntity<UserResponse> getByEmail(@PathVariable String email) {
-        try {
-            UserResponse response = userService.getByEmail(email);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-    }
-
     @PutMapping(Routes.User.UPDATE)
     public ResponseEntity<UserResponse> update(
             @PathVariable UUID id,
@@ -108,14 +49,10 @@ public class UserController {
         }
     }
 
-    @DeleteMapping(Routes.User.DELETE)
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        try {
-            userService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    @GetMapping(Routes.User.SEARCH_BY_USERNAME)
+    public ApiResponses<UserResponse> getByUserName(@PathVariable String name) {
+        UserResponse response = userService.getByUserName(name);
+        return ApiResponses.success(response, null);
     }
 
     // @PatchMapping("/{id}/status")
@@ -172,10 +109,4 @@ public class UserController {
     // return ResponseEntity.ok(Map.of("exists", exists));
     // }
 
-    // @GetMapping("/check-username/{userName}")
-    // public ResponseEntity<Map<String, Boolean>> checkUserNameExists(@PathVariable
-    // String userName) {
-    // boolean exists = userService.isUserNameExists(userName);
-    // return ResponseEntity.ok(Map.of("exists", exists));
-    // }
 }
