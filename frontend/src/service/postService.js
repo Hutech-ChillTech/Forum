@@ -40,7 +40,8 @@ const postService = {
     const response = await apiFetch(`${API_BASE_URL}/api/v1/posts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(postData) });
+      body: JSON.stringify(postData)
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to create post");
     return data.result ?? data;
@@ -52,7 +53,8 @@ const postService = {
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(postData) },
+        body: JSON.stringify(postData)
+      },
     );
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to update post");
@@ -63,7 +65,8 @@ const postService = {
     const response = await apiFetch(
       `${API_BASE_URL}/api/v1/posts/${postId}`,
       {
-        method: "DELETE" },
+        method: "DELETE"
+      },
     );
     if (!response.ok) {
       const data = await response.json();
@@ -89,13 +92,13 @@ const postService = {
     return data.result ?? data;
   },
   async getAllPostsAdmin(page = 0, size = 20, sort = "createdAt,desc") {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/all?page=${page}&size=${size}&sort=${sort}`, { });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/all?page=${page}&size=${size}&sort=${sort}`, {});
     if (!response.ok) throw new Error("Failed to fetch all posts");
     const data = await response.json(); return data.result ?? data;
   },
 
   async getPostsByStatus(status, page = 0, size = 20, sort = "createdAt,desc") {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`, { });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`, {});
     if (!response.ok) throw new Error("Failed to fetch posts by status");
     const data = await response.json(); return data.result ?? data;
   },
@@ -104,7 +107,11 @@ const postService = {
     const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }) });
+      body: JSON.stringify({ status })
+    });
+
+    if (response.status === 204) return null;
+
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to update post status");
     return data.result ?? data;
@@ -116,7 +123,7 @@ const postService = {
   },
 
   async countPostsByStatus(status) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/statistics/status/${status}`, { });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/statistics/status/${status}`, {});
     if (!response.ok) throw new Error("Failed to get count");
     const data = await response.json(); return data.result ?? data;
   },
@@ -125,6 +132,7 @@ const postService = {
     const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/statistics/user/${userId}`);
     if (!response.ok) throw new Error("Failed to get count");
     const data = await response.json(); return data.result ?? data;
-  } };
+  }
+};
 
 export default postService;

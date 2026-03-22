@@ -3,19 +3,22 @@ import { useNavigate } from "react-router-dom";
 import postService from "../service/postService";
 import commentService from "../service/commentService";
 import authService from "../service/authService";
+import shareService from "../service/shareService";
 import { API_BASE_URL } from "../utils/apiFetch.js";
 import "../styles/PostDetailModal.css";
 
-const PostDetailModal = ({ postId, onClose }) => {
+const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [_commentLoading, setCommentLoading] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   const userProfile = authService.getUser();
 
@@ -75,6 +78,95 @@ const PostDetailModal = ({ postId, onClose }) => {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?"))
+      return;
+
+    try {
+      await postService.deletePost(postId);
+
+      // Set flag and clear possible post list caches to ensure fresh data after reload
+      sessionStorage.setItem("FORCE_REFRESH_POSTS", "true");
+      sessionStorage.removeItem("home_posts_cache");
+      sessionStorage.removeItem("home_page_cache");
+      sessionStorage.removeItem("home_scroll_pos");
+      sessionStorage.removeItem("posts_page_cache");
+      sessionStorage.removeItem("posts_page_num");
+      sessionStorage.removeItem("posts_scroll_pos");
+
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      // If the post is already gone (404), refresh the current state
+      if (err.message?.includes("404") || err.status === 404) {
+        sessionStorage.removeItem("home_posts_cache");
+        sessionStorage.removeItem("home_page_cache");
+        sessionStorage.removeItem("home_scroll_pos");
+        sessionStorage.removeItem("posts_page_cache");
+        sessionStorage.removeItem("posts_page_num");
+        sessionStorage.removeItem("posts_scroll_pos");
+        onClose();
+        window.location.reload();
+      } else {
+        alert("Lỗi khi xóa bài viết: " + err.message);
+      }
+    }
+  };
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!showMenu && !showShareMenu) return;
+    const closeMenu = () => {
+      setShowMenu(false);
+      setShowShareMenu(false);
+    };
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, [showMenu, showShareMenu]);
+
+  const handleShare = async (platform) => {
+    const urlToShare = window.location.origin + "/posts/" + (postId || "");
+    setShowShareMenu(false);
+
+    try {
+      if (platform !== "COPY") {
+        await shareService.sharePost(postId, { platform });
+      }
+
+      if (platform === "COPY") {
+        navigator.clipboard.writeText(urlToShare);
+        alert("Đã sao chép liên kết bài viết!");
+      } else if (platform === "FACEBOOK") {
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`,
+          "_blank",
+          "width=600,height=400",
+        );
+      } else if (platform === "MESSENGER") {
+        window.open(
+          `fb-messenger://share?link=${encodeURIComponent(urlToShare)}`,
+          "_blank",
+          "width=600,height=400",
+        );
+      } else if (platform === "LINKEDIN") {
+        window.open(
+          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`,
+          "_blank",
+          "width=600,height=400",
+        );
+      } else if (platform === "INSTAGRAM") {
+        navigator.clipboard.writeText(urlToShare);
+        alert("Đã sao chép liên kết. Mở ứng dụng Instagram để chia sẻ!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi chia sẻ:", err);
+      alert("Lỗi khi chia sẻ: " + err.message);
+    }
+  };
+
   if (loading || !post) {
     return (
       <div className="post-modal-overlay" onClick={onClose}>
@@ -110,6 +202,33 @@ const PostDetailModal = ({ postId, onClose }) => {
               : post.imageURL,
           ]
         : [];
+  })();
+
+  // Parse text and code blocks
+  const contentBlocks = (() => {
+    const content = post.content || "";
+    const blocks = [];
+    const parts = content.split(/(!\[image\]\(.*?\)|```[\s\S]*?(?:```|$))/g);
+
+    parts.forEach((part, index) => {
+      if (!part) return;
+
+      if (index % 2 !== 0) {
+        if (part.startsWith("![")) {
+          // Ignore images here as they are shown on the left theater container
+        } else if (part.startsWith("```")) {
+          const code = part.replace(/^```[^\n]*\n?|```$/g, "");
+          if (code.trim() !== "") {
+            blocks.push({ type: "code", content: code });
+          }
+        }
+      } else {
+        if (part.trim()) {
+          blocks.push({ type: "text", content: part });
+        }
+      }
+    });
+    return blocks;
   })();
 
   const nextImage = () =>
@@ -232,9 +351,59 @@ const PostDetailModal = ({ postId, onClose }) => {
               </div>
             </div>
 
-            <h2 className="post-modal-title">{post.title}</h2>
-            <div className="post-modal-content">
-              {post.content.replace(/!\[image\]\(.*?\)/g, "")}
+            <h2
+              className="post-modal-title"
+              style={{
+                color: "var(--primary-color)",
+                fontSize: "20px",
+                fontWeight: "bold",
+                margin: "15px 0 10px 0",
+              }}
+            >
+              {post.title}
+            </h2>
+            <div
+              className="post-modal-content-blocks"
+              style={{ marginBottom: "20px" }}
+            >
+              {contentBlocks.map((block, i) => {
+                if (block.type === "text") {
+                  return (
+                    <p
+                      key={i}
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        margin: "8px 0",
+                        fontSize: "15px",
+                        color: "var(--text-color)",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {block.content}
+                    </p>
+                  );
+                }
+                if (block.type === "code") {
+                  return (
+                    <pre
+                      key={i}
+                      style={{
+                        background: "#1e1e1e",
+                        color: "#e6e6e6",
+                        padding: "16px",
+                        borderRadius: "12px",
+                        overflowX: "auto",
+                        fontFamily: "Consolas, Monaco, monospace",
+                        margin: "8px 0",
+                        fontSize: "14px",
+                      }}
+                    >
+                      <code>{block.content}</code>
+                    </pre>
+                  );
+                }
+                return null;
+              })}
             </div>
 
             {post.tags && post.tags.length > 0 && (
@@ -247,63 +416,313 @@ const PostDetailModal = ({ postId, onClose }) => {
               </div>
             )}
 
-            <div className="post-modal-actions">
+            <div
+              className="post-modal-actions"
+              style={{
+                display: "flex",
+                gap: "20px",
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
               <button
                 className="post-modal-action-btn"
                 onClick={() => setIsLiked(!isLiked)}
-                style={{ color: isLiked ? "var(--primary-color)" : "" }}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill={isLiked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-                Thích
-              </button>
-              <button className="post-modal-action-btn">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-                Bình luận
-              </button>
-              <button
-                className="post-modal-action-btn"
-                onClick={() => {
-                  navigate(`/posts/${postId}`);
-                  onClose();
+                style={{
+                  color: isLiked
+                    ? "var(--primary-color)"
+                    : "var(--text-secondary)",
                 }}
               >
                 <svg
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="currentColor"
+                >
+                  <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                </svg>
+                <span>{(post?.likes || 0) + (isLiked ? 1 : 0)}</span>
+              </button>
+              <button
+                className="post-modal-action-btn"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="currentColor"
+                >
+                  <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
+                </svg>
+                <span>{comments.length}</span>
+              </button>
+              <div style={{ position: "relative" }}>
+                <button
+                  className="post-modal-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowShareMenu(!showShareMenu);
+                  }}
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                  </svg>
+                  <span>Chia sẻ</span>
+                </button>
+
+                {showShareMenu && (
+                  <div
+                    className="post-modal-dropdown"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 8px)",
+                      left: "0",
+                      backgroundColor: "var(--card-bg)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      borderRadius: "8px",
+                      padding: "8px 0",
+                      zIndex: 100,
+                      minWidth: "200px",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare("FACEBOOK");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        color: "var(--text-color)",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                      </svg>
+                      Chia sẻ lên Facebook
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare("MESSENGER");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        color: "var(--text-color)",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                      </svg>
+                      Gửi qua Messenger
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare("LINKEDIN");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        color: "var(--text-color)",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                        <rect x="2" y="9" width="4" height="12"></rect>
+                        <circle cx="4" cy="4" r="2"></circle>
+                      </svg>
+                      Chia sẻ lên LinkedIn
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare("INSTAGRAM");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        color: "var(--text-color)",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="2"
+                          y="2"
+                          width="20"
+                          height="20"
+                          rx="5"
+                          ry="5"
+                        ></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                      </svg>
+                      Đăng lên Instagram
+                    </button>
+                    <div
+                      style={{
+                        height: "1px",
+                        backgroundColor: "var(--border-color)",
+                        margin: "4px 0",
+                      }}
+                    ></div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare("COPY");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        color: "var(--text-color)",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      Sao chép liên kết
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                className="post-modal-action-btn"
+                onClick={() => setIsSaved(!isSaved)}
+                style={{
+                  marginLeft: "auto",
+                  color: isSaved
+                    ? "var(--primary-color)"
+                    : "var(--text-secondary)",
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
-                  fill="none"
+                  fill={isSaved ? "currentColor" : "none"}
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Chi tiết
+                <span>{isSaved ? "Đã lưu" : "Lưu"}</span>
               </button>
             </div>
 
@@ -361,51 +780,73 @@ const PostDetailModal = ({ postId, onClose }) => {
 
               <div className="post-modal-comments-list">
                 {comments.length > 0 ? (
-                  comments.slice(0, 10).map((comment) => (
-                    <div
-                      key={comment.commentId}
-                      className="post-modal-comment-item"
-                    >
+                  (isFullPage ? comments : comments.slice(0, 10)).map(
+                    (comment) => (
                       <div
-                        className="post-modal-avatar"
-                        style={{ width: "32px", height: "32px", flexShrink: 0 }}
+                        key={comment.commentId}
+                        className="post-modal-comment-item"
                       >
-                        {comment.userAvatarURL ? (
-                          <img
-                            src={comment.userAvatarURL}
-                            alt=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: "50%",
+                        <div
+                          className="post-modal-avatar"
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            flexShrink: 0,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            navigate(`/profile?id=${comment.userId}`);
+                            onClose();
+                          }}
+                        >
+                          {comment.userAvatarURL ? (
+                            <img
+                              src={comment.userAvatarURL}
+                              alt=""
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                                backgroundColor: "var(--secondary-bg)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "11px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {comment.userName?.[0] || "U"}
+                            </div>
+                          )}
+                        </div>
+                        <div className="post-modal-comment-bubble">
+                          <span
+                            className="post-modal-comment-user"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => {
+                              navigate(`/profile?id=${comment.userId}`);
+                              onClose();
                             }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: "50%",
-                              backgroundColor: "var(--secondary-bg)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                              fontWeight: "bold",
-                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.color = "var(--primary-color)")
+                            }
+                            onMouseLeave={(e) => (e.target.style.color = "")}
                           >
-                            {comment.userName?.[0] || "U"}
-                          </div>
-                        )}
+                            {comment.userName}
+                          </span>
+                          {comment.content}
+                        </div>
                       </div>
-                      <div className="post-modal-comment-bubble">
-                        <span className="post-modal-comment-user">
-                          {comment.userName}
-                        </span>
-                        {comment.content}
-                      </div>
-                    </div>
-                  ))
+                    ),
+                  )
                 ) : (
                   <div
                     style={{
@@ -418,7 +859,7 @@ const PostDetailModal = ({ postId, onClose }) => {
                     Chưa có bình luận nào.
                   </div>
                 )}
-                {comments.length > 10 && (
+                {!isFullPage && comments.length > 10 && (
                   <button
                     onClick={() => {
                       navigate(`/posts/${postId}`);

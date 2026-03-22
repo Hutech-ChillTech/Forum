@@ -47,6 +47,9 @@ const Header = ({ hideAuth = false }) => {
     const [showSearchHistory, setShowSearchHistory] = useState(false);
     const [recentSearches, setRecentSearches] = useState([]);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
     const notificationRef = useRef(null);
     const chatRef = useRef(null);
@@ -208,6 +211,7 @@ const Header = ({ hideAuth = false }) => {
         window.addEventListener('openCreatePost', handleOpenCreatePost);
         window.addEventListener('openEditPost', handleOpenEditPost);
         window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        window.addEventListener('mobileMenuStateChanged', handleMenuStateChange);
         document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
@@ -221,6 +225,7 @@ const Header = ({ hideAuth = false }) => {
             window.removeEventListener('openCreatePost', handleOpenCreatePost);
             window.removeEventListener('openEditPost', handleOpenEditPost);
             window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+            window.removeEventListener('mobileMenuStateChanged', handleMenuStateChange);
         };
     }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 

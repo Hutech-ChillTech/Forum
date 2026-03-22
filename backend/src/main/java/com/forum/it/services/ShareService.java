@@ -33,10 +33,14 @@ public class ShareService {
     private final SecurityContextHelper securityContextHelper;
 
     public ShareResponse sharePost(UUID postId, ShareRequest request) {
+        if (postId == null) throw new IllegalArgumentException("Post ID cannot be null");
+        
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
 
         UUID userId = securityContextHelper.getCurrentUserId();
+        if (userId == null) throw new AppException(ErrorCode.UNAUTHORIZED);
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
@@ -45,7 +49,13 @@ public class ShareService {
         share.setUser(user);
         share.setPlatform(request.getPlatform());
 
-        return new ShareResponse(shareRepository.save(share));
+        try {
+            return new ShareResponse(shareRepository.save(share));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // If it's a duplicate share, we just return a success response with the data
+            // we have, since the goal (copying link) is achieved.
+            return new ShareResponse(share);
+        }
     }
 
     @Transactional(readOnly = true)

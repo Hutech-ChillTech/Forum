@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import PostCard from "../components/PostCard";
+import { showToast } from "../components/Toast";
 import postService from "../service/postService";
+import savedPostService from "../service/savedPostService";
 import "../styles/Home.css";
 import "../styles/PostDetail.css";
 
@@ -10,6 +12,7 @@ const HOME_PAGE_KEY = "home_page_cache";
 const HOME_SCROLL_KEY = "home_scroll_pos";
 
 const Home = () => {
+  const navigate = useNavigate();
   const { setSelectedPostId } = useOutletContext();
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,6 +20,7 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState("all"); // 'all', 'following', 'saved'
 
   // Helper for initialLoading state determination
   function initialLoadingInitially() {
@@ -99,9 +103,16 @@ const Home = () => {
   // Save full state to sessionStorage before navigating away
   useEffect(() => {
     const handleSave = () => {
+      const forceRefresh =
+        sessionStorage.getItem("FORCE_REFRESH_POSTS") === "true";
+      if (forceRefresh) return; // Don't cache stale state during deletion reload
+
       if (userPosts.length > 0 || (!initialLoading && page > 0)) {
-        sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(userPosts));
-        sessionStorage.setItem(HOME_PAGE_KEY, page.toString());
+        // Clear state if tab is not 'all' to avoid cross-tab caching
+        if (activeTab === "all") {
+          sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(userPosts));
+          sessionStorage.setItem(HOME_PAGE_KEY, page.toString());
+        }
       }
     };
 
@@ -110,21 +121,40 @@ const Home = () => {
       handleSave();
       window.removeEventListener("beforeunload", handleSave);
     };
-  }, [userPosts, page, initialLoading]);
+  }, [userPosts, page, initialLoading, activeTab]);
 
   const fetchPosts = async (pageNum, isInitial = false) => {
     try {
       if (isInitial) setInitialLoading(true);
       else setLoading(true);
 
-      const size = 10; // Load 10 posts per batch for a better balance
-      const data = await postService.getPublishedPosts(pageNum, size);
+      const size = 10;
+      let data;
+
+      if (activeTab === "saved") {
+        data = await savedPostService.getMyBookmarks(pageNum, size);
+      } else if (activeTab === "following") {
+        // TODO: Replace with real following API when available
+        data = await postService.getPublishedPosts(pageNum, size);
+      } else {
+        data = await postService.getPublishedPosts(pageNum, size);
+      }
 
       let newPosts = [];
-      if (data && data.posts) {
+      if (activeTab === "saved") {
+        // Backend returns Page<SavedPostResponse>
+        const content = data.content || (Array.isArray(data) ? data : []);
+        newPosts = content.map((sp) => ({
+          ...(sp.post || {}),
+          isSaved: true, // Definitely true if it's in the saved list
+        }));
+      } else if (data && data.posts) {
         newPosts = data.posts;
       } else if (Array.isArray(data)) {
         newPosts = data;
+      } else if (data && data.content) {
+        // Standard Spring Page object
+        newPosts = data.content;
       }
 
       if (isInitial) {
@@ -154,13 +184,18 @@ const Home = () => {
   // Load more when page changes (only if it's not the first page which is handled by mount/restore)
   useEffect(() => {
     if (page > 0) {
-      const cachedPage = sessionStorage.getItem(HOME_PAGE_KEY);
-      // Only fetch if the page we are moving to is NOT already cached
-      if (!cachedPage || page > parseInt(cachedPage)) {
-        fetchPosts(page);
-      }
+      fetchPosts(page);
     }
   }, [page]);
+
+  // Reset when switching tabs
+  useEffect(() => {
+    setPage(0);
+    setUserPosts([]);
+    setHasMore(true);
+    fetchPosts(0, true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
 
   useEffect(() => {
     const handleProfileUpdate = (e) => {
@@ -176,6 +211,16 @@ const Home = () => {
   }, []);
 
   const handlePostCreated = (newPost) => {
+    if (newPost && (newPost.status === "PENDING" || !newPost.status)) {
+      showToast(
+        "Bài viết đã được gửi và đang chờ phê duyệt. Nó sẽ hiện lên Trang chủ sau khi được duyệt.",
+        "Thành công",
+        "info",
+        5000,
+      );
+      return;
+    }
+
     setUserPosts((prevPosts) => [newPost, ...prevPosts]);
     // Update cache immediately
     sessionStorage.setItem(
@@ -195,6 +240,30 @@ const Home = () => {
   return (
     <>
       <main className="home-main">
+        <div className="home-tabs">
+          <button
+            className={`home-tab ${activeTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
+            Trang chủ
+            <div className="tab-indicator"></div>
+          </button>
+          <button
+            className={`home-tab ${activeTab === "following" ? "active" : ""}`}
+            onClick={() => setActiveTab("following")}
+          >
+            Đang theo dõi
+            <div className="tab-indicator"></div>
+          </button>
+          <button
+            className={`home-tab ${activeTab === "saved" ? "active" : ""}`}
+            onClick={() => setActiveTab("saved")}
+          >
+            Đã lưu
+            <div className="tab-indicator"></div>
+          </button>
+        </div>
+
         <div
           className="greeting-card"
           onClick={() =>
@@ -234,7 +303,15 @@ const Home = () => {
           </div>
         ) : (
           <div className="user-posts-section">
-            <h2 className="section-title">Bài viết mới nhất</h2>
+            {activeTab === "all" && (
+              <h2 className="section-title">Bài viết mới nhất</h2>
+            )}
+            {activeTab === "following" && (
+              <h2 className="section-title">Từ những người bạn theo dõi</h2>
+            )}
+            {activeTab === "saved" && (
+              <h2 className="section-title">Bài viết bạn đã lưu</h2>
+            )}
             {userPosts.map((post, index) => (
               <div
                 key={post.postId || post.id || index}

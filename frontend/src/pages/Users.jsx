@@ -149,50 +149,40 @@ const Users = () => {
           <div className="users-error">{error}</div>
         ) : (
           <>
-            <div className="user-browser">
-              <div className="user-grid">
-                {users.length === 0 ? (
-                  <div className="users-empty">Không có người dùng nào.</div>
-                ) : (
-                  users.map((user) => (
-                    <div key={user.userId} className="user-card">
-                      <div className="user-card-header">
-                        <Link
-                          to={"/profile?id=" + user.userId}
-                          className="user-avatar-medium"
-                          style={{ textDecoration: "none" }}
-                        >
-                          {user.avatarURL ? (
-                            <img src={user.avatarURL} alt={user.userName} />
-                          ) : (
-                            <span className="avatar-initials-medium">
-                              {getInitials(user.fullName || user.userName)}
-                            </span>
-                          )}
-                        </Link>
-                        <div className="user-details">
-                          <Link
-                            to={"/profile?id=" + user.userId}
-                            className="user-name-link"
-                          >
+            <div className="users-list-container">
+              {users.length === 0 ? (
+                <div className="users-empty">
+                  Không tìm thấy người dùng nào.
+                </div>
+              ) : (
+                <div className="users-list">
+                  {users.map((user) => (
+                    <Link
+                      to={"/profile?id=" + user.userId}
+                      key={user.userId}
+                      className="user-item-row"
+                    >
+                      <div className="user-item-avatar">
+                        {user.avatarURL ? (
+                          <img src={user.avatarURL} alt={user.userName} />
+                        ) : (
+                          <div className="user-avatar-initials">
+                            {getInitials(user.fullName || user.userName)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="user-item-content">
+                        <div className="user-item-info">
+                          <h3 className="user-item-name">
                             {user.fullName || user.userName}
-                          </Link>
-                          <span className="user-location">
+                          </h3>
+                          <span className="user-item-username">
                             @{user.userName}
                           </span>
-                          <div className="user-reputation">
-                            <span
-                              className={
-                                "status-small " +
-                                (user.status || "").toLowerCase()
-                              }
-                            >
-                              {user.status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="user-tags">
-                          <span className="user-tag">{user.email}</span>
+                          <p className="user-item-bio">
+                            {user.email || "Thành viên mới của SkillForum"}
+                          </p>
                         </div>
                         {currentUserId &&
                           String(user.userId) !== String(currentUserId) && (
@@ -209,10 +199,10 @@ const Users = () => {
                             </button>
                           )}
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {totalPages > 1 && (

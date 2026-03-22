@@ -10,18 +10,83 @@
     grid-template-columns: var(--left-sidebar-width) 1fr var(--right-sidebar-width);
     max-width: var(--container-max-width);
     margin: 56px auto 0;
-    padding: 24px 16px;
-    gap: 24px;
+    padding: 0 16px;
+    gap: 0;
     flex: 1;
     width: 100%;
+}
+
+/* Home Tabs (Twitter-like) */
+.home-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 56px;
+    z-index: 10;
+    margin: 0 -20px 20px;
+    width: calc(100% + 40px);
+}
+
+.home-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    min-width: 0;
+}
+
+.home-tab:hover {
+    background-color: var(--sidebar-item-hover);
+}
+
+.home-tab.active {
+    color: var(--primary-color);
+}
+
+.tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 4px;
+    width: 56px;
+    background-color: var(--primary-color);
+    border-radius: 99px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.home-tab.active .tab-indicator {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .home-tabs {
+        margin: 0 -20px 16px;
+    }
+}
+
+.mobile-menu-backdrop {
+    display: none;
 }
 
 /* Left Sidebar */
 .home-sidebar {
     position: sticky;
-    top: 80px;
+    top: 56px;
     width: var(--left-sidebar-width);
     height: fit-content;
+    padding-top: 24px;
+    padding-right: 24px;
 }
 
 .sidebar-nav {
@@ -89,7 +154,12 @@
 
 /* Main Content */
 .home-main {
-    min-width: 0;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    min-height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px 40px;
 }
 
 /* Greeting Card */
@@ -359,9 +429,11 @@
 /* Right Sidebar */
 .home-right-sidebar {
     position: sticky;
-    top: 80px;
+    top: 56px;
     width: var(--right-sidebar-width);
     height: fit-content;
+    padding-top: 24px;
+    padding-left: 24px;
 }
 
 .tags-widget {
@@ -428,11 +500,54 @@
 @media (max-width: 768px) {
     .home-container {
         grid-template-columns: 1fr;
+        padding: 16px 12px;
+    }
+
+    .mobile-menu-backdrop {
+        display: block;
+        position: fixed;
+        top: 56px;
+        /* Below header */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1500;
+        /* Above home content */
+        animation: backdropFade 0.3s ease;
+        backdrop-filter: blur(2px);
     }
 
     .home-sidebar {
-        position: static;
-        order: 2;
+        position: fixed;
+        left: -100%;
+        top: 56px;
+        /* Below header */
+        bottom: 0;
+        width: 260px;
+        height: calc(100vh - 56px);
+        background-color: var(--bg-color);
+        z-index: 1600;
+        /* On top of backdrop */
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 16px;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+        overflow-y: auto;
+        margin: 0;
+    }
+
+    .home-sidebar.open {
+        left: 0;
+    }
+
+    @keyframes backdropFade {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 
     .home-main {
@@ -442,9 +557,20 @@
     .greeting-card {
         flex-direction: column;
         text-align: center;
+        padding: 12px;
     }
 
     .greeting-text {
-        font-size: 20px;
+        font-size: 16px;
+    }
+
+    .user-post-card {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .post-actions {
+        flex-wrap: wrap;
+        gap: 8px;
     }
 }

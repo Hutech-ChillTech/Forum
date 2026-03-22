@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import PostCard from "../components/PostCard";
-import postService from "../service/postService";
-import userService from "../service/userService";
-import "../styles/Profile.css";
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import PostCard from '../components/PostCard';
+import PostDetailModal from '../components/PostDetailModal';
+import postService from '../service/postService';
+import userService from '../service/userService';
+import savedPostService from '../service/savedPostService';
+import authService from '../service/authService';
+import fileService from '../service/fileService';
+import { API_BASE_URL } from '../utils/apiFetch.js';
+import '../styles/Profile.css';
 
 const Profile = () => {
   const { userId } = useParams();
@@ -57,347 +62,280 @@ const Profile = () => {
     };
   });
 
-  const [userPosts, setUserPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [userPosts, setUserPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedPostId, setSelectedPostId] = useState(null);
+    const [activeTab, setActiveTab] = useState('posts'); // 'posts', 'comments', 'saved'
 
-  // Own-profile: listen for profile update events
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    const handleProfileUpdate = (e) => {
-      const profile = e.detail;
-      setUserData((prev) => ({
-        ...prev,
-        name: profile.fullName || profile.displayName,
-      }));
+    // Fetch user info and posts
+    // ... (rest of useEffects same)
+    useEffect(() => {
+        const fetchProfileData = async () => {
+            // Only show loader for initial load or tab change (if we want)
+            setLoading(true);
+            try {
+                let targetUser;
+                let targetUserId;
+
+                if (userId) {
+                    targetUser = await userService.getUserById(userId);
+                    targetUserId = userId;
+                } else {
+                    const savedProfile = localStorage.getItem('userProfile');
+                    if (savedProfile) {
+                        targetUser = JSON.parse(savedProfile);
+                        targetUserId = targetUser.userId;
+                    } else {
+                        return;
+                    }
+                }
+
+                if (targetUser && activeTab === 'posts') { // Only update name/avatar if on main tab load
+                    setUserData(prev => ({
+                        ...prev,
+                        name: targetUser.fullName || targetUser.userName || targetUser.displayName || "User",
+                        userName: targetUser.userName,
+                        avatarURL: targetUser.avatarURL || targetUser.userAvatarURL,
+                        memberSince: targetUser.createdAt ? new Date(targetUser.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' }) : "Recently",
+                        reputation: targetUser.reputation || 1,
+                    }));
+                }
+
+                if (targetUserId) {
+                    let posts = [];
+                    if (activeTab === 'posts') {
+                        const postData = await postService.getPostsByUser(targetUserId);
+                        posts = postData.posts || [];
+                        setUserData(prev => ({ ...prev, questions: posts.length }));
+                    } else if (activeTab === 'saved') {
+                        const data = await savedPostService.getMyBookmarks(0, 50);
+                        const content = data.content || (Array.isArray(data) ? data : []);
+                        posts = content.map(sp => ({
+                            ...(sp.post || {}),
+                            isSaved: true
+                        }));
+                    } else if (activeTab === 'comments') {
+                        // Placeholder for comments
+                        posts = [];
+                    }
+                    setUserPosts(posts);
+                }
+            } catch (err) {
+                console.error('Failed to fetch profile data:', err);
+                setUserPosts([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfileData();
+    }, [userId, activeTab]);
+
+    useEffect(() => {
+        const handleProfileUpdate = (e) => {
+            if (isOwnProfile) {
+                const profile = e.detail;
+                setUserData(prev => ({
+                    ...prev,
+                    name: profile.fullName || profile.displayName,
+                    avatarURL: profile.avatarURL
+                }));
+            }
+        };
+
+        window.addEventListener('userProfileUpdated', handleProfileUpdate);
+        return () => window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+    }, [isOwnProfile]);
+
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setLoading(true);
+            // 1. Upload file
+            const uploadRes = await fileService.uploadFile(file);
+            const avatarURL = uploadRes.url.startsWith('http')
+                ? uploadRes.url
+                : `${API_BASE_URL}${uploadRes.url}`;
+
+            // 2. Update user profile
+            const updatedUser = await userService.updateUser(currentUser.userId, { avatarURL });
+
+            // 3. Update local state
+            setUserData(prev => ({ ...prev, avatarURL }));
+
+            // 4. Update localStorage and notify app
+            const storedUser = JSON.parse(localStorage.getItem('userProfile') || '{}');
+            const newProfile = { ...storedUser, avatarURL };
+            localStorage.setItem('userProfile', JSON.stringify(newProfile));
+
+            window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: newProfile }));
+            alert('Đổi ảnh đại diện thành công!');
+        } catch (err) {
+            console.error('Failed to update avatar:', err);
+            alert('Không thể đổi ảnh đại diện. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
+        }
     };
-    window.addEventListener("userProfileUpdated", handleProfileUpdate);
-    return () =>
-      window.removeEventListener("userProfileUpdated", handleProfileUpdate);
-  }, [isOwnProfile]);
 
-  // Other-user profile: fetch user data + online status
-  useEffect(() => {
-    if (isOwnProfile) return;
-    const fetchOtherUser = async () => {
-      try {
-        const [user, statusRes] = await Promise.all([
-          userService.getUserById(userId),
-          userService.getOnlineStatus(userId),
-        ]);
-        setUserData((prev) => ({
-          ...prev,
-          name: user.fullName || user.username || "User",
-          online: statusRes.online ?? false,
-        }));
-      } catch (err) {
-        console.error("Failed to fetch user profile:", err);
-      }
+    const getInitial = (name) => {
+        return name ? name.charAt(0).toUpperCase() : 'U';
     };
-    fetchOtherUser();
-  }, [isOwnProfile, userId]);
 
-  // Fetch posts
-  useEffect(() => {
-    const fetchUserPosts = async () => {
-      try {
-        const targetId = isOwnProfile
-          ? (() => {
-              try {
-                return JSON.parse(localStorage.getItem("userProfile") || "{}")
-                  .userId;
-              } catch {
-                return null;
-              }
-            })()
-          : userId;
-        if (!targetId) return;
-        setLoading(true);
-        const data = await postService.getPostsByUser(targetId);
-        const posts = data.posts || [];
-        setUserPosts(posts);
-        setUserData((prev) => ({ ...prev, questions: posts.length }));
-      } catch (err) {
-        console.error("Failed to fetch user posts:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUserPosts();
-  }, [isOwnProfile, userId]);
+    return (
+        <>
+            {/* Main Content */}
+            <main className="profile-main">
+                {/* User Header */}
+                <div className="profile-hero">
+                    <div className="profile-cover"></div>
+                    <div className="profile-hero-content">
+                        <div className="profile-avatar-wrapper">
+                            {userData.avatarURL ? (
+                                <img src={userData.avatarURL} alt={userData.name} className="profile-avatar-circle" />
+                            ) : (
+                                <div className="profile-avatar-circle initials">
+                                    {getInitial(userData.name)}
+                                </div>
+                            )}
 
-  return (
-    <>
-      {/* Main Content */}
-      <main className="profile-main">
-        {/* User Header */}
-        <div className="profile-header">
-          <div className="profile-avatar-large">
-            {/* The pattern is handled by CSS background */}
-          </div>
-          <div className="profile-header-info">
-            <div className="profile-name-row">
-              <h1 className="profile-name">{userData.name}</h1>
-              {isOwnProfile ? (
-                <a
-                  href="/settings"
-                  className="btn-network-profile"
-                  style={{
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Chỉnh sửa hồ sơ
-                </a>
-              ) : (
-                <button
-                  className="btn-network-profile"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    cursor: "pointer",
-                    border: "none",
-                    background: "none",
-                  }}
-                  onClick={() => navigate(`/chat?userId=${userId}`)}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  Nhắn tin
-                </button>
-              )}
-            </div>
-            <div className="profile-meta">
-              <svg viewBox="0 0 18 18">
-                <path d="M14 6V3h2v11h-2v-3H4v3H2V3h2v3h10zM6 6h6V4H6v2z"></path>
-              </svg>
-              <span>Thành viên từ {userData.memberSince}</span>
-              <span className="meta-separator">•</span>
-              {!isOwnProfile ? (
-                <span
-                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: userData.online ? "#22c55e" : "#9ca3af",
-                      display: "inline-block",
-                    }}
-                  ></span>
-                  {userData.online ? "Đang hoạt động" : "Ngoại tuyến"}
-                </span>
-              ) : (
-                <>
-                  <svg viewBox="0 0 18 18">
-                    <path d="M9 16A7 7 0 119 2a7 7 0 010 14zm0-2A5 5 0 109 4a5 5 0 000 10zM8 7h2v5H8V7zm0-2h2v1H8V5z"></path>
-                  </svg>
-                  <span>Truy cập lần cuối {userData.lastSeen}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+                            {isOwnProfile && (
+                                <label htmlFor="avatar-upload" className="avatar-edit-overlay">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                    <input
+                                        type="file"
+                                        id="avatar-upload"
+                                        hidden
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                    />
+                                </label>
+                            )}
+                        </div>
 
-        {/* Tabs — only on own profile */}
-        {/* Tabs */}
-        <div className="profile-tabs">
-          <button
-            className={`tab-btn${activeTab === "profile" ? " active" : ""}`}
-            onClick={() => setActiveTab("profile")}
-          >
-            Hồ sơ
-          </button>
-          {isOwnProfile ? (
-            <button
-              className={`tab-btn${activeTab === "activity" ? " active" : ""}`}
-              onClick={() => setActiveTab("activity")}
-            >
-              Hoạt động
-            </button>
-          ) : (
-            <button
-              className="tab-btn"
-              onClick={() => navigate(`/chat?userId=${userId}`)}
-            >
-              Nhắn tin
-            </button>
-          )}
-        </div>
-
-        {/* Activity tab view */}
-        {activeTab === "activity" && isOwnProfile && (
-          <div className="profile-section" style={{ marginTop: 24 }}>
-            <h2 className="section-title">Hoạt động của bạn</h2>
-            <div className="profile-posts-list" style={{ marginTop: "16px" }}>
-              {loading ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  Đang tải bài viết...
+                        <div className="profile-actions-bar">
+                            {isOwnProfile && (
+                                <a href="/settings" className="edit-profile-button">
+                                    Chỉnh sửa hồ sơ
+                                </a>
+                            )}
+                        </div>
+                    </div>
                 </div>
-              ) : userPosts.length > 0 ? (
-                userPosts.map((post) => (
-                  <PostCard
-                    key={post.postId || post.id}
-                    post={post}
-                    hideFollowButton={true}
-                  />
-                ))
-              ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "40px 20px",
-                    color: "var(--text-secondary)",
-                    backgroundColor: "var(--secondary-bg)",
-                    borderRadius: "12px",
-                  }}
-                >
-                  Bạn chưa có bài viết nào.
+
+                <div className="profile-info-section">
+                    <h1 className="profile-display-name">{userData.name}</h1>
+                    <p className="profile-username">@{userData.userName || 'user'}</p>
+
+                    <p className="profile-bio">
+                        {userData.bio || "Thành viên đam mê công nghệ và chia sẻ kiến thức tại SkillForum."}
+                    </p>
+
+                    <div className="profile-stats-row">
+                        <div className="profile-stat-item">
+                            <span className="stat-count">{userData.questions}</span>
+                            <span className="stat-label">Bài viết</span>
+                        </div>
+                        <div className="profile-stat-item">
+                            <span className="stat-count">0</span>
+                            <span className="stat-label">Người theo dõi</span>
+                        </div>
+                        <div className="profile-stat-item">
+                            <span className="stat-count">0</span>
+                            <span className="stat-label">Đang theo dõi</span>
+                        </div>
+                    </div>
+
+                    <div className="profile-details-grid">
+                        <div className="detail-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span>Tham gia {userData.memberSince}</span>
+                        </div>
+                        <div className="detail-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Hoạt động cuối: {userData.lastSeen}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="profile-tabs-bar">
+                    <button
+                        className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('posts')}
+                    >
+                        Bài viết
+                    </button>
+                    <button
+                        className={`profile-tab ${activeTab === 'comments' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('comments')}
+                    >
+                        Bình luận
+                    </button>
+                    <button
+                        className={`profile-tab ${activeTab === 'saved' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('saved')}
+                    >
+                        Đã lưu
+                    </button>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Profile content grid - shown when profile tab is active */}
-        {activeTab === "profile" && (
-          <div className="profile-content-grid">
-            {/* Left Column */}
-            <div className="profile-left-col">
-              {/* Stats Section */}
-              <div className="profile-section">
-                <h2 className="section-title">Thống kê</h2>
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <div className="stat-value">{userData.reputation}</div>
-                    <div className="stat-label">Reputation</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{userData.reached}</div>
-                    <div className="stat-label">Lượt tiếp cận</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{userData.answers}</div>
-                    <div className="stat-label">Answers</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{userData.questions}</div>
-                    <div className="stat-label">Posts</div>
-                  </div>
+                {/* Content Grid (Two Columns) */}
+                <div className="profile-feed">
+                    {loading ? (
+                        <div className="profile-loading">Đang tải nội dung...</div>
+                    ) : userPosts.length > 0 ? (
+                        <div className="posts-container-inner">
+                            {userPosts.map((post, idx) => (
+                                <PostCard
+                                    key={post.postId || post.id || idx}
+                                    post={post}
+                                    hideFollowButton={true}
+                                    onOpenModal={(id) => setSelectedPostId(id)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="profile-empty-feed">
+                            <p>
+                                {activeTab === 'saved'
+                                    ? "Bạn chưa lưu bài viết nào."
+                                    : activeTab === 'comments'
+                                        ? "Chưa có bình luận nào."
+                                        : isOwnProfile
+                                            ? "Bạn chưa có bài viết nào."
+                                            : "Người dùng này chưa có bài viết nào."}
+                            </p>
+                        </div>
+                    )}
                 </div>
-              </div>
+            </main>
 
-              {/* Communities Section */}
-              <div className="profile-section">
-                <h2 className="section-title">Cộng đồng</h2>
-                <div className="communities-list">
-                  {userData.communities.map((community, index) => (
-                    <a key={index} href="#" className="community-item">
-                      <svg className="community-icon" viewBox="0 0 18 18">
-                        <path d="M12.9 14.1l3 2.7-1.3 1.3-3.1-2.9c-.8.4-1.8.7-2.8.7-3.3 0-6-2.7-6-6s2.7-6 6-6c1.6 0 3 .6 4.1 1.6l-1.3 1.4c-.8-.7-1.8-1-2.8-1-2.2 0-4 1.8-4 4s1.8 4 4 4c.8 0 1.6-.3 2.2-.7v-1h-2.5v-1.8h4.5v3.3z"></path>
-                      </svg>
-                      <div className="community-info">
-                        <div className="community-name">{community.name}</div>
-                      </div>
-                      <div className="community-count">{community.count}</div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="profile-right-col">
-              {/* Badges Section */}
-              <div className="profile-section">
-                <h2 className="section-title">Danh hiệu</h2>
-                <div className="empty-state">
-                  <p>
-                    Người dùng này chưa nhận được <a href="#">danh hiệu</a> nào.
-                  </p>
-                </div>
-              </div>
-
-              {/* Posts Section */}
-              <div className="profile-section">
-                <h2 className="section-title">Bài viết gần đây</h2>
-                <div
-                  className="profile-posts-list"
-                  style={{ marginTop: "16px" }}
-                >
-                  {loading ? (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "20px",
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Đang tải bài viết...
-                    </div>
-                  ) : userPosts.length > 0 ? (
-                    userPosts.map((post) => (
-                      <PostCard
-                        key={post.postId || post.id}
-                        post={post}
-                        hideFollowButton={true}
-                      />
-                    ))
-                  ) : (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "40px 20px",
-                        color: "var(--text-secondary)",
-                        backgroundColor: "var(--secondary-bg)",
-                        borderRadius: "12px",
-                      }}
-                    >
-                      {isOwnProfile
-                        ? "Bạn chưa có bài viết nào."
-                        : "Người dùng này chưa có bài viết nào."}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </>
-  );
+            {selectedPostId && (
+                <PostDetailModal
+                    postId={selectedPostId}
+                    onClose={() => setSelectedPostId(null)}
+                />
+            )}
+        </>
+    );
 };
 
 export default Profile;
