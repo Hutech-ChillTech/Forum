@@ -16,9 +16,11 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
     const [submittingComment, setSubmittingComment] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showShareMenu, setShowShareMenu] = useState(false);
+    const [replyingToCommentId, setReplyingToCommentId] = useState(null);
+    const [replyContent, setReplyContent] = useState('');
     const [isLiked, setIsLiked] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const [showShareMenu, setShowShareMenu] = useState(false);
 
     const userProfile = authService.getUser();
 
@@ -36,10 +38,18 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                 setLoading(true);
                 const postData = await postService.getPostById(postId);
                 setPost(postData);
+                setIsSaved(postData.isSaved || false);
+
+                // Set like status - in a real app you might need a separate API call 
+                // but checking postData initial state for now
+                if (postData.isLiked !== undefined) {
+                    setIsLiked(postData.isLiked);
+                }
 
                 setCommentLoading(true);
                 const commentData = await commentService.getCommentsByPost(postId);
-                setComments(commentData.comments || []);
+                const fetchedComments = commentData.content || commentData.comments || (Array.isArray(commentData) ? commentData : []);
+                setComments(fetchedComments);
             } catch (err) {
                 console.error('Failed to fetch post modal data:', err);
             } finally {
@@ -51,21 +61,40 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
         if (postId) fetchData();
     }, [postId]);
 
-    const handleCommentSubmit = async (e) => {
+    const handleCommentSubmit = async (e, parentId = null) => {
         if (e) e.preventDefault();
-        if (!newComment.trim() || !userProfile?.userId || submittingComment) return;
+
+        const contentToPost = parentId ? replyContent : newComment;
+        if (!contentToPost.trim() || !userProfile?.userId || submittingComment) return;
 
         try {
             setSubmittingComment(true);
             const createdComment = await commentService.createComment({
                 postId: postId,
                 userId: userProfile.userId,
-                content: newComment.trim()
+                content: contentToPost.trim(),
+                parentId: parentId
             });
-            setComments(prev => [createdComment, ...prev]);
-            setNewComment('');
 
-            // Notify other components (like PostCard) to update comment count
+            if (parentId) {
+                setComments(prev => prev.map(c => {
+                    if (c.commentId === parentId) {
+                        return {
+                            ...c,
+                            replies: [createdComment, ...(c.replies || [])],
+                            replyCount: (c.replyCount || 0) + 1
+                        };
+                    }
+                    return c;
+                }));
+                setReplyContent('');
+                setReplyingToCommentId(null);
+            } else {
+                setComments(prev => [createdComment, ...prev]);
+                setNewComment('');
+            }
+
+            // Notify other components
             window.dispatchEvent(new CustomEvent('commentCreated', {
                 detail: { postId: postId, comment: createdComment }
             }));
@@ -75,6 +104,56 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
             setSubmittingComment(false);
         }
     };
+
+    const timeAgo = (date) => {
+        if (!date) return 'vừa xong';
+        const now = new Date();
+        const past = new Date(date);
+        const seconds = Math.floor((now - past) / 1000);
+
+        if (isNaN(seconds)) return 'vừa xong';
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " năm trước";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " tháng trước";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " ngày trước";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " giờ trước";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " phút trước";
+        return Math.floor(seconds) + " giây trước";
+    };
+
+    const handleToggleLike = async () => {
+        if (!userProfile) return;
+        try {
+            const newLiked = !isLiked;
+            setIsLiked(newLiked);
+            await likeService.toggleLike(postId);
+        } catch (err) {
+            console.error('Failed to toggle like:', err);
+            setIsLiked(isLiked);
+        }
+    };
+
+    const handleToggleSave = async () => {
+        if (!userProfile) return;
+        try {
+            if (isSaved) {
+                await savedPostService.unbookmarkPost(postId);
+                setIsSaved(false);
+            } else {
+                await savedPostService.bookmarkPost(postId);
+                setIsSaved(true);
+            }
+        } catch (err) {
+            console.error('Failed to save post:', err);
+        }
+    };
+
+    const totalCommentsCount = (comments || []).reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
 
     const handleDeletePost = async () => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
@@ -387,17 +466,17 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                         )}
 
                         <div className="post-modal-actions" style={{ display: 'flex', gap: '20px', alignItems: 'center', width: '100%' }}>
-                            <button className="post-modal-action-btn" onClick={() => setIsLiked(!isLiked)} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
+                            <button className="post-modal-action-btn" onClick={handleToggleLike} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                                     <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                                 </svg>
-                                <span>{(post?.likes || 0) + (isLiked ? 1 : 0)}</span>
+                                <span>{(post?.likes || 0) + (isLiked ? (post.isLiked ? 0 : 1) : (post.isLiked ? -1 : 0))}</span>
                             </button>
-                            <button className="post-modal-action-btn" style={{ color: 'var(--text-secondary)' }}>
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                            <button className="post-action-btn-p btn-animate" style={{ cursor: 'default' }}>
+                                <svg width="20" height="20" viewBox="0 0 18 18" fill="currentColor">
                                     <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
                                 </svg>
-                                <span>{comments.length}</span>
+                                <span>{totalCommentsCount}</span>
                             </button>
                             <div style={{ position: 'relative' }}>
                                 <button className="post-modal-action-btn" onClick={(e) => {
@@ -466,7 +545,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                                     </div>
                                 )}
                             </div>
-                            <button className="post-modal-action-btn" onClick={() => setIsSaved(!isSaved)} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
+                            <button className="post-modal-action-btn" onClick={handleToggleSave} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                                 </svg>
@@ -475,7 +554,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                         </div>
 
                         <div className="post-modal-comments-section">
-                            <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>Bình luận ({comments.length})</h3>
+                            <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>Bình luận ({totalCommentsCount})</h3>
 
                             <form className="post-modal-comment-input" onSubmit={handleCommentSubmit}>
                                 <div className="post-modal-avatar" style={{ width: '32px', height: '32px', backgroundColor: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
@@ -510,17 +589,83 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="post-modal-comment-bubble">
-                                            <span
-                                                className="post-modal-comment-user"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => { navigate(`/profile?id=${comment.userId}`); onClose(); }}
-                                                onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
-                                                onMouseLeave={(e) => e.target.style.color = ''}
-                                            >
-                                                {comment.userName}
-                                            </span>
-                                            {comment.content}
+                                        <div className="post-modal-comment-wrapper" style={{ flex: 1 }}>
+                                            <div className="comment-bubble-p" style={{ position: 'relative' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                                    <span
+                                                        className="post-modal-comment-user"
+                                                        style={{ cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                                                        onClick={() => { navigate(`/profile?id=${comment.userId}`); onClose(); }}
+                                                    >
+                                                        {comment.userName}
+                                                    </span>
+                                                    <span style={{ fontSize: '11px', color: 'var(--text-gray)' }}>{timeAgo(comment.createdAt)}</span>
+                                                </div>
+                                                <div style={{ fontSize: '14px', lineHeight: '1.4', color: 'var(--text-color)' }}>{comment.content}</div>
+
+                                                <div className="comment-actions" style={{ display: 'flex', gap: '12px', marginTop: '6px', alignItems: 'center' }}>
+                                                    <button className="btn-animate" style={{ background: 'none', border: 'none', color: 'var(--text-gray)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '11px' }}>
+                                                        <svg width="12" height="12" viewBox="0 0 16 16"><path fill="currentColor" d="M2 7v7h3V7H2zm4 7h6.5c.6 0 1.2-.4 1.4-1l1.5-4.5c.1-.2.1-.4.1-.5V7c0-.6-.4-1-1-1H9.8L11 3.2c.1-.2.1-.5 0-.8-.1-.2-.4-.4-.7-.4H9.5L6 6v8z" /></svg> Thích
+                                                    </button>
+                                                    <button
+                                                        className="btn-animate"
+                                                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', fontSize: '11px', fontWeight: '500' }}
+                                                        onClick={() => setReplyingToCommentId(replyingToCommentId === comment.commentId ? null : comment.commentId)}
+                                                    >
+                                                        Phản hồi
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Reply Input Box */}
+                                            {replyingToCommentId === comment.commentId && (
+                                                <form onSubmit={(e) => handleCommentSubmit(e, comment.commentId)} style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder={`Phản hồi ${comment.userName}...`}
+                                                        style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', flex: 1, outline: 'none', fontSize: '12px', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)' }}
+                                                        value={replyContent}
+                                                        onChange={(e) => setReplyContent(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        type="submit"
+                                                        className="btn-primary btn-animate"
+                                                        style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: 'white', cursor: 'pointer' }}
+                                                        disabled={submittingComment || !replyContent.trim()}
+                                                    >
+                                                        Gửi
+                                                    </button>
+                                                </form>
+                                            )}
+
+                                            {/* Child Replies */}
+                                            {comment.replies && comment.replies.length > 0 && (
+                                                <div className="replies-list" style={{ marginTop: '10px', borderLeft: '1.5px solid var(--border-color)', paddingLeft: '12px' }}>
+                                                    {comment.replies.map(reply => (
+                                                        <div key={reply.commentId} className="reply-item-modal" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                            <div className="post-modal-avatar" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                                                                {reply.userAvatarURL ? (
+                                                                    <img src={reply.userAvatarURL} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                                                                ) : (
+                                                                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', backgroundColor: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold' }}>
+                                                                        {reply.userName?.[0] || 'U'}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="reply-content-wrapper" style={{ flex: 1 }}>
+                                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                    <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{reply.userName}</span>
+                                                                    <span style={{ fontSize: '10px', color: 'var(--text-gray)' }}>{timeAgo(reply.createdAt)}</span>
+                                                                </div>
+                                                                <div className="reply-bubble" style={{ fontSize: '12px', marginTop: '2px', color: 'var(--text-color)' }}>
+                                                                    <p style={{ margin: 0, lineHeight: '1.4' }}>{reply.content}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )) : (

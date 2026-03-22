@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import PostCard from '../components/PostCard';
+import SkeletonPost from '../components/SkeletonPost';
 import postService from '../service/postService';
 import '../styles/Posts.css';
 
@@ -212,8 +213,10 @@ const Posts = () => {
         </div>
 
         {initialLoading && posts.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div className="loader" style={{ margin: '0 auto' }}>Đang tải bài viết...</div>
+          <div className="questions-list">
+            <SkeletonPost />
+            <SkeletonPost />
+            <SkeletonPost />
           </div>
         ) : error ? (
           <div style={{ padding: '20px', color: 'red' }}>{error}</div>

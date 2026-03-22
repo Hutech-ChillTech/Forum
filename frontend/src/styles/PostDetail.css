@@ -373,15 +373,25 @@
     .post-detail-container {
         grid-template-columns: var(--left-sidebar-width, 240px) 1fr;
     }
-    .post-detail-right-sidebar { display: none; }
+
+    .post-detail-right-sidebar {
+        display: none;
+    }
 }
 
 @media (max-width: 800px) {
     .post-detail-container {
         grid-template-columns: 1fr;
     }
-    .post-detail-sidebar { display: none; }
-    .post-detail-card-premium, .comments-section-premium { padding: 16px; }
+
+    .post-detail-sidebar {
+        display: none;
+    }
+
+    .post-detail-card-premium,
+    .comments-section-premium {
+        padding: 16px;
+    }
 }
 
 /* Shared Utilities */
@@ -422,6 +432,11 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }

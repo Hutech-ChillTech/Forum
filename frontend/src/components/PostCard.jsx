@@ -6,6 +6,7 @@ import commentService from '../service/commentService';
 import authService from '../service/authService';
 import likeService from '../service/likeService';
 import shareService from '../service/shareService';
+import savedPostService from '../service/savedPostService';
 import ShareModal from './ShareModal';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 
@@ -214,7 +215,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
 
     const handleDeletePost = async (e) => {
         if (e) e.stopPropagation();
-        
+
         const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?");
         if (!confirmDelete) return;
 
@@ -270,34 +271,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         return () => window.removeEventListener('click', closeMenu);
     }, [showMenu, showShareMenu]);
 
-    const handleShare = async (platform) => {
-        const urlToShare = window.location.origin + '/posts/' + (id || '');
-        setShowShareMenu(false);
 
-        try {
-            if (platform !== 'COPY') {
-                await shareService.sharePost(id, { platform });
-            }
-
-            if (platform === 'COPY') {
-                navigator.clipboard.writeText(urlToShare);
-                alert('Đã sao chép liên kết bài viết!');
-            } else if (platform === 'FACEBOOK') {
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
-            } else if (platform === 'MESSENGER') {
-                window.open(`fb-messenger://share?link=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400'); // Note: web messenger sharing might differ
-            } else if (platform === 'LINKEDIN') {
-                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
-            } else if (platform === 'INSTAGRAM') {
-                navigator.clipboard.writeText(urlToShare);
-                alert('Đã sao chép liên kết. Mở ứng dụng Instagram để chia sẻ!');
-            }
-        } catch (err) {
-            console.error('Lỗi khi chia sẻ:', err);
-            // Optionally silently fail or show alert
-            alert('Lỗi khi chia sẻ: ' + err.message);
-        }
-    };
 
     // Regroup blocks to bundle consecutive images
     const groupedBlocks = (() => {
@@ -576,30 +550,30 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                 </div>
             ) : (
                 <div className="post-actions" style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                    <button className="post-action-btn" onClick={handleToggleLike} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <button className={`post-action-btn btn-animate ${isLiked ? 'liked' : ''}`} onClick={(e) => { e.stopPropagation(); handleToggleLike(); }} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                             <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                         </svg>
                         <span>{likeCount}</span>
                     </button>
-                    <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <button className="post-action-btn btn-animate" onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} style={{ color: 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                             <path d="M2 4a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V4z" />
                         </svg>
                         <span>{localCommentCount}</span>
                     </button>
-                    <button 
-                        className="post-action-btn share-btn" 
-                        onClick={handleShare} 
-                        style={{ 
-                            color: 'var(--text-secondary)', 
-                            border: 'none', 
-                            background: 'none', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '6px', 
-                            cursor: 'pointer', 
-                            fontSize: '14px', 
+                    <button
+                        className="post-action-btn share-btn btn-animate"
+                        onClick={(e) => { e.stopPropagation(); setIsShareModalOpen(true); }}
+                        style={{
+                            color: 'var(--text-secondary)',
+                            border: 'none',
+                            background: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
                             fontWeight: '500',
                             padding: '6px 10px',
                             borderRadius: '6px',
@@ -613,12 +587,14 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                         </svg>
                         <span>Chia sẻ</span>
                     </button>
-                    <button className="post-action-btn" onClick={(e) => { e.stopPropagation(); setIsSaved(!isSaved); }} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        <span>{isSaved ? 'Đã lưu' : 'Lưu Bài'}</span>
-                    </button>
+                    {userProfile?.userId !== post.userId && (
+                        <button className="post-action-btn btn-animate" onClick={handleToggleSave} style={{ marginLeft: 'auto', color: isSaved ? 'var(--primary-color)' : 'var(--text-secondary)', border: 'none', background: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>{isSaved ? 'Đã lưu' : 'Lưu bài'}</span>
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -791,11 +767,11 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                     </div>
                 )
             }
-            
-            <ShareModal 
-                post={post} 
-                isOpen={isShareModalOpen} 
-                onClose={() => setIsShareModalOpen(false)} 
+
+            <ShareModal
+                post={post}
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
             />
         </div >
     );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import PostCard from '../components/PostCard';
+import SkeletonPost from '../components/SkeletonPost';
 import { showToast } from '../components/Toast';
 import postService from '../service/postService';
 import savedPostService from '../service/savedPostService';
@@ -267,8 +268,10 @@ const Home = () => {
                 </div>
 
                 {initialLoading && userPosts.length === 0 ? (
-                    <div style={{ padding: '40px', textAlign: 'center' }}>
-                        <div className="loader" style={{ margin: '0 auto' }}>Đang tải bài viết...</div>
+                    <div className="user-posts-section">
+                        <SkeletonPost />
+                        <SkeletonPost />
+                        <SkeletonPost />
                     </div>
                 ) : (
                     <div className="user-posts-section">

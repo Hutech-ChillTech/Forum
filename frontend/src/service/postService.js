@@ -92,13 +92,13 @@ const postService = {
     return data.result ?? data;
   },
   async getAllPostsAdmin(page = 0, size = 20, sort = "createdAt,desc") {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/all?page=${page}&size=${size}&sort=${sort}`, {});
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/posts?page=${page}&size=${size}&sort=${sort}`, {});
     if (!response.ok) throw new Error("Failed to fetch all posts");
     const data = await response.json(); return data.result ?? data;
   },
 
   async getPostsByStatus(status, page = 0, size = 20, sort = "createdAt,desc") {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`, {});
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`, {});
     if (!response.ok) throw new Error("Failed to fetch posts by status");
     const data = await response.json(); return data.result ?? data;
   },
@@ -118,7 +118,7 @@ const postService = {
   },
 
   async deletePostByAdmin(postId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/posts/${postId}/admin`, { method: "DELETE" });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/posts/${postId}`, { method: "DELETE" });
     if (!response.ok) { const data = await response.json(); throw new Error(data.message || "Failed to delete post"); }
   },
 

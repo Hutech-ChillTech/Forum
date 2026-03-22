@@ -84,7 +84,7 @@ public class PostService {
         post.setTitle(request.getTitle().trim());
         post.setContent(request.getContent().trim());
         post.setImageURL(request.getImageURL());
-        post.setStatus(PostStatus.PUBLISHED);
+        post.setStatus(PostStatus.PENDING);
         post.setUser(user);
 
         Post savedPost = postRepository.save(post);

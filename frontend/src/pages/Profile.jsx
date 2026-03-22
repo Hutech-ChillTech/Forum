@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import PostCard from '../components/PostCard';
+import SkeletonPost from '../components/SkeletonPost';
 import PostDetailModal from '../components/PostDetailModal';
 import postService from '../service/postService';
 import userService from '../service/userService';
@@ -30,73 +31,108 @@ const Profile = () => {
     });
 
     const [userPosts, setUserPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [selectedPostId, setSelectedPostId] = useState(null);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts', 'comments', 'saved'
 
+    const observer = useRef();
+    const lastPostElementRef = useCallback(node => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, hasMore]);
+
     // Fetch user info and posts
     // ... (rest of useEffects same)
-    useEffect(() => {
-        const fetchProfileData = async () => {
-            // Only show loader for initial load or tab change (if we want)
-            setLoading(true);
-            try {
-                let targetUser;
-                let targetUserId;
-
-                if (userId) {
-                    targetUser = await userService.getUserById(userId);
-                    targetUserId = userId;
-                } else {
-                    const savedProfile = localStorage.getItem('userProfile');
-                    if (savedProfile) {
-                        targetUser = JSON.parse(savedProfile);
-                        targetUserId = targetUser.userId;
-                    } else {
-                        return;
-                    }
-                }
-
-                if (targetUser && activeTab === 'posts') { // Only update name/avatar if on main tab load
-                    setUserData(prev => ({
-                        ...prev,
-                        name: targetUser.fullName || targetUser.userName || targetUser.displayName || "User",
-                        userName: targetUser.userName,
-                        avatarURL: targetUser.avatarURL || targetUser.userAvatarURL,
-                        memberSince: targetUser.createdAt ? new Date(targetUser.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' }) : "Recently",
-                        reputation: targetUser.reputation || 1,
-                    }));
-                }
-
-                if (targetUserId) {
-                    let posts = [];
-                    if (activeTab === 'posts') {
-                        const postData = await postService.getPostsByUser(targetUserId);
-                        posts = postData.posts || [];
-                        setUserData(prev => ({ ...prev, questions: posts.length }));
-                    } else if (activeTab === 'saved') {
-                        const data = await savedPostService.getMyBookmarks(0, 50);
-                        const content = data.content || (Array.isArray(data) ? data : []);
-                        posts = content.map(sp => ({
-                            ...(sp.post || {}),
-                            isSaved: true
-                        }));
-                    } else if (activeTab === 'comments') {
-                        // Placeholder for comments
-                        posts = [];
-                    }
-                    setUserPosts(posts);
-                }
-            } catch (err) {
-                console.error('Failed to fetch profile data:', err);
-                setUserPosts([]);
-            } finally {
-                setLoading(false);
+    const fetchProfileData = async (pageNum, isInitial = false) => {
+        try {
+            if (isInitial) {
+                setInitialLoading(true);
+                setPage(0);
+            } else {
+                setLoading(true);
             }
-        };
 
-        fetchProfileData();
+            let targetUser;
+            let targetUserId;
+
+            if (userId) {
+                targetUser = await userService.getUserById(userId);
+                targetUserId = userId;
+            } else {
+                const savedProfile = localStorage.getItem('userProfile');
+                if (savedProfile) {
+                    targetUser = JSON.parse(savedProfile);
+                    targetUserId = targetUser.userId;
+                } else {
+                    return;
+                }
+            }
+
+            if (targetUser && isInitial) {
+                setUserData(prev => ({
+                    ...prev,
+                    name: targetUser.fullName || targetUser.userName || targetUser.displayName || "User",
+                    userName: targetUser.userName,
+                    avatarURL: targetUser.avatarURL || targetUser.userAvatarURL,
+                    memberSince: targetUser.createdAt ? new Date(targetUser.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long' }) : "Recently",
+                    reputation: targetUser.reputation || 1,
+                }));
+            }
+
+            if (targetUserId) {
+                const size = 10;
+                let posts = [];
+                if (activeTab === 'posts') {
+                    const postData = await postService.getPostsByUser(targetUserId, pageNum, size);
+                    posts = postData.posts || postData.content || postData || [];
+                    if (isInitial) {
+                        setUserData(prev => ({ ...prev, questions: (postData.totalItems || posts.length) }));
+                    }
+                } else if (activeTab === 'saved') {
+                    const data = await savedPostService.getMyBookmarks(pageNum, size);
+                    const content = data.content || (Array.isArray(data) ? data : []);
+                    posts = content.map(sp => ({
+                        ...(sp.post || {}),
+                        isSaved: true
+                    }));
+                } else if (activeTab === 'comments') {
+                    posts = [];
+                }
+
+                if (isInitial) {
+                    setUserPosts(posts);
+                } else {
+                    setUserPosts(prev => [...prev, ...posts]);
+                }
+                setHasMore(posts.length >= size);
+            }
+        } catch (err) {
+            console.error('Failed to fetch profile data:', err);
+            if (isInitial) setUserPosts([]);
+        } finally {
+            setLoading(false);
+            setInitialLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProfileData(0, true);
     }, [userId, activeTab]);
+
+    useEffect(() => {
+        if (page > 0) {
+            fetchProfileData(page);
+        }
+    }, [page]);
 
     useEffect(() => {
         const handleProfileUpdate = (e) => {
@@ -262,18 +298,27 @@ const Profile = () => {
 
                 {/* Content Grid (Two Columns) */}
                 <div className="profile-feed">
-                    {loading ? (
-                        <div className="profile-loading">Đang tải nội dung...</div>
+                    {initialLoading && userPosts.length === 0 ? (
+                        <div className="posts-container-inner">
+                            <SkeletonPost />
+                            <SkeletonPost />
+                        </div>
                     ) : userPosts.length > 0 ? (
                         <div className="posts-container-inner">
                             {userPosts.map((post, idx) => (
-                                <PostCard
-                                    key={post.postId || post.id || idx}
-                                    post={post}
-                                    hideFollowButton={true}
-                                    onOpenModal={(id) => setSelectedPostId(id)}
-                                />
+                                <div key={post.postId || post.id || idx} ref={idx === userPosts.length - 1 ? lastPostElementRef : null}>
+                                    <PostCard
+                                        post={post}
+                                        hideFollowButton={true}
+                                        onOpenModal={(id) => setSelectedPostId(id)}
+                                    />
+                                </div>
                             ))}
+                            {loading && (
+                                <div style={{ padding: '20px', textAlign: 'center' }}>
+                                    <div className="loader" style={{ margin: '0 auto' }}>Đang tải thêm...</div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="profile-empty-feed">

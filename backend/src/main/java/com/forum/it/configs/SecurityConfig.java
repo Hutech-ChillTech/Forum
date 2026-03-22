@@ -68,9 +68,8 @@ public class SecurityConfig {
                         // Static resources & File uploads
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/v1/files/**").permitAll()
-                        // Admin-only routes
-                        .requestMatchers("/api/v1/internal-mng/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/v1/internal-mod/**").hasAnyAuthority("ROLE_MODERATOR")
+                        // Management & Moderation routes
+                        .requestMatchers("/api/v1/internal-mng/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MODERATOR")
                         // Everything else requires authentication
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session

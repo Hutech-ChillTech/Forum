@@ -16,6 +16,7 @@ import Admin from './pages/Admin';
 import ModeratorReview from './pages/ModeratorReview';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
+import ScrollToTop from './components/ScrollToTop';
 import './App.css';
 
 function App() {
@@ -52,17 +53,18 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/posts" element={<Posts />} />
-          <Route 
-            path="/posts/review" 
+          <Route
+            path="/posts/review"
             element={
               <ProtectedRoute allowedRoles={['MODERATOR', 'ADMIN']}>
                 <ModeratorReview />
               </ProtectedRoute>
-            } 
+            }
           />
           <Route path="/tags" element={<Tags />} />
           <Route path="/profile" element={<Profile />} />
@@ -72,16 +74,16 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/saved" element={<Saved />} />
         </Route>
-        
+
         <Route path="/posts/:id" element={<PostDetail />} />
 
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <Admin />
             </ProtectedRoute>
-          } 
+          }
         />
 
         <Route path="/login" element={<Login />} />

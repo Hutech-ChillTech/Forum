@@ -56,6 +56,7 @@ public enum ErrorCode {
     // ── Bookmark ──────────────────────────────────────────────────────────────
     BOOKMARK_ALREADY_EXISTS(6001, "Post is already bookmarked", HttpStatus.BAD_REQUEST),
     BOOKMARK_NOT_FOUND(6002, "Bookmark not found", HttpStatus.NOT_FOUND),
+    BOOKMARK_CANNOT_SAVE_OWN_POST(6003, "You cannot bookmark your own post", HttpStatus.BAD_REQUEST),
 
     // ── Tag ───────────────────────────────────────────────────────────────────
     TAG_NOT_FOUND(7001, "Tag not found", HttpStatus.NOT_FOUND),

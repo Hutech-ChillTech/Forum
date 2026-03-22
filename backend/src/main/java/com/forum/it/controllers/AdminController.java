@@ -149,10 +149,18 @@ public class AdminController {
 
     @GetMapping(Routes.Admin.GET_BY_STATUS_POST)
     public ResponseEntity<Map<String, Object>> getPostsByStatus(
-            @PathVariable PostStatus status,
+            @PathVariable("status") String statusStr,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
+
+        PostStatus status;
+        try {
+            status = PostStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Pageable pageable = buildPageable(page, size, sort);
         Page<PostResponse> postsPage = postService.getPostsByStatus(status, pageable);
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));

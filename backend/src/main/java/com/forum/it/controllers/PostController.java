@@ -44,6 +44,22 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping(Routes.Post.GET_BY_ID_POST)
+    public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
+        PostResponse response = postService.getPostById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("")
+    public ResponseEntity<Map<String, Object>> getPublishedPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<PostResponse> postsPage = postService.getPublishedPosts(pageable);
+        return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
+    }
+
     @GetMapping(Routes.Post.GET_BY_USER_POST)
     public ResponseEntity<Map<String, Object>> getPostsByUser(
             @PathVariable UUID userId,
