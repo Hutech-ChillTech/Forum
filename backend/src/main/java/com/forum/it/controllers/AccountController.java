@@ -14,7 +14,6 @@ import com.forum.it.dtos.request.OtpRequest;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.AuthResponse;
 import com.forum.it.services.AccountService;
-import com.forum.it.dtos.request.RoleRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -66,4 +65,15 @@ public class AccountController {
         return ApiResponses.success(null, null);
     }
 
+    // @PostMapping(Routes.Admin.BAN_USER)
+    // public ApiResponses<String> ban(@RequestBody @Valid BanRequest request) {
+    // accountService.ban(request);
+    // return ApiResponses.success(null, null);
+    // }
+
+    // @PostMapping(Routes.Admin.UNBAN_USER)
+    // public ApiResponses<String> unban(@RequestBody @Valid UnbanRequest request) {
+    // accountService.unban(request);
+    // return ApiResponses.success(null, null);
+    // }
 }

@@ -1,6 +1,7 @@
 package com.forum.it.services;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
 
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
@@ -33,7 +35,9 @@ import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.utils.SecurityContextHelper;
 import com.forum.it.dtos.response.UserResponse;
 import com.forum.it.dtos.request.RoleRequest;
-import com.forum.it.repositories.AccountRoleRepository;
+import java.util.Collections;
+import java.util.Set;
+import com.forum.it.repositories.RolePermissionRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +60,7 @@ public class AccountService {
     SecurityContextHelper securityContextHelper;
     OtpService otpService;
     EmailService emailService;
+    RolePermissionRepository rolePermissionRepository;
 
     @Value("${jwt.refresh-token.expiration}")
     @NonFinal
@@ -110,8 +115,9 @@ public class AccountService {
         accountRole.setAccount(savedAccount);
         accountRole.setRole(userRole);
         accountRoleRepository.save(accountRole);
+        Set<String> permissions = getPermissionsByAccount(savedAccount);
 
-        String token = jwtTokenProvider.generateToken(account, userRole.getName());
+        String token = jwtTokenProvider.generateToken(savedAccount, userRole.getName(), permissions);
 
         return AuthResponse.builder()
                 .accessToken(token)
@@ -134,7 +140,8 @@ public class AccountService {
         }
 
         String roleName = resolveRole(account);
-        String accessToken = jwtTokenProvider.generateToken(account, roleName);
+        Set<String> permissions = getPermissionsByAccount(account);
+        String accessToken = jwtTokenProvider.generateToken(account, roleName, permissions);
         String refreshToken = jwtTokenProvider.generateRefreshToken(account);
 
         long iat = jwtTokenProvider.getIssuedAtTime(accessToken);
@@ -147,6 +154,7 @@ public class AccountService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .authenticated(true)
+                .permissions(permissions)
                 .issuedAt(iat)
                 .expiredAt(exp)
                 .build();
@@ -198,7 +206,8 @@ public class AccountService {
         Account account = accountRepository.findByEmail(userEmail);
 
         String roleName = resolveRole(account);
-        String newAccessToken = jwtTokenProvider.generateToken(account, roleName);
+        Set<String> permissions = getPermissionsByAccount(account);
+        String newAccessToken = jwtTokenProvider.generateToken(account, roleName, permissions);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
 
         long iat = jwtTokenProvider.getIssuedAtTime(newAccessToken);
@@ -294,4 +303,32 @@ public class AccountService {
 
         redisService.deleteValue("ROLE_CACHE:" + existingAccount.getEmail());
     }
+
+    public UserResponse ban(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setStatus(AccountStatus.BANNED);
+        return new UserResponse(userRepository.save(user));
+    }
+
+    public UserResponse unban(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setStatus(AccountStatus.OFFLINE);
+        return new UserResponse(userRepository.save(user));
+    }
+
+    private Set<String> getPermissionsByAccount(Account account) {
+        Set<UUID> roleIds = accountRoleRepository.findByAccount_AccountId(account.getAccountId())
+                .stream()
+                .map(ar -> ar.getRole().getRoleId())
+                .collect(Collectors.toSet());
+        if (roleIds.isEmpty())
+            return Collections.emptySet();
+        return rolePermissionRepository.findByRole_RoleIdIn(roleIds)
+                .stream()
+                .map(rp -> rp.getPermission().getName())
+                .collect(Collectors.toSet());
+    }
+
 }
