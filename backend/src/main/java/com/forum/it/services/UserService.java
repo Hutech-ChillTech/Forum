@@ -133,20 +133,6 @@ public class UserService {
         return new UserResponse(user);
     }
 
-    public UserResponse ban(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        user.setStatus(AccountStatus.BANNED);
-        return new UserResponse(userRepository.save(user));
-    }
-
-    public UserResponse unban(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        user.setStatus(AccountStatus.OFFLINE);
-        return new UserResponse(userRepository.save(user));
-    }
-
     @Transactional(readOnly = true)
     public List<UserResponse> getByStatus(AccountStatus status) {
         return userRepository.findByStatus(status)
