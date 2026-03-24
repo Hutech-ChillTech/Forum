@@ -40,6 +40,43 @@ const tagService = {
     const response = await apiFetch(`${API_BASE_URL}/api/v1/tags/${id}`, {
       method: "DELETE" });
     if (!response.ok) throw new Error("Failed to delete tag");
-  } };
+  },
+
+  // ─── Admin Endpoints ──────────────────────────────────────────
+  async adminGetAllTags(page = 0, size = 50) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/tags?page=${page}&size=${size}`);
+    if (!response.ok) throw new Error("Failed to fetch tags for admin");
+    const data = await response.json(); return data.result ?? data;
+  },
+
+  async adminCreateTag(name) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/tags`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to create tag");
+    return data.result ?? data;
+  },
+
+  async adminDeleteTag(id) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/tags/${id}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) throw new Error("Failed to delete tag");
+  },
+
+  async adminUpdateTag(id, name) {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/tags/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to update tag");
+    return data.result ?? data;
+  }
+};
 
 export default tagService;

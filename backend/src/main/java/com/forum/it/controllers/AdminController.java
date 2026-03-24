@@ -206,6 +206,12 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/tags/{id}")
+    public ResponseEntity<TagResponse> updateTag(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        String name = body.get("name");
+        return ResponseEntity.ok(tagService.updateTag(id, name));
+    }
+
     @PostMapping(Routes.Admin.BAN_USER)
     public ResponseEntity<UserResponse> ban(@PathVariable UUID id) {
         return ResponseEntity.ok(accountService.ban(id));
