@@ -7,20 +7,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "role_claims")
+@Table(name = "role_permissions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoleClaim {
+public class RolePermission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID roleClaimId;
+    private UUID rolePermissionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "roleId", nullable = false)
     private Role role;
 
-    @Column(nullable = false, length = 100)
-    private String claim;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "permissionId", nullable = false)
+    private Permission permission;
 }

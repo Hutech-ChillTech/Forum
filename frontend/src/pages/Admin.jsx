@@ -93,36 +93,25 @@ const Admin = () => {
   };
 
   const handleBanUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to ban this user?')) return;
     try {
       await userService.banUser(userId);
-      setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? { ...u, status: "BANNED" } : u)),
-      );
-    } catch (e) {
-      alert("Lỗi: " + e.message);
-    }
+      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'BANNED' } : u));
+    } catch (e) { alert('Error: ' + e.message); }
   };
 
   const handleUnbanUser = async (userId) => {
     try {
       await userService.unbanUser(userId);
-      setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? { ...u, status: "ACTIVE" } : u)),
-      );
-    } catch (e) {
-      alert("Lỗi: " + e.message);
-    }
+      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'ACTIVE' } : u));
+    } catch (e) { alert('Error: ' + e.message); }
   };
 
-  const handleUpdateUserRole = async (userId, role) => {
+  const handleAssignRole = async (accountId, roleName) => {
     try {
-      await userService.updateUserRole(userId, role);
-      setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
-      );
-    } catch (e) {
-      alert("Lỗi: " + e.message);
-    }
+      await userService.assignRole(accountId, roleName);
+      setUsers(prev => prev.map(u => u.accountId === accountId ? { ...u, role: roleName } : u));
+    } catch (e) { alert('Lỗi: ' + e.message); }
   };
 
   const handleDeletePost = async (postId) => {
@@ -209,227 +198,72 @@ const Admin = () => {
                 <div className="stat-value">-</div>
                 <div className="stat-label">Tags</div>
               </div>
+
+              {usersLoading ? (
+                <div className="admin-loading-mini">Đang tải biểu mẫu...</div>
+              ) : (
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Tên hiển thị</th>
+                        <th>Email</th>
+                        <th>Vai trò (Role)</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map(u => (
+                        <tr key={u.userId}>
+                          <td>
+                            <div style={{ fontWeight: 600, color: '#111827' }}>
+                              {u.fullName || u.userName}
+                            </div>
+                          </td>
+                          <td style={{ color: '#6b7280' }}>{u.email}</td>
+                          <td>
+                            <select
+                              value={u.roleName || 'USER'}
+                              onChange={(e) => handleAssignRole(u.accountId, e.target.value)}
+                              className="status-select-v2"
+                              style={{ padding: '4px 8px', fontSize: '12px' }}
+                            >
+                              <option value="USER">USER</option>
+                              <option value="MODERATOR">MODERATOR</option>
+                            </select>
+                          </td>
+                          <td>
+                            <span className={`status-badge-v2 ${getStatusClass(u.status)}`} style={{ fontSize: '11px' }}>
+                              {u.status === 'BANNED' ? 'BANNED' : 'ACTIVE'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              {u.status === 'BANNED' ? (
+                                <button className="btn-action btn-action--success" onClick={() => handleUnbanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Unban</button>
+                              ) : (
+                                <button className="btn-action btn-action--danger" onClick={() => handleBanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Ban</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {users.length === 0 && (
+                        <tr>
+                          <td colSpan="5" style={{ textAlign: 'center', color: '#9ca3af', padding: '24px' }}>Không tìm thấy người dùng nào</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {renderPagination(userPage, userTotalPages, setUserPage)}
             </div>
-          </div>
-        )}
-
-        {/* -- USERS -- */}
-        {activeTab === "users" && (
-          <div className="admin-section">
-            {usersLoading ? (
-              <div className="admin-loading">Đang tải...</div>
-            ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Họ tên</th>
-                    <th>Email</th>
-                    <th>Vai trò</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.userId}>
-                      <td>{u.userName}</td>
-                      <td>{u.fullName}</td>
-                      <td>{u.email}</td>
-                      <td>
-                        <select
-                          className="status-select"
-                          value={u.role || "USER"}
-                          onChange={(e) =>
-                            handleUpdateUserRole(u.userId, e.target.value)
-                          }
-                        >
-                          <option value="USER">USER</option>
-                          <option value="MODERATOR">MODERATOR</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                      </td>
-                      <td>
-                        <span
-                          className={
-                            "status-badge " + (u.status || "").toLowerCase()
-                          }
-                        >
-                          {u.status}
-                        </span>
-                      </td>
-                      <td>
-                        {u.status === "BANNED" ? (
-                          <button
-                            className="btn-unban"
-                            onClick={() => handleUnbanUser(u.userId)}
-                          >
-                            Bỏ cấm
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-ban"
-                            onClick={() => handleBanUser(u.userId)}
-                          >
-                            Cấm
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {users.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="empty-row">
-                        Không có dữ liệu
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-            {userTotalPages > 1 && (
-              <div className="admin-pagination">
-                {Array.from({ length: userTotalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    className={"page-btn" + (userPage === i ? " active" : "")}
-                    onClick={() => setUserPage(i)}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* -- POSTS -- */}
-        {activeTab === "posts" && (
-          <div className="admin-section">
-            {postsLoading ? (
-              <div className="admin-loading">Đang tải...</div>
-            ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Tiêu đề</th>
-                    <th>Tác giả</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {posts.map((p) => (
-                    <tr key={p.postId}>
-                      <td className="post-title-cell" title={p.title}>
-                        {p.title}
-                      </td>
-                      <td>{p.userName}</td>
-                      <td>
-                        <select
-                          className="status-select"
-                          value={p.status || ""}
-                          onChange={(e) =>
-                            handleUpdatePostStatus(p.postId, e.target.value)
-                          }
-                        >
-                          <option value="PUBLISHED">PUBLISHED</option>
-                          <option value="DRAFT">DRAFT</option>
-                          <option value="ARCHIVED">ARCHIVED</option>
-                          <option value="DELETED">DELETED</option>
-                        </select>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDeletePost(p.postId)}
-                        >
-                          Xóa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {posts.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="empty-row">
-                        Không có dữ liệu
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-            {postTotalPages > 1 && (
-              <div className="admin-pagination">
-                {Array.from({ length: postTotalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    className={"page-btn" + (postPage === i ? " active" : "")}
-                    onClick={() => setPostPage(i)}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* -- TAGS -- */}
-        {activeTab === "tags" && (
-          <div className="admin-section">
-            <div className="tag-create-form">
-              <input
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateTag()}
-                placeholder="Nhập tên tag mới..."
-                className="tag-input"
-              />
-              <button className="btn-create" onClick={handleCreateTag}>
-                Tạo tag
-              </button>
-            </div>
-            {tagsLoading ? (
-              <div className="admin-loading">Đang tải...</div>
-            ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Tên tag</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tags.map((t) => (
-                    <tr key={t.tagId}>
-                      <td>
-                        <span className="tag-pill">{t.name}</span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-delete"
-                          onClick={() => handleDeleteTag(t.tagId)}
-                        >
-                          Xóa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {tags.length === 0 && (
-                    <tr>
-                      <td colSpan="2" className="empty-row">
-                        Chưa có tag nào
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-      </main>
-    </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -73,7 +73,8 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/v1/files/**").permitAll()
                         // Admin-only routes
-                        .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "MODERATOR")
+                        .requestMatchers("/api/v1/internal-mng/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/internal-mod/**").hasAnyAuthority("ROLE_MODERATOR")
                         // Everything else requires authentication
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
@@ -90,7 +91,8 @@ public class SecurityConfig {
         // Standardize list of origins from common dev ports
         configuration.setAllowedOrigins(
                 java.util.Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://localhost:5174"));
-        configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        configuration
+                .setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(
                 java.util.Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
         configuration.setAllowCredentials(true);

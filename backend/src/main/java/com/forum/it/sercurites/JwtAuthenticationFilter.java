@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,22 +12,31 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.forum.it.services.AccountService;
 import com.forum.it.services.RedisService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisService redisService;
+    private final AccountService accountService;
+
+    public JwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider,
+            RedisService redisService,
+            @Lazy AccountService accountService) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.redisService = redisService;
+        this.accountService = accountService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -56,14 +66,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             UUID userId = jwtTokenProvider.extractUserId(jwt);
-            String role = jwtTokenProvider.extractRole(jwt);
+            String lastestRole = accountService.resolveRoleByEmail(email);
 
             if (email != null
                     && SecurityContextHolder.getContext().getAuthentication() == null
                     && jwtTokenProvider.isTokenValid(jwt, email)) {
 
-                UserPrincipal principal = new UserPrincipal(userId, email, role);
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                UserPrincipal principal = new UserPrincipal(userId, email, lastestRole);
+                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + lastestRole));
 
                 var authToken = new UsernamePasswordAuthenticationToken(
                         principal, null, authorities);
@@ -74,14 +84,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            log.debug("Expired JWT for request {}", request.getServletPath());
+            log.error("Expired JWT for request {}", request.getServletPath());
             write401(response, "ACCESS_TOKEN_EXPIRED");
         } catch (io.jsonwebtoken.security.SignatureException
                 | io.jsonwebtoken.MalformedJwtException e) {
-            log.debug("Invalid JWT signature/format: {}", e.getMessage());
+            log.error("Invalid JWT signature/format: {}", e.getMessage());
             write401(response, "ACCESS_TOKEN_INVALID");
         } catch (Exception e) {
-            log.debug("JWT processing error: {}", e.getMessage());
+            log.error("JWT processing error: {}", e.getMessage());
             write401(response, "ACCESS_TOKEN_INVALID");
         }
     }

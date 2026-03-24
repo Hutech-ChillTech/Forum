@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.forum.it.dtos.request.CreateUserRequest;
 import com.forum.it.dtos.request.UpdateUserRequest;
 import com.forum.it.dtos.response.UserResponse;
+import com.forum.it.entities.user.Account;
 import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
@@ -20,6 +21,7 @@ import com.forum.it.exceptions.AppException;
 import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.AccountRepository;
 import com.forum.it.repositories.UserRepository;
+import com.forum.it.entities.user.AccountRole;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,10 +33,22 @@ public class UserService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AccountService accountService;
 
     @Transactional(readOnly = true)
     public Page<UserResponse> getAll(Pageable pageable) {
-        return userRepository.findAll(pageable).map(UserResponse::new);
+        return userRepository.findAll(pageable).map(user -> {
+            UserResponse response = new UserResponse(user);
+            // Tìm account dựa vào userId
+            Account account = accountRepository.findByUser_UserId(user.getUserId());
+
+            if (account != null) {
+                response.setAccountId(account.getAccountId());
+                response.setRoleName(accountService.resolveRole(account));
+            }
+
+            return response;
+        });
     }
 
     @Transactional(readOnly = true)
@@ -117,20 +131,6 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
         return new UserResponse(user);
-    }
-
-    public UserResponse ban(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        user.setStatus(AccountStatus.BANNED);
-        return new UserResponse(userRepository.save(user));
-    }
-
-    public UserResponse unban(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        user.setStatus(AccountStatus.OFFLINE);
-        return new UserResponse(userRepository.save(user));
     }
 
     @Transactional(readOnly = true)

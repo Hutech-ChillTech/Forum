@@ -42,11 +42,6 @@ public class TagController {
                 "totalItems", result.getTotalElements()));
     }
 
-    @GetMapping(Routes.Tag.GET_BY_ID)
-    public ResponseEntity<TagResponse> getTagById(@PathVariable UUID id) {
-        return ResponseEntity.ok(tagService.getTagById(id));
-    }
-
     @GetMapping(Routes.Tag.SEARCH)
     public ResponseEntity<TagResponse> getTagByName(@RequestParam String name) {
         return ResponseEntity.ok(tagService.getTagByName(name));
@@ -55,17 +50,5 @@ public class TagController {
     @GetMapping(Routes.Tag.BY_POST)
     public ResponseEntity<List<TagResponse>> getTagsByPost(@PathVariable UUID postId) {
         return ResponseEntity.ok(tagService.getTagsByPostId(postId));
-    }
-
-    @PostMapping(Routes.Tag.CREATE)
-    public ResponseEntity<TagResponse> createTag(@RequestBody Map<String, String> body) {
-        String name = body.get("name");
-        return ResponseEntity.status(HttpStatus.CREATED).body(tagService.createTag(name));
-    }
-
-    @DeleteMapping(Routes.Tag.DELETE)
-    public ResponseEntity<Void> deleteTag(@PathVariable UUID id) {
-        tagService.deleteTag(id);
-        return ResponseEntity.noContent().build();
     }
 }

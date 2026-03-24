@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -36,17 +37,17 @@ public class JwtTokenProvider {
     /**
      * Generates an access token embedding userId, role, and minimal user info.
      */
-    public String generateToken(Account account, String roleName) {
+    public String generateToken(Account account, String roleName, Set<String> permissions) {
         User user = account.getUser();
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getUserId().toString());
         claims.put("email", account.getEmail());
         claims.put("role", roleName);
-        // Keep additional claims minimal to reduce token size
         claims.put("userName", user.getUserName());
         claims.put("avatarURL", user.getAvatarURL());
         claims.put("verifyStatus", user.getVerifyStatus().name());
         claims.put("status", user.getStatus().name());
+        claims.put("permissions", permissions);
 
         return Jwts.builder()
                 .setSubject(account.getEmail())

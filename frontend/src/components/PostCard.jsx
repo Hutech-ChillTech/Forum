@@ -249,11 +249,14 @@ const PostCard = ({
 
   // Close menu when clicking outside
   useEffect(() => {
-    if (!showMenu) return;
-    const closeMenu = () => setShowMenu(false);
+    if (!showMenu && !showShareMenu) return;
+    const closeMenu = () => {
+      setShowMenu(false);
+      setShowShareMenu(false);
+    };
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
-  }, [showMenu]);
+  }, [showMenu, showShareMenu]);
 
   // Regroup blocks to bundle consecutive images
   const groupedBlocks = (() => {

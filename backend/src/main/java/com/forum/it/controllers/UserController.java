@@ -10,10 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -131,14 +129,10 @@ public class UserController {
         }
     }
 
-    @DeleteMapping(Routes.User.DELETE)
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        try {
-            userService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    @GetMapping(Routes.User.SEARCH_BY_USERNAME)
+    public ApiResponses<UserResponse> getByUserName(@PathVariable String name) {
+        UserResponse response = userService.getByUserName(name);
+        return ApiResponses.success(response, null);
     }
 
     // @PatchMapping("/{id}/status")
@@ -195,10 +189,4 @@ public class UserController {
     // return ResponseEntity.ok(Map.of("exists", exists));
     // }
 
-    // @GetMapping("/check-username/{userName}")
-    // public ResponseEntity<Map<String, Boolean>> checkUserNameExists(@PathVariable
-    // String userName) {
-    // boolean exists = userService.isUserNameExists(userName);
-    // return ResponseEntity.ok(Map.of("exists", exists));
-    // }
 }

@@ -4,7 +4,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.forum.it.entities.user.Account;
+import com.forum.it.entities.user.AccountRole;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -15,4 +17,5 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Account findByEmail(String email);
 
     Account findByUser_UserId(java.util.UUID userId);
+
 }

@@ -42,7 +42,7 @@ public class AccountController {
     @PostMapping(Routes.Auth.REQUEST_OTP)
     public ApiResponses<String> requestOtp(@RequestBody @Valid OtpRequest request) {
         accountService.requestOtp(request);
-        return ApiResponses.success("OTP has been sent to your email", null);
+        return ApiResponses.success(null, null);
     }
 
     @PostMapping(Routes.Auth.LOGOUT)
@@ -51,7 +51,7 @@ public class AccountController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             accountService.logout();
         }
-        return ApiResponses.success("Logout success", null);
+        return ApiResponses.success(null, null);
     }
 
     @PostMapping(Routes.Auth.REFRESH)
@@ -62,7 +62,18 @@ public class AccountController {
     @PostMapping(Routes.Auth.CHANGE_PASSWORD)
     public ApiResponses<String> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
         accountService.changePassword(request);
-        return ApiResponses.success("Password changed successfully", null);
+        return ApiResponses.success(null, null);
     }
 
+    // @PostMapping(Routes.Admin.BAN_USER)
+    // public ApiResponses<String> ban(@RequestBody @Valid BanRequest request) {
+    // accountService.ban(request);
+    // return ApiResponses.success(null, null);
+    // }
+
+    // @PostMapping(Routes.Admin.UNBAN_USER)
+    // public ApiResponses<String> unban(@RequestBody @Valid UnbanRequest request) {
+    // accountService.unban(request);
+    // return ApiResponses.success(null, null);
+    // }
 }
