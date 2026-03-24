@@ -31,6 +31,17 @@ public class TagController {
 
     private final TagService tagService;
 
+    @GetMapping(Routes.Tag.GET_ALL)
+    public ResponseEntity<Map<String, Object>> getAllTags(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TagResponse> result = tagService.getAllTags(pageable);
+        return ResponseEntity.ok(Map.of(
+                "tags", result.getContent(),
+                "totalItems", result.getTotalElements()));
+    }
+
     @GetMapping(Routes.Tag.SEARCH)
     public ResponseEntity<TagResponse> getTagByName(@RequestParam String name) {
         return ResponseEntity.ok(tagService.getTagByName(name));

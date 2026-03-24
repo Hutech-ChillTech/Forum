@@ -11,8 +11,6 @@ import com.forum.it.entities.user.AccountVerifyCheck;
 import com.forum.it.entities.user.Role;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
-import com.forum.it.exceptions.AppException;
-import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.AccountRepository;
 import com.forum.it.repositories.AccountRoleRepository;
 import com.forum.it.repositories.RoleRepository;
