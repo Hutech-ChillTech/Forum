@@ -270,35 +270,6 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         return () => window.removeEventListener('click', closeMenu);
     }, [showMenu, showShareMenu]);
 
-    const handleShare = async (platform) => {
-        const urlToShare = window.location.origin + '/posts/' + (id || '');
-        setShowShareMenu(false);
-
-        try {
-            if (platform !== 'COPY') {
-                await shareService.sharePost(id, { platform });
-            }
-
-            if (platform === 'COPY') {
-                navigator.clipboard.writeText(urlToShare);
-                alert('Đã sao chép liên kết bài viết!');
-            } else if (platform === 'FACEBOOK') {
-                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
-            } else if (platform === 'MESSENGER') {
-                window.open(`fb-messenger://share?link=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400'); // Note: web messenger sharing might differ
-            } else if (platform === 'LINKEDIN') {
-                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`, '_blank', 'width=600,height=400');
-            } else if (platform === 'INSTAGRAM') {
-                navigator.clipboard.writeText(urlToShare);
-                alert('Đã sao chép liên kết. Mở ứng dụng Instagram để chia sẻ!');
-            }
-        } catch (err) {
-            console.error('Lỗi khi chia sẻ:', err);
-            // Optionally silently fail or show alert
-            alert('Lỗi khi chia sẻ: ' + err.message);
-        }
-    };
-
     // Regroup blocks to bundle consecutive images
     const groupedBlocks = (() => {
         const result = [];

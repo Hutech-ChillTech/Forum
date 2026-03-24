@@ -40,13 +40,13 @@ class UserService {
     if (!response.ok) throw new Error('Failed to delete user');
   }
   async banUser(userId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/users/${userId}/ban`, { method: 'PATCH' });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/${userId}/ban`, { method: 'POST' });
     if (!response.ok) throw new Error('Failed to ban user');
     return await response.json();
   }
 
   async unbanUser(userId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/users/${userId}/unban`, { method: 'PATCH' });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/${userId}/unban`, { method: 'POST' });
     if (!response.ok) throw new Error('Failed to unban user');
     return await response.json();
   }

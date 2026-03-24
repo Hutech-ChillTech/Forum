@@ -37,18 +37,18 @@ const Admin = () => {
 
   // ─── Actions ──────────────────────────────────────────────────
   const handleBanUser = async (userId) => {
-    if (!window.confirm('Bạn chắc chắn muốn cấm người dùng này?')) return;
+    if (!window.confirm('Are you sure you want to ban this user?')) return;
     try {
       await userService.banUser(userId);
       setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'BANNED' } : u));
-    } catch (e) { alert('Lỗi: ' + e.message); }
+    } catch (e) { alert('Error: ' + e.message); }
   };
 
   const handleUnbanUser = async (userId) => {
     try {
       await userService.unbanUser(userId);
       setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'ACTIVE' } : u));
-    } catch (e) { alert('Lỗi: ' + e.message); }
+    } catch (e) { alert('Error: ' + e.message); }
   };
 
   const handleAssignRole = async (accountId, roleName) => {
@@ -203,15 +203,15 @@ const Admin = () => {
                           </td>
                           <td>
                             <span className={`status-badge-v2 ${getStatusClass(u.status)}`} style={{ fontSize: '11px' }}>
-                              {u.status === 'BANNED' ? 'BỊ CẤM' : 'ĐANG HOẠT ĐỘNG'}
+                              {u.status === 'BANNED' ? 'BANNED' : 'ACTIVE'}
                             </span>
                           </td>
                           <td>
                             <div className="action-buttons">
                               {u.status === 'BANNED' ? (
-                                <button className="btn-action btn-action--success" onClick={() => handleUnbanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Bỏ cấm</button>
+                                <button className="btn-action btn-action--success" onClick={() => handleUnbanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Unban</button>
                               ) : (
-                                <button className="btn-action btn-action--danger" onClick={() => handleBanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Cấm</button>
+                                <button className="btn-action btn-action--danger" onClick={() => handleBanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Ban</button>
                               )}
                             </div>
                           </td>
