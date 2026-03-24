@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import userService from '../service/userService';
+import tagService from '../service/tagService';
 import '../styles/Admin.css';
 
 const Admin = () => {
@@ -58,6 +59,67 @@ const Admin = () => {
     } catch (e) { alert('Lỗi: ' + e.message); }
   };
 
+  // ─── Tags ──────────────────────────────────────────────────────
+  const [tags, setTags] = useState([]);
+  const [tagPage, setTagPage] = useState(0);
+  const [tagTotalPages, setTagTotalPages] = useState(0);
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [editingTagId, setEditingTagId] = useState(null);
+  const [editTagName, setEditTagName] = useState('');
+
+  const loadTags = useCallback(async () => {
+    setTagsLoading(true);
+    try {
+      const data = await tagService.adminGetAllTags(tagPage, 15);
+      setTags(data.tags || []);
+      setTagTotalPages(Math.ceil((data.totalItems || 0) / 15));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTagsLoading(false);
+    }
+  }, [tagPage]);
+
+  useEffect(() => {
+    if (activeTab === 'tags') {
+      loadTags();
+    }
+  }, [loadTags, activeTab]);
+
+  const handleCreateTag = async (e) => {
+    e.preventDefault();
+    if (!newTagName.trim()) return;
+    try {
+      await tagService.adminCreateTag(newTagName.trim());
+      setNewTagName('');
+      loadTags();
+    } catch (e) {
+      alert('Lỗi: ' + e.message);
+    }
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa tag này?')) return;
+    try {
+      await tagService.adminDeleteTag(tagId);
+      setTags(prev => prev.filter(t => t.tagId !== tagId));
+    } catch (e) {
+      alert('Lỗi: ' + e.message);
+    }
+  };
+
+  const handleUpdateTag = async (tagId) => {
+    if (!editTagName.trim()) return;
+    try {
+      await tagService.adminUpdateTag(tagId, editTagName.trim());
+      setTags(prev => prev.map(t => t.tagId === tagId ? { ...t, name: editTagName.trim().toLowerCase() } : t));
+      setEditingTagId(null);
+    } catch (e) {
+      alert('Lỗi: ' + e.message);
+    }
+  };
+
   // ─── Helpers ──────────────────────────────────────────────────
   const getStatusClass = (status) => {
     if (!status) return 'success';
@@ -101,6 +163,16 @@ const Admin = () => {
           <circle cx="9" cy="7" r="4"></circle>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      )
+    },
+    {
+      key: 'tags',
+      label: 'Quản lý Tags',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
         </svg>
       )
     }
@@ -199,6 +271,7 @@ const Admin = () => {
                             >
                               <option value="USER">USER</option>
                               <option value="MODERATOR">MODERATOR</option>
+                              <option value="ADMIN">ADMIN</option>
                             </select>
                           </td>
                           <td>
@@ -227,6 +300,82 @@ const Admin = () => {
                 </div>
               )}
               {renderPagination(userPage, userTotalPages, setUserPage)}
+            </div>
+          )}
+
+          {activeTab === 'tags' && (
+            <div className="admin-content animate-in">
+              <div className="section-header">
+                <h2 className="section-title">Quản lý Tags</h2>
+                <form onSubmit={handleCreateTag} style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Tên tag mới..."
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="filter-select"
+                    style={{ width: '200px' }}
+                  />
+                  <button type="submit" className="btn-action btn-action--success" style={{ padding: '8px 16px' }}>Thêm Tag</button>
+                </form>
+              </div>
+
+              {tagsLoading ? (
+                <div className="admin-loading-mini">Đang tải danh sách tag...</div>
+              ) : (
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Tên Tag</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tags.map(t => (
+                        <tr key={t.tagId}>
+                          <td style={{ color: '#6b7280', fontSize: '12px' }}>{t.tagId}</td>
+                          <td>
+                            {editingTagId === t.tagId ? (
+                              <input
+                                type="text"
+                                value={editTagName}
+                                onChange={(e) => setEditTagName(e.target.value)}
+                                className="filter-select"
+                                style={{ width: '120px', padding: '4px' }}
+                              />
+                            ) : (
+                              <div style={{ fontWeight: 600, color: '#111827' }}>#{t.name}</div>
+                            )}
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              {editingTagId === t.tagId ? (
+                                <>
+                                  <button className="btn-action btn-action--success" onClick={() => handleUpdateTag(t.tagId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Lưu</button>
+                                  <button className="btn-action" onClick={() => setEditingTagId(null)} style={{ padding: '4px 8px', fontSize: '12px', background: '#ccc' }}>Hủy</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button className="btn-action" onClick={() => { setEditingTagId(t.tagId); setEditTagName(t.name); }} style={{ padding: '4px 8px', fontSize: '12px', background: '#e0e7ff', color: '#4338ca' }}>Sửa</button>
+                                  <button className="btn-action btn-action--danger" onClick={() => handleDeleteTag(t.tagId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Xóa</button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {tags.length === 0 && (
+                        <tr>
+                          <td colSpan="3" style={{ textAlign: 'center', color: '#9ca3af', padding: '24px' }}>Không có tag nào</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {renderPagination(tagPage, tagTotalPages, setTagPage)}
             </div>
           )}
         </div>

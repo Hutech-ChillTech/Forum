@@ -3,7 +3,7 @@ import { apiFetch, API_BASE_URL } from '../utils/apiFetch.js';
 class UserService {
   async getAllUsers(page = 0, size = 20, sort = 'createdAt,desc') {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/internal-mng/users?page=${page}&size=${size}&sort=${sort}`
+      `${API_BASE_URL}/api/v1/users?page=${page}&size=${size}&sort=${sort}`
     );
     if (!response.ok) throw new Error('Failed to fetch users');
     return await response.json();

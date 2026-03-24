@@ -63,6 +63,19 @@ public class TagService {
         tagRepository.deleteById(tagId);
     }
 
+    public TagResponse updateTag(UUID tagId, String name) {
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
+        
+        String normalizedName = name.trim().toLowerCase();
+        if (tagRepository.existsByName(normalizedName) && !tag.getName().equals(normalizedName)) {
+            throw new AppException(ErrorCode.TAG_ALREADY_EXISTS);
+        }
+        
+        tag.setName(normalizedName);
+        return new TagResponse(tagRepository.save(tag));
+    }
+
     @Transactional(readOnly = true)
     public List<TagResponse> getTagsByPostId(UUID postId) {
         return postTagRepository.findTagNamesByPostId(postId).stream()

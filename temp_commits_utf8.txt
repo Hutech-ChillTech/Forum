@@ -1,0 +1,76 @@
+﻿missytr | update ban user
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #23 from Hutech-ChillTech/feature/role-permissions
+Duc Khai | feature: initialize permission entities and adding permission object in access token
+NguyenHongPhuc-2455 | feat: synchronize Post interactions and Enhance UI/UX
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #22 from Hutech-ChillTech/feature/admin-dashboard
+Duc Khai | feature: built assign role api and refactor logic saving rolename on redis
+windyandlnd | Merge pull request #21 from Hutech-ChillTech/new/like-share
+windyandlnd | Merge branch 'dev' into new/like-share
+windyandlnd | Fix: UI
+phamphuson | new like and share
+NguyenHongPhuc-2455 | feat: complete moderation system with real-time notifications and UI layout optimization
+HaiDangIT | fix: websocket
+HaiDangIT | local save
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #17 from Hutech-ChillTech/delete-post
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge branch 'dev' into delete-post
+windyandlnd | Merge pull request #16 from Hutech-ChillTech/frontend-admin
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #15 from Hutech-ChillTech/dev
+sonson-56 | share
+missytr | Add PATCH method to allowed CORS methods in SecurityConfig
+missytr | update admin dashboard
+NguyenHongPhuc-2455 | Edit posts
+windyandlnd | Merge pull request #14 from Hutech-ChillTech/hotfix/login
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #13 from Hutech-ChillTech/hotfix/otp
+Duc Khai | hotfix: increase timeouts 10.000ms
+NguyenHongPhuc-2455 | delete post, otp register
+Duc Khai | refactor: caching otp on redis with ttl 1 minute
+sonson-56 | like
+HaiDangIT | Done
+HaiDangIT | resolve merge conflict
+windyandlnd | Merge pull request #12 from Hutech-ChillTech/search-otp
+HaiDangIT | Merge branch 'search-otp' of https://github.com/Hutech-ChillTech/Forum into dev
+NguyenHongPhuc-2455 | search, otp login
+HaiDangIT | Merge branch 'dev' of https://github.com/Hutech-ChillTech/Forum into dev :wq
+HaiDangIT | local save
+windyandlnd | Merge pull request #11 from Hutech-ChillTech/feat/implement-redis
+Duc Khai | feat: finished refresh-token
+windyandlnd | Merge pull request #10 from Hutech-ChillTech/refactor/unified-main-layout
+windyandlnd | Merge branch 'dev' into refactor/unified-main-layout
+windyandlnd | Merge pull request #9 from Hutech-ChillTech/hotfix/login
+Duc Khai | hotfix: authenticate v2
+Duc Khai | logic: change logic push access token into blacklist following timestamps
+Duc Khai | logic: change logic push access token into blacklist following timestamp
+Duc Khai | hotfix: dont authenticate GET method
+NguyenHongPhuc-2455 | refactor: unify main layout across all pages and cleanup redundant components
+NguyenHongPhuc-2455 | refactor: unify main layout across all pages and cleanup redundant components
+windyandlnd | Merge pull request #8 from Hutech-ChillTech/hotfix/login
+Duc Khai | hofix login
+HaiDangIT | update source
+Duc Khai | refactor: posts, tags, comments, e.g...
+missytr | update frontend
+missytr | Resolve merge conflict in PostController
+missytr | update api frontend
+HaiDangIT | feat: implement secure backend architecture with JWT auth, rate limiting, websocket chat, and social features
+HaiDangIT | Refactor: restructure backend architecture, add JWT security, rate limiting, websocket chat, and social modules
+Duc Khai | dont finish post feature
+HaiDangIT | dev branch
+NguyenHongPhuc-2455 | Update UI: Notification, message, search, sidebar, chat bubbles.
+missytr | update-userprofile-homepage
+missytr | update-userprofile-homepage
+missytr | update-userprofile-homepage
+missytr | update-userprofile-homepage
+missytr | feat: update forntend-userprofile
+Duc Khai | refactor, improve query SQL post logic
+missytr | CRUD tag feature
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #7 from Hutech-ChillTech/signup-signin
+Duc Khai | implement logout function and logic refresh toekn no using redis
+Duc Khai | implement logout function and logic refresh toekn no using redis
+sonson-56 | Add saved post
+Duc Khai | built signup/signin using jwt
+NguyenHongPhuc-2455 | feat: add post creation UI, chat UI, home page, tags page, footer.
+missytr | WIP: frontend login & register (incomplete)
+Hß╗ô Tr╞░╞íng ─Éß╗⌐c Khß║úi | Merge pull request #6 from Hutech-ChillTech/build/globalException
+Duc Khai | built globalException and added basic exceptions in errorCode file
+Duc Khai | build globalException and adding basic exception in errorCode file
+HaiDangIT | last post
+missytr | setup frontend project

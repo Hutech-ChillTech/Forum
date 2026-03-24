@@ -33,14 +33,15 @@ function clearSession() {
 
 export async function apiFetch(url, options = {}) {
   const token = getToken();
-  const headers = { ...options.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  const tokenType = localStorage.getItem("tokenType") || "Bearer";
+  const headers = { ...options.headers, ...(token ? { Authorization: `${tokenType} ${token}` } : {}) };
   let response = await fetch(url, { ...options, headers });
 
   if (response.status === 401) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       const newToken = getToken();
-      const retryHeaders = { ...options.headers, ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}) };
+      const retryHeaders = { ...options.headers, ...(newToken ? { Authorization: `${tokenType} ${newToken}` } : {}) };
       response = await fetch(url, { ...options, headers: retryHeaders });
     }
     // If still 401 after attempting refresh, force re-login
