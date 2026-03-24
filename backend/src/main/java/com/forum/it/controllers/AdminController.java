@@ -206,6 +206,16 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping(Routes.Admin.BAN_USER)
+    public ResponseEntity<UserResponse> ban(@PathVariable UUID id) {
+        return ResponseEntity.ok(accountService.ban(id));
+    }
+
+    @PostMapping(Routes.Admin.UNBAN_USER)
+    public ResponseEntity<UserResponse> unban(@PathVariable UUID id) {
+        return ResponseEntity.ok(accountService.unban(id));
+    }
+
     // Role API Endpoints
     @PostMapping(Routes.Admin.ASSIGN_ROLE)
     public ApiResponses<String> assignRole(@RequestBody @Valid RoleRequest request) {
