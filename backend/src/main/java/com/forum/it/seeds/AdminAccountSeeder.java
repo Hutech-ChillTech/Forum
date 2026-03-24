@@ -38,26 +38,41 @@ public class AdminAccountSeeder implements CommandLineRunner {
         String adminEmail = "admin@forum.com";
         String adminPassword = "admin"; // You should change this later
 
-        // 1. Check if admin already exists
-        if (accountRepository.existsByEmail(adminEmail)) {
-            return;
-        }
-
-        // 2. Get ADMIN role
+        // 1. Get or Create ADMIN role first
         Role adminRole = roleRepository.findByName("ADMIN").orElseGet(() -> {
             Role newRole = new Role();
             newRole.setName("ADMIN");
             return roleRepository.save(newRole);
         });
 
-        // 3. Create User
-        User adminUser = new User();
-        adminUser.setUserName("admin");
-        adminUser.setFullName("System Administrator");
-        adminUser.setEmail(adminEmail);
-        adminUser.setPassword(passwordEncoder.encode(adminPassword));
-        adminUser.setVerifyStatus(UserStatus.ACTIVE);
-        adminUser = userRepository.save(adminUser);
+        // 2. Check if admin account exists
+        Account existingAccount = accountRepository.findByEmail(adminEmail);
+        if (existingAccount != null) {
+            // Check if already has ADMIN role
+            boolean hasAdminRole = accountRoleRepository.findByAccount_AccountId(existingAccount.getAccountId())
+                    .stream().anyMatch(ar -> ar.getRole().getName().equals("ADMIN"));
+
+            if (!hasAdminRole) {
+                log.info("Admin account exists but lacks ADMIN role. Assigning now...");
+                AccountRole accountRole = new AccountRole();
+                accountRole.setAccount(existingAccount);
+                accountRole.setRole(adminRole);
+                accountRoleRepository.save(accountRole);
+            }
+            return;
+        }
+
+        // 3. Create User if not exists (in case user doesn't exist but account check
+        // failed - though unlikely)
+        User adminUser = userRepository.findByEmail(adminEmail).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setUserName("admin");
+            newUser.setFullName("System Administrator");
+            newUser.setEmail(adminEmail);
+            newUser.setPassword(passwordEncoder.encode(adminPassword));
+            newUser.setVerifyStatus(UserStatus.ACTIVE);
+            return userRepository.save(newUser);
+        });
 
         // 4. Create Account
         Account adminAccount = new Account();
@@ -73,5 +88,6 @@ public class AdminAccountSeeder implements CommandLineRunner {
         accountRole.setAccount(adminAccount);
         accountRole.setRole(adminRole);
         accountRoleRepository.save(accountRole);
+        log.info("Successfully created and assigned ADMIN role to: {}", adminEmail);
     }
 }
