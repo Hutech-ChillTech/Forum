@@ -25,7 +25,7 @@ const Header = ({ hideAuth = false }) => {
   const [isChatClosing, setIsChatClosing] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [postToEdit, setPostToEdit] = useState(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [_isMenuOpen, _setIsMenuOpen] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -296,7 +296,7 @@ const Header = ({ hideAuth = false }) => {
     }
   };
 
-  const handleOpenPersonalChat = (user) => {
+  const _handleOpenPersonalChat = (user) => {
     setActiveChats((prev) => {
       // Check if user already exists
       const existing = prev.find((c) => c.name === user.name);

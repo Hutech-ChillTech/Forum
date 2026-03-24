@@ -185,12 +185,6 @@ const Admin = () => {
     return "status--offline";
   };
 
-  const getPostStatusClass = (status) => {
-    if (status === "PUBLIC") return "status--active";
-    if (status === "REMOVED") return "status--banned";
-    return "status--offline";
-  };
-
   const renderPagination = (currentPage, totalPages, setPage) => {
     if (totalPages <= 1) return null;
     return (

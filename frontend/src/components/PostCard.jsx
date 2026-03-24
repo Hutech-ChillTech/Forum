@@ -17,11 +17,10 @@ const PostCard = ({
 }) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [_likeCount, _setLikeCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentLoading, setCommentLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -121,6 +120,7 @@ const PostCard = ({
       .getFollowStatus(post.userId)
       .then((status) => setIsFollowed(status.isFollowing))
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.userId, userProfile?.userId]);
 
   const handleFollowToggle = async (e) => {
@@ -245,18 +245,17 @@ const PostCard = ({
     }
   };
 
-  if (isDeleted) return null;
-
   // Close menu when clicking outside
   useEffect(() => {
-    if (!showMenu && !showShareMenu) return;
+    if (!showMenu) return;
     const closeMenu = () => {
       setShowMenu(false);
-      setShowShareMenu(false);
     };
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
-  }, [showMenu, showShareMenu]);
+  }, [showMenu]);
+
+  if (isDeleted) return null;
 
   // Regroup blocks to bundle consecutive images
   const groupedBlocks = (() => {

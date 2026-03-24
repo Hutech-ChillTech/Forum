@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { showToast } from "../components/Toast";
 import postService from "../service/postService";
@@ -12,7 +12,6 @@ const HOME_PAGE_KEY = "home_page_cache";
 const HOME_SCROLL_KEY = "home_scroll_pos";
 
 const Home = () => {
-  const navigate = useNavigate();
   const { setSelectedPostId } = useOutletContext();
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -85,6 +84,7 @@ const Home = () => {
     } else {
       fetchPosts(0, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Effect to continuously track scroll position
@@ -185,6 +185,7 @@ const Home = () => {
     if (page > 0) {
       fetchPosts(page);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Reset when switching tabs
@@ -194,6 +195,7 @@ const Home = () => {
     setHasMore(true);
     fetchPosts(0, true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   useEffect(() => {

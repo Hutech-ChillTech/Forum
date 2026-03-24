@@ -71,6 +71,7 @@ const PostDetail = () => {
     };
 
     if (id) fetchPostAndData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, userProfile?.userId]);
 
   const handleToggleLike = async () => {

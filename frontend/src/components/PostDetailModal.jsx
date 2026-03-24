@@ -12,7 +12,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [commentLoading, setCommentLoading] = useState(false);
+  const [_commentLoading, setCommentLoading] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -78,7 +78,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
     }
   };
 
-  const handleDeletePost = async () => {
+  const _handleDeletePost = async () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?"))
       return;
 

@@ -5,7 +5,6 @@ import PostDetailModal from "../components/PostDetailModal";
 import postService from "../service/postService";
 import userService from "../service/userService";
 import savedPostService from "../service/savedPostService";
-import authService from "../service/authService";
 import fileService from "../service/fileService";
 import followService from "../service/followService";
 import { API_BASE_URL } from "../utils/apiFetch.js";
@@ -203,7 +202,7 @@ const Profile = () => {
         : `${API_BASE_URL}${uploadRes.url}`;
 
       // 2. Update user profile
-      const updatedUser = await userService.updateUser(currentUser.userId, {
+      await userService.updateUser(currentUser.userId, {
         avatarURL,
       });
 
