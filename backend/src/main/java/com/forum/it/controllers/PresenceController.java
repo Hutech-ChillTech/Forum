@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forum.it.contants.Routes;
 import com.forum.it.sercurites.UserPrincipal;
 import com.forum.it.services.PresenceService;
 
@@ -24,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/presence")
+@RequestMapping(Routes.Presence.BASE)
 public class PresenceController {
 
     private final PresenceService presenceService;
@@ -33,7 +34,7 @@ public class PresenceController {
      * Refresh the caller's presence heartbeat.
      * Requires a valid JWT (handled by {@code JwtAuthenticationFilter}).
      */
-    @PostMapping("/heartbeat")
+    @PostMapping(Routes.Presence.HEARTBEAT)
     public ResponseEntity<Map<String, Boolean>> heartbeat(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal userPrincipal)) {
             return ResponseEntity.status(401).body(Map.of("ok", false));

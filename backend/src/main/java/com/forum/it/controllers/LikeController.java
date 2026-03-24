@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forum.it.contants.Routes;
 import com.forum.it.dtos.response.ApiResponses;
 import com.forum.it.dtos.response.LikeResponse;
 import com.forum.it.services.LikeService;
@@ -19,13 +20,13 @@ import com.forum.it.services.LikeService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/likes")
+@RequestMapping(Routes.Like.BASE)
 @RequiredArgsConstructor
 public class LikeController {
 
     private final LikeService likeService;
 
-    @PostMapping("/post/{postId}")
+    @PostMapping(Routes.Like.TOGGLE)
     public ResponseEntity<ApiResponses<LikeResponse>> toggleLike(@PathVariable UUID postId) {
         LikeResponse response = likeService.toggleLike(postId);
         return ResponseEntity.ok(ApiResponses.<LikeResponse>builder()
@@ -34,7 +35,7 @@ public class LikeController {
                 .build());
     }
 
-    @GetMapping("/post/{postId}/status")
+    @GetMapping(Routes.Like.STATUS)
     public ResponseEntity<ApiResponses<Boolean>> getLikeStatus(@PathVariable UUID postId) {
         boolean isLiked = likeService.isLikedByCurrentUser(postId);
         return ResponseEntity.ok(ApiResponses.<Boolean>builder()
@@ -42,7 +43,7 @@ public class LikeController {
                 .build());
     }
 
-    @GetMapping("/post/{postId}")
+    @GetMapping(Routes.Like.BY_POST)
     public ResponseEntity<ApiResponses<Page<LikeResponse>>> getLikesByPost(
             @PathVariable UUID postId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -51,7 +52,7 @@ public class LikeController {
                 .build());
     }
 
-    @GetMapping("/post/{postId}/count")
+    @GetMapping(Routes.Like.COUNT)
     public ResponseEntity<ApiResponses<Long>> countLikes(@PathVariable UUID postId) {
         return ResponseEntity.ok(ApiResponses.<Long>builder()
                 .result(likeService.countLikesByPost(postId))

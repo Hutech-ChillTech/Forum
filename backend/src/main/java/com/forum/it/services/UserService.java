@@ -21,7 +21,6 @@ import com.forum.it.exceptions.AppException;
 import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.AccountRepository;
 import com.forum.it.repositories.UserRepository;
-import com.forum.it.entities.user.AccountRole;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,16 +37,11 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<UserResponse> getAll(Pageable pageable) {
         return userRepository.findAll(pageable).map(user -> {
-            UserResponse response = new UserResponse(user);
-            // Tìm account dựa vào userId
             Account account = accountRepository.findByUser_UserId(user.getUserId());
-
             if (account != null) {
-                response.setAccountId(account.getAccountId());
-                response.setRoleName(accountService.resolveRole(account));
+                return new UserResponse(user, account.getAccountId(), accountService.resolveRole(account));
             }
-
-            return response;
+            return new UserResponse(user);
         });
     }
 

@@ -65,8 +65,11 @@ public final class Routes {
 
     public static final class User {
         public static final String BASE = API_V1 + "/users";
-        public static final String GET_ALL = "/";
+        public static final String GET_ALL = "";
+        public static final String CREATE = "";
         public static final String ME = "/me";
+        public static final String GET_BY_ID = "/{id}";
+        public static final String GET_BY_EMAIL = "/email/{email}";
         public static final String UPDATE = "/{id}";
         public static final String SEARCH = "/search";
         public static final String SEARCH_BY_USERNAME = "/search/name/{name}";
@@ -79,7 +82,7 @@ public final class Routes {
 
     public static final class Post {
         public static final String BASE = API_V1 + "/posts";
-        public static final String GET_ALL = "/";
+        public static final String GET_ALL = "";
         public static final String GET_BY_ID_POST = "/{id}";
         public static final String GET_BY_USER_POST = "/user/{userId}";
         public static final String SEARCH = "/search";
@@ -97,7 +100,7 @@ public final class Routes {
 
     public static final class Comment {
         public static final String BASE = API_V1 + "/comments";
-        public static final String GET_ALL = "/";
+        public static final String GET_ALL = "";
         public static final String BY_POST = "/post/{postId}";
         public static final String BY_POST_ALL = "/post/{postId}/all";
         public static final String BY_USER = "/user/{userId}";
@@ -124,7 +127,7 @@ public final class Routes {
 
     public static final class Tag {
         public static final String BASE = API_V1 + "/tags";
-        public static final String GET_ALL = "/";
+        public static final String GET_ALL = "";
         public static final String BY_NAME = "/name/{name}";
         public static final String BY_POST = "/post/{postId}";
         public static final String POPULAR = "/popular";
@@ -183,6 +186,19 @@ public final class Routes {
     public static final class File {
         public static final String BASE = API_V1 + "/files";
         public static final String UPLOAD = "/upload";
+    }
+
+    public static final class Like {
+        public static final String BASE = API_V1 + "/likes";
+        public static final String TOGGLE = "/post/{postId}";
+        public static final String STATUS = "/post/{postId}/status";
+        public static final String BY_POST = "/post/{postId}";
+        public static final String COUNT = "/post/{postId}/count";
+    }
+
+    public static final class Presence {
+        public static final String BASE = API_V1 + "/presence";
+        public static final String HEARTBEAT = "/heartbeat";
     }
 
     public static final class Search {

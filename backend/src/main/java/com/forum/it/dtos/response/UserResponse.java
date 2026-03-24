@@ -57,4 +57,10 @@ public class UserResponse implements Serializable {
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
     }
+
+    public UserResponse(User user, UUID accountId, String roleName) {
+        this(user);
+        this.accountId = accountId;
+        this.roleName = roleName;
+    }
 }

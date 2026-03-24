@@ -93,25 +93,39 @@ const Admin = () => {
   };
 
   const handleBanUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to ban this user?')) return;
+    if (!window.confirm("Are you sure you want to ban this user?")) return;
     try {
       await userService.banUser(userId);
-      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'BANNED' } : u));
-    } catch (e) { alert('Error: ' + e.message); }
+      setUsers((prev) =>
+        prev.map((u) => (u.userId === userId ? { ...u, status: "BANNED" } : u)),
+      );
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
   };
 
   const handleUnbanUser = async (userId) => {
     try {
       await userService.unbanUser(userId);
-      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, status: 'ACTIVE' } : u));
-    } catch (e) { alert('Error: ' + e.message); }
+      setUsers((prev) =>
+        prev.map((u) => (u.userId === userId ? { ...u, status: "ACTIVE" } : u)),
+      );
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
   };
 
   const handleAssignRole = async (accountId, roleName) => {
     try {
       await userService.assignRole(accountId, roleName);
-      setUsers(prev => prev.map(u => u.accountId === accountId ? { ...u, role: roleName } : u));
-    } catch (e) { alert('Lỗi: ' + e.message); }
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.accountId === accountId ? { ...u, role: roleName } : u,
+        ),
+      );
+    } catch (e) {
+      alert("Lỗi: " + e.message);
+    }
   };
 
   const handleDeletePost = async (postId) => {
@@ -165,6 +179,43 @@ const Admin = () => {
     tags: "Tags",
   };
 
+  const getStatusClass = (status) => {
+    if (status === "BANNED") return "status--banned";
+    if (status === "ACTIVE") return "status--active";
+    return "status--offline";
+  };
+
+  const getPostStatusClass = (status) => {
+    if (status === "PUBLIC") return "status--active";
+    if (status === "REMOVED") return "status--banned";
+    return "status--offline";
+  };
+
+  const renderPagination = (currentPage, totalPages, setPage) => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="admin-pagination">
+        <button
+          className="admin-page-btn"
+          disabled={currentPage === 0}
+          onClick={() => setPage((p) => p - 1)}
+        >
+          ← Trước
+        </button>
+        <span className="admin-page-info">
+          {currentPage + 1} / {totalPages}
+        </span>
+        <button
+          className="admin-page-btn"
+          disabled={currentPage >= totalPages - 1}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Sau →
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
       <main className="admin-main">
@@ -191,79 +242,268 @@ const Admin = () => {
                 <div className="stat-label">Tổng bài viết</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">-</div>
+                <div className="stat-value">
+                  {users.length > 0 ? users.length : "-"}
+                </div>
                 <div className="stat-label">Người dùng</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">-</div>
+                <div className="stat-value">
+                  {tags.length > 0 ? tags.length : "-"}
+                </div>
                 <div className="stat-label">Tags</div>
               </div>
-
-              {usersLoading ? (
-                <div className="admin-loading-mini">Đang tải biểu mẫu...</div>
-              ) : (
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Tên hiển thị</th>
-                        <th>Email</th>
-                        <th>Vai trò (Role)</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map(u => (
-                        <tr key={u.userId}>
-                          <td>
-                            <div style={{ fontWeight: 600, color: '#111827' }}>
-                              {u.fullName || u.userName}
-                            </div>
-                          </td>
-                          <td style={{ color: '#6b7280' }}>{u.email}</td>
-                          <td>
-                            <select
-                              value={u.roleName || 'USER'}
-                              onChange={(e) => handleAssignRole(u.accountId, e.target.value)}
-                              className="status-select-v2"
-                              style={{ padding: '4px 8px', fontSize: '12px' }}
-                            >
-                              <option value="USER">USER</option>
-                              <option value="MODERATOR">MODERATOR</option>
-                            </select>
-                          </td>
-                          <td>
-                            <span className={`status-badge-v2 ${getStatusClass(u.status)}`} style={{ fontSize: '11px' }}>
-                              {u.status === 'BANNED' ? 'BANNED' : 'ACTIVE'}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              {u.status === 'BANNED' ? (
-                                <button className="btn-action btn-action--success" onClick={() => handleUnbanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Unban</button>
-                              ) : (
-                                <button className="btn-action btn-action--danger" onClick={() => handleBanUser(u.userId)} style={{ padding: '4px 8px', fontSize: '12px' }}>Ban</button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {users.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: 'center', color: '#9ca3af', padding: '24px' }}>Không tìm thấy người dùng nào</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {renderPagination(userPage, userTotalPages, setUserPage)}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+
+        {/* -- USERS -- */}
+        {activeTab === "users" && (
+          <div className="admin-section">
+            <h2 className="admin-section-title">Quản lý người dùng</h2>
+            {usersLoading ? (
+              <div className="admin-loading-mini">Đang tải...</div>
+            ) : (
+              <div className="table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Tên hiển thị</th>
+                      <th>Email</th>
+                      <th>Vai trò (Role)</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.userId}>
+                        <td>
+                          <div style={{ fontWeight: 600, color: "#111827" }}>
+                            {u.fullName || u.userName}
+                          </div>
+                        </td>
+                        <td style={{ color: "#6b7280" }}>{u.email}</td>
+                        <td>
+                          <select
+                            value={u.roleName || "USER"}
+                            onChange={(e) =>
+                              handleAssignRole(u.accountId, e.target.value)
+                            }
+                            className="status-select-v2"
+                            style={{ padding: "4px 8px", fontSize: "12px" }}
+                          >
+                            <option value="USER">USER</option>
+                            <option value="MODERATOR">MODERATOR</option>
+                          </select>
+                        </td>
+                        <td>
+                          <span
+                            className={`status-badge-v2 ${getStatusClass(u.status)}`}
+                            style={{ fontSize: "11px" }}
+                          >
+                            {u.status === "BANNED" ? "BANNED" : "ACTIVE"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            {u.status === "BANNED" ? (
+                              <button
+                                className="btn-action btn-action--success"
+                                onClick={() => handleUnbanUser(u.userId)}
+                                style={{ padding: "4px 8px", fontSize: "12px" }}
+                              >
+                                Unban
+                              </button>
+                            ) : (
+                              <button
+                                className="btn-action btn-action--danger"
+                                onClick={() => handleBanUser(u.userId)}
+                                style={{ padding: "4px 8px", fontSize: "12px" }}
+                              >
+                                Ban
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          style={{
+                            textAlign: "center",
+                            color: "#9ca3af",
+                            padding: "24px",
+                          }}
+                        >
+                          Không tìm thấy người dùng nào
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {renderPagination(userPage, userTotalPages, setUserPage)}
+          </div>
+        )}
+
+        {/* -- POSTS -- */}
+        {activeTab === "posts" && (
+          <div className="admin-section">
+            <h2 className="admin-section-title">Quản lý bài viết</h2>
+            {postsLoading ? (
+              <div className="admin-loading-mini">Đang tải...</div>
+            ) : (
+              <div className="table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Tiêu đề</th>
+                      <th>Tác giả</th>
+                      <th>Trạng thái</th>
+                      <th>Ngày tạo</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {posts.map((p) => (
+                      <tr key={p.postId}>
+                        <td
+                          style={{
+                            maxWidth: 240,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {p.title}
+                        </td>
+                        <td style={{ color: "#6b7280" }}>{p.userName}</td>
+                        <td>
+                          <select
+                            value={p.status}
+                            onChange={(e) =>
+                              handleUpdatePostStatus(p.postId, e.target.value)
+                            }
+                            className="status-select-v2"
+                            style={{ padding: "4px 8px", fontSize: "12px" }}
+                          >
+                            <option value="PUBLIC">PUBLIC</option>
+                            <option value="PRIVATE">PRIVATE</option>
+                            <option value="REMOVED">REMOVED</option>
+                            <option value="PENDING">PENDING</option>
+                          </select>
+                        </td>
+                        <td style={{ color: "#6b7280", fontSize: "12px" }}>
+                          {p.createdAt}
+                        </td>
+                        <td>
+                          <button
+                            className="btn-action btn-action--danger"
+                            onClick={() => handleDeletePost(p.postId)}
+                            style={{ padding: "4px 8px", fontSize: "12px" }}
+                          >
+                            Xóa
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {posts.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          style={{
+                            textAlign: "center",
+                            color: "#9ca3af",
+                            padding: "24px",
+                          }}
+                        >
+                          Không tìm thấy bài viết nào
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {renderPagination(postPage, postTotalPages, setPostPage)}
+          </div>
+        )}
+
+        {/* -- TAGS -- */}
+        {activeTab === "tags" && (
+          <div className="admin-section">
+            <h2 className="admin-section-title">Quản lý Tags</h2>
+            <div
+              className="tag-create-form"
+              style={{ display: "flex", gap: 8, marginBottom: 16 }}
+            >
+              <input
+                type="text"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="Tên tag mới..."
+                className="admin-input"
+                onKeyDown={(e) => e.key === "Enter" && handleCreateTag()}
+              />
+              <button
+                className="btn-action btn-action--success"
+                onClick={handleCreateTag}
+              >
+                + Thêm tag
+              </button>
+            </div>
+            {tagsLoading ? (
+              <div className="admin-loading-mini">Đang tải...</div>
+            ) : (
+              <div className="table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Tên tag</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tags.map((t) => (
+                      <tr key={t.tagId}>
+                        <td>{t.name}</td>
+                        <td>
+                          <button
+                            className="btn-action btn-action--danger"
+                            onClick={() => handleDeleteTag(t.tagId)}
+                            style={{ padding: "4px 8px", fontSize: "12px" }}
+                          >
+                            Xóa
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {tags.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="2"
+                          style={{
+                            textAlign: "center",
+                            color: "#9ca3af",
+                            padding: "24px",
+                          }}
+                        >
+                          Chưa có tag nào
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </>
   );
 };
 

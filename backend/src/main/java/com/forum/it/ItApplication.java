@@ -23,7 +23,7 @@ public class ItApplication {
 			try {
 				jdbcTemplate.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS count_like INTEGER DEFAULT 0");
 				System.out.println("DEBUG: Database schema updated successfully (count_like column checked)");
-				
+
 				// Fix shares platform check constraint
 				try {
 					jdbcTemplate.execute("ALTER TABLE shares DROP CONSTRAINT IF EXISTS shares_platform_check");
