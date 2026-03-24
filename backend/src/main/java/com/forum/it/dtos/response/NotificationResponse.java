@@ -1,8 +1,9 @@
 package com.forum.it.dtos.response;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.forum.it.entities.system.Notification;
 import com.forum.it.entities.system.NotificationStatus;
 import com.forum.it.entities.system.NotificationType;
@@ -17,7 +18,9 @@ public class NotificationResponse {
     private final NotificationType type;
     private final String message;
     private final NotificationStatus status;
-    private final LocalDate createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private final LocalDateTime createdAt;
 
     public NotificationResponse(Notification n) {
         this.notificationId = n.getNotificationId();

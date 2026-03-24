@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import chatService from "../service/chatService";
@@ -32,6 +32,7 @@ const Chat = () => {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
   const token = localStorage.getItem("token");
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("normal");
   const [conversations, setConversations] = useState([]);
@@ -116,6 +117,12 @@ const Chat = () => {
       webSocketFactory: () => new SockJS(`${API_BASE}/ws`),
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
+      // Always use the freshest token on (re)connect
+      beforeConnect: () => {
+        const freshToken = localStorage.getItem("token");
+        if (freshToken)
+          client.connectHeaders = { Authorization: `Bearer ${freshToken}` };
+      },
       onConnect: () => {
         // Normal messages
         client.subscribe("/user/queue/messages", (frame) => {
@@ -124,7 +131,20 @@ const Chat = () => {
           const partnerId =
             msg.senderId === currentUser.userId ? msg.receiverId : msg.senderId;
           if (contact && contact.userId === partnerId) {
-            setMessages((prev) => [...prev, msg]);
+            setMessages((prev) => {
+              // Replace the last optimistic (temp-*) message sent by me with the real echo
+              if (String(msg.senderId) === String(currentUser.userId)) {
+                const tempIdx = [...prev]
+                  .map((m) => String(m.communicationId).startsWith("temp-"))
+                  .lastIndexOf(true);
+                if (tempIdx !== -1) {
+                  const updated = [...prev];
+                  updated[tempIdx] = msg;
+                  return updated;
+                }
+              }
+              return [...prev, msg];
+            });
           }
           loadConversations();
         });
@@ -164,7 +184,10 @@ const Chat = () => {
     setLoadingMsgs(true);
     try {
       const data = await chatService.getConversation(contact.userId);
-      setMessages(data || []);
+      // Backend returns DESC order (newest first) for pagination;
+      // reverse to chronological (oldest first) for chat display
+      const msgs = Array.isArray(data) ? [...data].reverse() : [];
+      setMessages(msgs);
     } catch (err) {
       console.error("Failed to load messages", err);
       setMessages([]);
@@ -190,14 +213,28 @@ const Chat = () => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!inputValue.trim() || !selectedContact) return;
+    const text = inputValue.trim();
+    if (!text || !selectedContact) return;
     if (!stompClientRef.current?.connected) return;
+
+    // Optimistically show the message immediately; the WebSocket echo will replace it
+    const tempId = `temp-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        communicationId: tempId,
+        senderId: currentUser.userId,
+        receiverId: selectedContact.userId,
+        message: text,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
 
     stompClientRef.current.publish({
       destination: "/app/chat.send",
       body: JSON.stringify({
         receiverId: selectedContact.userId,
-        message: inputValue.trim(),
+        message: text,
       }),
     });
     setInputValue("");
@@ -210,7 +247,9 @@ const Chat = () => {
       if (selectedContact?.userId === senderId) {
         setIsPendingConv(false);
         const data = await chatService.getConversation(senderId);
-        setMessages(data || []);
+        // Backend returns DESC order; reverse to chronological for display
+        const msgs = Array.isArray(data) ? [...data].reverse() : [];
+        setMessages(msgs);
       }
     } catch (err) {
       console.error("Failed to accept pending", err);
@@ -247,6 +286,21 @@ const Chat = () => {
       {/* ── Sidebar ── */}
       <div className="chat-contacts-sidebar">
         <div className="sidebar-header">
+          <button className="chat-back-btn" onClick={() => navigate(-1)}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Quay lại
+          </button>
           <h2>Tin nhắn</h2>
           <div className="search-contacts">
             <input
@@ -425,7 +479,7 @@ const Chat = () => {
                   const isMe = msg.senderId === currentUser.userId;
                   return (
                     <div
-                      key={msg.id ?? idx}
+                      key={msg.communicationId ?? idx}
                       className={`chat-bubble-wrapper ${isMe ? "me" : "other"}`}
                     >
                       {!isMe && (
@@ -445,7 +499,7 @@ const Chat = () => {
                         </div>
                       )}
                       <div className="chat-bubble">
-                        {msg.content}
+                        {msg.message}
                         <span className="chat-time">
                           {formatTime(msg.createdAt)}
                         </span>

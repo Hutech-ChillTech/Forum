@@ -55,6 +55,22 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping(Routes.User.ACTIVE)
+    public ResponseEntity<Map<String, Object>> getActiveUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<UserResponse> usersPage = userService.getActiveUsers(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("users", usersPage.getContent());
+        response.put("currentPage", usersPage.getNumber());
+        response.put("totalItems", usersPage.getTotalElements());
+        response.put("totalPages", usersPage.getTotalPages());
+        response.put("pageSize", usersPage.getSize());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping(Routes.User.GET_ALL)
     public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,

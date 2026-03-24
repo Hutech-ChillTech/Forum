@@ -1,42 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PostCard from "../components/PostCard";
+import savedPostService from "../service/savedPostService";
 import "../styles/Home.css"; // Reusing Home styles for consistency
 
 const Saved = () => {
-  const [savedPosts] = useState({
-    saved_1: true,
-    saved_2: true,
-  });
+  const [savedPosts, setSavedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock saved data
-  const savedPostData = [
-    {
-      id: 1,
-      title: "Làm thế nào để tối ưu hóa truy vấn SQL trong Spring Boot?",
-      excerpt:
-        "Tôi đang gặp vấn đề về hiệu năng khi load dữ liệu lớn từ database. Có ai có kinh nghiệm về việc sử dụng Specification hoặc QueryDSL không?",
-      author: "hoangminh",
-      reputation: 154,
-      likes: 42,
-      comments: 15,
-      tags: ["java", "spring-boot", "sql"],
-      time: "3 giờ trước",
-      images: ["/images/java-logo.png"],
-    },
-    {
-      id: 2,
-      title: "Sự khác biệt giữa useEffect và useLayoutEffect trong React?",
-      excerpt:
-        "Khi nào thì chúng ta nên sử dụng useLayoutEffect thay vì useEffect? Tôi thấy trong tài liệu nói nó có thể gây chậm UI.",
-      author: "tech_guru",
-      reputation: 2500,
-      likes: 128,
-      comments: 34,
-      tags: ["javascript", "reactjs", "frontend"],
-      time: "1 ngày trước",
-      images: ["/images/react-logo.png"],
-    },
-  ];
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      try {
+        const data = await savedPostService.getMyBookmarks(0, 50);
+        // API may return array directly or wrapped in posts/items field
+        setSavedPosts(
+          Array.isArray(data) ? data : (data.posts ?? data.items ?? []),
+        );
+      } catch (err) {
+        console.error("Failed to load bookmarks", err);
+        setSavedPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookmarks();
+  }, []);
 
   return (
     <>
@@ -58,14 +45,20 @@ const Saved = () => {
         </div>
 
         <div className="posts-container">
-          {savedPostData.filter((post) => savedPosts["saved_" + post.id])
-            .length > 0 ? (
-            savedPostData.map(
-              (post) =>
-                savedPosts["saved_" + post.id] && (
-                  <PostCard key={post.id} post={post} />
-                ),
-            )
+          {loading ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Đang tải...
+            </div>
+          ) : savedPosts.length > 0 ? (
+            savedPosts.map((post) => (
+              <PostCard key={post.postId ?? post.id} post={post} />
+            ))
           ) : (
             <div
               style={{

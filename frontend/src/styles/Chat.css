@@ -11,20 +11,21 @@
 }
 
 .chat-page-container {
-  max-width: 1200px;
-  margin: 80px auto 40px;
-  height: calc(100vh - 130px);
+  max-width: 1400px;
+  margin: 56px auto 0;
+  height: calc(100vh - 56px);
   background: white;
-  border-radius: 20px;
+  border-radius: 0;
   display: flex;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   overflow: hidden;
-  width: 95%;
+  width: 100%;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
 .chat-contacts-sidebar {
-  width: 320px;
+  width: 360px;
+  min-width: 300px;
   border-right: 1px solid #eef0f2;
   display: flex;
   flex-direction: column;
@@ -32,9 +33,30 @@
 }
 
 .sidebar-header {
-  padding: 20px 18px 14px;
+  padding: 14px 18px 14px;
   background: linear-gradient(135deg, #0066ff 0%, #5b3df5 100%);
   color: white;
+}
+
+/* ── Back button ─────────────────────────────────────────────────────────── */
+.chat-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.chat-back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-header h2 {
@@ -88,7 +110,7 @@
   margin-top: 12px;
 }
 
-.tab-btn {
+.chat-tabs .tab-btn {
   flex: 1;
   padding: 7px 10px;
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -106,12 +128,12 @@
   position: relative;
 }
 
-.tab-btn:hover {
+.chat-tabs .tab-btn:hover {
   background: rgba(255, 255, 255, 0.18);
   color: white;
 }
 
-.tab-btn.active {
+.chat-tabs .tab-btn.active {
   background: white;
   border-color: white;
   color: #0066ff;

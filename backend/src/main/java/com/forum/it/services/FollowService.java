@@ -6,7 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.forum.it.dtos.response.FollowResponse;
 import com.forum.it.dtos.response.FollowStatusResponse;
@@ -25,24 +29,28 @@ import com.forum.it.repositories.UserRepository;
 import com.forum.it.utils.SecurityContextHelper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class FollowService {
 
-    private final FollowRepository       followRepository;
-    private final UserRepository         userRepository;
-    private final NotificationRepository notificationRepository;
-    private final SecurityContextHelper  securityContextHelper;
-    private final SimpMessagingTemplate  messagingTemplate;
+    private final FollowRepository            followRepository;
+    private final UserRepository              userRepository;
+    private final NotificationRepository      notificationRepository;
+    private final SecurityContextHelper       securityContextHelper;
+    private final SimpMessagingTemplate       messagingTemplate;
+    private final PlatformTransactionManager  transactionManager;
 
     // ── Follow / Unfollow ────────────────────────────────────────────────────
 
     /**
      * Current user follow targetUserId.
-     * Gửi notification cho người được follow.
+     * Gửi notification cho người được follow (trong transaction riêng, sau khi follow commit).
      */
+    @Transactional
     public FollowResponse follow(UUID targetUserId) {
         UUID currentUserId = securityContextHelper.getCurrentUserId();
 
@@ -61,19 +69,45 @@ public class FollowService {
         Follow follow = new Follow();
         follow.setFollower(follower);
         follow.setFollowing(following);
-        Follow saved = followRepository.save(follow);
 
-        // Thông báo cho người được follow
-        Notification notification = new Notification();
-        notification.setUser(following);
-        notification.setType(NotificationType.FOLLOW);
-        notification.setStatus(NotificationStatus.UNREAD);
-        notification.setMessage(follower.getUserName() + " đã theo dõi bạn");
-        Notification savedNotif = notificationRepository.save(notification);
-        messagingTemplate.convertAndSendToUser(
-                following.getUserId().toString(),
-                "/queue/notifications",
-                new NotificationResponse(savedNotif));
+        Follow saved;
+        try {
+            saved = followRepository.saveAndFlush(follow);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new AppException(ErrorCode.ALREADY_FOLLOWING);
+        }
+
+        // Notification is created in a SEPARATE transaction AFTER the follow commits.
+        // This ensures: (1) the follow is always persisted even if notification fails,
+        // (2) the notification is visible in DB before the WebSocket push reaches the client.
+        final String followerName = follower.getUserName();
+        final UUID   followingId  = following.getUserId();
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    TransactionTemplate tx = new TransactionTemplate(transactionManager);
+                    NotificationResponse wsPayload = tx.execute(status -> {
+                        User target = userRepository.getReferenceById(followingId);
+                        Notification notification = new Notification();
+                        notification.setUser(target);
+                        notification.setType(NotificationType.FOLLOW);
+                        notification.setStatus(NotificationStatus.UNREAD);
+                        notification.setMessage(followerName + " đã theo dõi bạn");
+                        Notification savedNotif = notificationRepository.save(notification);
+                        return new NotificationResponse(savedNotif);
+                    });
+                    if (wsPayload != null) {
+                        messagingTemplate.convertAndSendToUser(
+                                followingId.toString(), "/queue/notifications", wsPayload);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to create follow notification for user {}: {}",
+                            followingId, e.getMessage());
+                }
+            }
+        });
 
         return new FollowResponse(saved, false);
     }

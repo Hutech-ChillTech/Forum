@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import CreatePostModal from "./CreatePostModal";
@@ -8,6 +8,7 @@ import authService from "../service/authService";
 import notificationService from "../service/notificationService";
 import chatService from "../service/chatService";
 import searchService from "../service/searchService";
+import { apiFetch } from "../utils/apiFetch.js";
 import "../styles/Header.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -23,6 +24,8 @@ const Header = ({ hideAuth = false }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [isChatClosing, setIsChatClosing] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [postToEdit, setPostToEdit] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -34,26 +37,6 @@ const Header = ({ hideAuth = false }) => {
   const notificationRef = useRef(null);
   const chatRef = useRef(null);
   const searchRef = useRef(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [showChat, setShowChat] = useState(false);
-    const [activeChats, setActiveChats] = useState([]); // List of up to 5 user objects
-    const [maximizedChatId, setMaximizedChatId] = useState(null); // ID/Name of the chat currently open
-    const [isClosing, setIsClosing] = useState(false);
-    const [isChatClosing, setIsChatClosing] = useState(false);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [postToEdit, setPostToEdit] = useState(null);
-    const [showSearchHistory, setShowSearchHistory] = useState(false);
-    const [recentSearches, setRecentSearches] = useState([]);
-    const [searchKeyword, setSearchKeyword] = useState('');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [notifications, setNotifications] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const dropdownRef = useRef(null);
-    const notificationRef = useRef(null);
-    const chatRef = useRef(null);
-    const searchRef = useRef(null);
 
   // Get user data from localStorage or use defaults
   const [userData, setUserData] = useState(() => {
@@ -83,10 +66,17 @@ const Header = ({ hideAuth = false }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // Load initial unread count
+    // Load initial unread count + recent notifications
     notificationService
       .countUnread()
       .then((data) => setUnreadCount(Number(data?.unread ?? data ?? 0)))
+      .catch(() => {});
+    notificationService
+      .getMyNotifications(0, 10)
+      .then((data) => {
+        const list = data?.notifications || (Array.isArray(data) ? data : []);
+        setNotifications(list);
+      })
       .catch(() => {});
 
     // WebSocket for real-time push
@@ -94,6 +84,12 @@ const Header = ({ hideAuth = false }) => {
       webSocketFactory: () => new SockJS(`${API_BASE}/ws`),
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 15000,
+      // Always use the freshest token on (re)connect
+      beforeConnect: () => {
+        const freshToken = localStorage.getItem("token");
+        if (freshToken)
+          client.connectHeaders = { Authorization: `Bearer ${freshToken}` };
+      },
       onConnect: () => {
         client.subscribe("/user/queue/notifications", (frame) => {
           const notif = JSON.parse(frame.body);
@@ -107,17 +103,38 @@ const Header = ({ hideAuth = false }) => {
     return () => client.deactivate();
   }, [isLoggedIn]);
 
-  // Load notifications list when panel opens
+  // ── Presence heartbeat ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!showNotifications || !isLoggedIn) return;
-    notificationService
-      .getMyNotifications()
-      .then((data) => {
-        const list = data?.notifications || (Array.isArray(data) ? data : []);
-        setNotifications(list);
-      })
-      .catch(() => {});
-  }, [showNotifications, isLoggedIn]);
+    if (!isLoggedIn) return;
+
+    // Use apiFetch so it auto-refreshes the token and stops heartbeat on 401
+    const sendHeartbeat = () => {
+      apiFetch(`${API_BASE}/api/v1/presence/heartbeat`, {
+        method: "POST",
+      }).catch(() => {});
+    };
+
+    // Immediate heartbeat on login / mount
+    sendHeartbeat();
+
+    // Refresh every 2 minutes
+    const intervalId = setInterval(sendHeartbeat, 2 * 60 * 1000);
+
+    // Re-ping immediately when the user returns to the tab
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") sendHeartbeat();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isLoggedIn]);
+
+  // Notifications are kept up-to-date by the mount-time fetch + WebSocket push.
+  // No re-fetch when the panel opens — avoids overwriting real-time data with
+  // potentially stale DB results (the notification may not be committed yet).
 
   // Load conversations when chat panel opens
   useEffect(() => {
@@ -184,17 +201,14 @@ const Header = ({ hideAuth = false }) => {
     };
 
     const handleOpenCreatePost = () => {
+      setPostToEdit(null);
       setIsCreateOpen(true);
     };
-        const handleOpenCreatePost = () => {
-            setPostToEdit(null);
-            setIsCreateOpen(true);
-        };
 
-        const handleOpenEditPost = (e) => {
-            setPostToEdit(e.detail);
-            setIsCreateOpen(true);
-        };
+    const handleOpenEditPost = (e) => {
+      setPostToEdit(e.detail);
+      setIsCreateOpen(true);
+    };
 
     const handleProfileUpdate = (e) => {
       const profile = e.detail;
@@ -206,28 +220,17 @@ const Header = ({ hideAuth = false }) => {
     };
 
     window.addEventListener("openCreatePost", handleOpenCreatePost);
+    window.addEventListener("openEditPost", handleOpenEditPost);
     window.addEventListener("userProfileUpdated", handleProfileUpdate);
     document.addEventListener("mousedown", handleClickOutside);
-        window.addEventListener('openCreatePost', handleOpenCreatePost);
-        window.addEventListener('openEditPost', handleOpenEditPost);
-        window.addEventListener('userProfileUpdated', handleProfileUpdate);
-        window.addEventListener('mobileMenuStateChanged', handleMenuStateChange);
-        document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("openCreatePost", handleOpenCreatePost);
+      window.removeEventListener("openEditPost", handleOpenEditPost);
       window.removeEventListener("userProfileUpdated", handleProfileUpdate);
     };
   }, [showNotifications, showChat, showDropdown, showSearchHistory]);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('openCreatePost', handleOpenCreatePost);
-            window.removeEventListener('openEditPost', handleOpenEditPost);
-            window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-            window.removeEventListener('mobileMenuStateChanged', handleMenuStateChange);
-        };
-    }, [showNotifications, showChat, showDropdown, showSearchHistory]);
 
   // Fetch search history
   useEffect(() => {
@@ -334,10 +337,6 @@ const Header = ({ hideAuth = false }) => {
       .toUpperCase()
       .slice(0, 2);
   };
-    // Get user initials for avatar
-    const getInitials = (name) => {
-        return name ? name.charAt(0).toUpperCase() : 'U';
-    };
 
   const formatNotifTime = (iso) => {
     if (!iso) return "";
@@ -577,7 +576,7 @@ const Header = ({ hideAuth = false }) => {
                         )}
                       </div>
                       <div className="notification-footer">
-                        <a href="/notifications">Xem tất cả</a>
+                        <Link to="/notifications">Xem tất cả</Link>
                       </div>
                     </div>
                   )}
@@ -698,7 +697,7 @@ const Header = ({ hideAuth = false }) => {
                         )}
                       </div>
                       <div className="notification-footer">
-                        <a href="/messages">Vào trang chat</a>
+                        <a href="/chat">Vào trang chat</a>
                       </div>
                     </div>
                   )}
@@ -842,7 +841,11 @@ const Header = ({ hideAuth = false }) => {
 
       <CreatePostModal
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setPostToEdit(null);
+        }}
+        postToEdit={postToEdit}
         onPostCreated={(newPost) => {
           const event = new CustomEvent("globalPostCreated", {
             detail: newPost,
@@ -852,20 +855,6 @@ const Header = ({ hideAuth = false }) => {
       />
     </header>
   );
-            <CreatePostModal
-                isOpen={isCreateOpen}
-                onClose={() => {
-                    setIsCreateOpen(false);
-                    setPostToEdit(null);
-                }}
-                postToEdit={postToEdit}
-                onPostCreated={(newPost) => {
-                    const event = new CustomEvent('globalPostCreated', { detail: newPost });
-                    window.dispatchEvent(event);
-                }}
-            />
-        </header>
-    );
 };
 
 export default Header;

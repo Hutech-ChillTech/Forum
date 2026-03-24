@@ -76,7 +76,7 @@ public enum ErrorCode {
     PENDING_REQUEST_NOT_FOUND(10003, "No pending message request from this user", HttpStatus.NOT_FOUND),
 
     // ── Follow ────────────────────────────────────────────────────────────────
-    ALREADY_FOLLOWING(11001, "You are already following this user", HttpStatus.BAD_REQUEST),
+    ALREADY_FOLLOWING(11001, "You are already following this user", HttpStatus.CONFLICT),
     FOLLOW_NOT_FOUND(11002, "Follow relationship not found", HttpStatus.NOT_FOUND),
     FOLLOW_SELF(11003, "Cannot follow yourself", HttpStatus.BAD_REQUEST),
 

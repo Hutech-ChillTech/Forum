@@ -1,6 +1,6 @@
 package com.forum.it.dtos.response;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.forum.it.entities.system.Communication;
@@ -17,8 +17,8 @@ public class MessageResponse {
     private final UUID          receiverId;
     private final String        receiverName;
     private final String        message;
-    private final MessageStatus status;
-    private final LocalDate     createdAt;
+    private final MessageStatus  status;
+    private final LocalDateTime   createdAt;
 
     public MessageResponse(Communication c) {
         this.communicationId = c.getCommunicationId();

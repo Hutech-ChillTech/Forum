@@ -1,6 +1,6 @@
 package com.forum.it.entities.system;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -61,5 +61,5 @@ public class Communication {
     private MessageStatus status = MessageStatus.NORMAL;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 }

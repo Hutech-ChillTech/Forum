@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+} from "react-router-dom";
 import Home from "./pages/Home";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
@@ -12,11 +17,30 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import Saved from "./pages/Saved";
+import Notifications from "./pages/Notifications";
 import Admin from "./pages/Admin";
 import ModeratorReview from "./pages/ModeratorReview";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./components/MainLayout";
+import Header from "./components/Header";
+import Toast from "./components/Toast";
 import "./App.css";
+
+// Minimal layout for full-width pages (no sidebar)
+const SlimLayout = () => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "100vh",
+      backgroundColor: "var(--bg-color)",
+    }}
+  >
+    <Header />
+    <Outlet />
+    <Toast />
+  </div>
+);
 
 function App() {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -71,9 +95,16 @@ function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/chat" element={<Chat />} />
           <Route path="/saved" element={<Saved />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
+
+        {/* Chat gets full viewport (no sidebar grid) */}
+        <Route element={<SlimLayout />}>
+          <Route path="/chat" element={<Chat />} />
+        </Route>
+
+        <Route path="/posts/:id" element={<PostDetail />} />
 
         <Route
           path="/admin"

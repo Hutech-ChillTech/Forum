@@ -30,7 +30,8 @@ const chatService = {
     );
     if (!response.ok) throw new Error("Failed to fetch conversation");
     const data = await response.json();
-    return data.result ?? data;
+    // Backend returns { messages: [...], totalItems: N, totalPages: N }
+    return data.result ?? data.messages ?? data;
   },
 
   // ── Inbox / Sent ──────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ const chatService = {
     );
     if (!response.ok) throw new Error("Failed to fetch inbox");
     const data = await response.json();
-    return data.result ?? data;
+    return data.result ?? data.messages ?? data;
   },
 
   async getSentMessages(page = 0, size = 20) {
@@ -49,7 +50,7 @@ const chatService = {
     );
     if (!response.ok) throw new Error("Failed to fetch sent messages");
     const data = await response.json();
-    return data.result ?? data;
+    return data.result ?? data.messages ?? data;
   },
 
   // ── Pending Message Requests ──────────────────────────────────────────────

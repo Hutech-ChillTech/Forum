@@ -7,6 +7,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -53,6 +55,12 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload SendMessageRequest request, Principal principal) {
+        // WebSocket threads don't have SecurityContext set automatically (no @EnableWebSocketSecurity).
+        // Populate it from the STOMP session Principal so SecurityContextHelper works.
+        if (principal instanceof UsernamePasswordAuthenticationToken auth) {
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
         MessageResponse saved = communicationService.sendMessage(request);
 
         String receiverIdStr = saved.getReceiverId().toString();

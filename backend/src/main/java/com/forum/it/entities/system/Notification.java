@@ -1,6 +1,6 @@
 package com.forum.it.entities.system;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,5 +56,5 @@ public class Notification {
     private NotificationStatus status;
 
     @CreationTimestamp
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 }

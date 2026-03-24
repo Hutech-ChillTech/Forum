@@ -15,6 +15,7 @@ const Users = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
   const [followStates, setFollowStates] = useState({});
+  const [followLoading, setFollowLoading] = useState({});
   const currentUserId = authService.getUser()?.userId;
 
   const fetchUsers = async (page = 0, search = "") => {
@@ -29,9 +30,27 @@ const Users = () => {
       } else {
         data = await userService.getAllUsers(page, 20);
       }
-      setUsers(data.users || []);
+      const fetchedUsers = data.users || [];
+      setUsers(fetchedUsers);
       setTotalPages(data.totalPages || 0);
       setTotalItems(data.totalItems || 0);
+
+      // Load initial follow states for all non-self users
+      if (currentUserId && fetchedUsers.length > 0) {
+        const otherUsers = fetchedUsers.filter(
+          (u) => String(u.userId) !== String(currentUserId),
+        );
+        const statuses = await Promise.allSettled(
+          otherUsers.map((u) => followService.getFollowStatus(u.userId)),
+        );
+        const newStates = {};
+        otherUsers.forEach((u, i) => {
+          if (statuses[i].status === "fulfilled") {
+            newStates[u.userId] = statuses[i].value;
+          }
+        });
+        setFollowStates(newStates);
+      }
     } catch (e) {
       setError("Không thể tải danh sách người dùng.");
       console.error(e);
@@ -52,8 +71,10 @@ const Users = () => {
   };
 
   const handleFollowToggle = async (user) => {
+    if (followLoading[user.userId]) return;
     const current = followStates[user.userId];
     const isFollowing = current?.isFollowing;
+    setFollowLoading((prev) => ({ ...prev, [user.userId]: true }));
     setFollowStates((prev) => ({
       ...prev,
       [user.userId]: { isFollowing: !isFollowing },
@@ -62,12 +83,33 @@ const Users = () => {
       if (isFollowing) {
         await followService.unfollow(user.userId);
       } else {
-        await followService.follow(user.userId);
+        const result = await followService.follow(user.userId);
+        if (result?.alreadyFollowing) {
+          // Server says already following — correct the state
+          setFollowStates((prev) => ({
+            ...prev,
+            [user.userId]: { isFollowing: true },
+          }));
+        }
       }
     } catch (e) {
-      // revert on error
-      setFollowStates((prev) => ({ ...prev, [user.userId]: { isFollowing } }));
+      // On error, fetch the real state from server instead of reverting to stale value
+      try {
+        const realStatus = await followService.getFollowStatus(user.userId);
+        setFollowStates((prev) => ({
+          ...prev,
+          [user.userId]: realStatus,
+        }));
+      } catch {
+        // Fall back to reverting if status fetch also fails
+        setFollowStates((prev) => ({
+          ...prev,
+          [user.userId]: { isFollowing },
+        }));
+      }
       console.error(e);
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [user.userId]: false }));
     }
   };
 
@@ -158,7 +200,7 @@ const Users = () => {
                 <div className="users-list">
                   {users.map((user) => (
                     <Link
-                      to={"/profile?id=" + user.userId}
+                      to={"/profile/" + user.userId}
                       key={user.userId}
                       className="user-item-row"
                     >
@@ -188,14 +230,17 @@ const Users = () => {
                           String(user.userId) !== String(currentUserId) && (
                             <button
                               className={`follow-user-btn${followStates[user.userId]?.isFollowing ? " following" : ""}`}
+                              disabled={followLoading[user.userId]}
                               onClick={(e) => {
                                 e.preventDefault();
                                 handleFollowToggle(user);
                               }}
                             >
-                              {followStates[user.userId]?.isFollowing
-                                ? "Bỏ theo dõi"
-                                : "Theo dõi"}
+                              {followLoading[user.userId]
+                                ? "..."
+                                : followStates[user.userId]?.isFollowing
+                                  ? "Bỏ theo dõi"
+                                  : "Theo dõi"}
                             </button>
                           )}
                       </div>
