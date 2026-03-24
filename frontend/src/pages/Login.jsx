@@ -131,7 +131,13 @@ const Login = () => {
   const handleLoginSuccess = (result) => {
     authService.saveSession(result);
     setSuccessMessage("Đăng nhập thành công!");
-    setTimeout(() => navigate("/"), 1000);
+    const user = authService.getUser();
+    console.log("Data: " + user.role);
+    if (user.role === "ADMIN") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
   };
 
   const handleResendOtp = async () => {

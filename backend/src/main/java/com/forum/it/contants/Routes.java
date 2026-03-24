@@ -83,6 +83,7 @@ public final class Routes {
     public static final class Post {
         public static final String BASE = API_V1 + "/posts";
         public static final String GET_ALL = "";
+        public static final String GET_ALL = "";
         public static final String GET_BY_ID_POST = "/{id}";
         public static final String GET_BY_USER_POST = "/user/{userId}";
         public static final String SEARCH = "/search";
@@ -100,6 +101,7 @@ public final class Routes {
 
     public static final class Comment {
         public static final String BASE = API_V1 + "/comments";
+        public static final String GET_ALL = "";
         public static final String GET_ALL = "";
         public static final String BY_POST = "/post/{postId}";
         public static final String BY_POST_ALL = "/post/{postId}/all";
@@ -127,6 +129,7 @@ public final class Routes {
 
     public static final class Tag {
         public static final String BASE = API_V1 + "/tags";
+        public static final String GET_ALL = "";
         public static final String GET_ALL = "";
         public static final String BY_NAME = "/name/{name}";
         public static final String BY_POST = "/post/{postId}";

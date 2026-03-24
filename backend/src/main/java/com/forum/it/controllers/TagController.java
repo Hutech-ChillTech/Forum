@@ -31,10 +31,17 @@ public class TagController {
 
     private final TagService tagService;
 
+<<<<<<< HEAD
     @GetMapping(Routes.Tag.GET_ALL)
     public ResponseEntity<Map<String, Object>> getAllTags(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
+=======
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllTags(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "200") int size) {
+>>>>>>> b547b2841a9c097b899a43a536fd74dfcc4ff4d6
         Pageable pageable = PageRequest.of(page, size);
         Page<TagResponse> result = tagService.getAllTags(pageable);
         return ResponseEntity.ok(Map.of(

@@ -9,6 +9,7 @@ import com.forum.it.entities.user.AccountStatus;
 import com.forum.it.entities.user.Gender;
 import com.forum.it.entities.user.User;
 import com.forum.it.entities.user.UserStatus;
+import com.forum.it.entities.user.Account;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -44,7 +45,6 @@ public class UserResponse implements Serializable {
     private LocalDate updatedAt;
 
     public UserResponse(User user) {
-        this.userId = user.getUserId();
         this.userName = user.getUserName();
         this.fullName = user.getFullName();
         this.email = user.getEmail();
