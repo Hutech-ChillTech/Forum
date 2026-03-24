@@ -1,7 +1,13 @@
 package com.forum.it.controllers;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.forum.it.dtos.request.UpdateUserRequest;
@@ -31,6 +38,29 @@ public class UserController {
 
     final UserService userService;
     final AccountService accountService;
+
+    @GetMapping(Routes.User.GET_ALL)
+    public ResponseEntity<Map<String, Object>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equals("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
+        Page<UserResponse> usersPage = userService.getAll(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("users", usersPage.getContent());
+        response.put("currentPage", usersPage.getNumber());
+        response.put("totalItems", usersPage.getTotalElements());
+        response.put("totalPages", usersPage.getTotalPages());
+        response.put("pageSize", usersPage.getSize());
+
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping(Routes.User.ME)
     public ApiResponses<UserResponse> getProfile() {
