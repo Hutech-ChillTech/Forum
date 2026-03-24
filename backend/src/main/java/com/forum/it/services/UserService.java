@@ -21,7 +21,6 @@ import com.forum.it.exceptions.AppException;
 import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.repositories.AccountRepository;
 import com.forum.it.repositories.UserRepository;
-import com.forum.it.entities.user.AccountRole;
 
 import lombok.RequiredArgsConstructor;
 
