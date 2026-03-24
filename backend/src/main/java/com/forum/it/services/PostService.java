@@ -32,6 +32,7 @@ import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
+import com.forum.it.repositories.FollowRepository;
 import com.forum.it.repositories.NotificationRepository;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.PostTagRepository;
@@ -58,6 +59,7 @@ public class PostService {
     private final SavedPostRepository savedPostRepository;
     private final ShareRepository shareRepository;
     private final NotificationRepository notificationRepository;
+    private final FollowRepository followRepository;
     private final SecurityContextHelper securityContextHelper;
 
     /**
@@ -95,6 +97,21 @@ public class PostService {
     @Transactional(readOnly = true)
     public Page<PostResponse> getPublishedPosts(Pageable pageable) {
         Page<PostResponse> page = postRepository.findPublishedPosts(pageable)
+                .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
+        enrichSavedStatus(page.getContent());
+        return page;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getFollowingPosts(Pageable pageable) {
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        List<UUID> followingIds = followRepository.findByFollowerUserId(currentUserId, Pageable.unpaged())
+                .map(follow -> follow.getFollowing().getUserId())
+                .getContent();
+        if (followingIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        Page<PostResponse> page = postRepository.findPublishedPostsByUserIds(followingIds, pageable)
                 .map(post -> new PostResponse(post, postTagRepository.findTagNamesByPostId(post.getPostId())));
         enrichSavedStatus(page.getContent());
         return page;

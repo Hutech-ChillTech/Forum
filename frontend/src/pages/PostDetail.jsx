@@ -4,8 +4,7 @@ import postService from "../service/postService";
 import commentService from "../service/commentService";
 import authService from "../service/authService";
 import likeService from "../service/likeService";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import followService from "../service/followService";
 import ShareModal from "../components/ShareModal";
 import { API_BASE_URL } from "../utils/apiFetch.js";
 import "../styles/PostDetail.css";
@@ -47,6 +46,18 @@ const PostDetail = () => {
 
         setComments(commentData.comments || []);
         setIsLiked(likeStatus);
+
+        // Check follow status
+        if (
+          userProfile &&
+          postData.userId &&
+          postData.userId !== userProfile.userId
+        ) {
+          followService
+            .getFollowStatus(postData.userId)
+            .then((status) => setIsFollowed(status.isFollowing))
+            .catch(() => {});
+        }
       } catch (err) {
         console.error("DEBUG: Error details:", err);
         setError(
@@ -103,51 +114,43 @@ const PostDetail = () => {
 
   if (loading)
     return (
-      <div className="post-detail-layout">
-        <Header />
-        <div className="post-detail-container">
-          <main className="post-detail-main">
-            <div className="loader-modern">
-              <div className="spinner"></div>
-              <p>Đang chuẩn bị nội dung cho bạn...</p>
-            </div>
-          </main>
+      <main className="home-main">
+        <div className="post-detail-main">
+          <div className="loader-modern">
+            <div className="spinner"></div>
+            <p>Đang chuẩn bị nội dung cho bạn...</p>
+          </div>
         </div>
-        <Footer />
-      </div>
+      </main>
     );
 
   if (error || !post)
     return (
-      <div className="post-detail-layout">
-        <Header />
-        <div className="post-detail-container">
-          <main
-            className="post-detail-main"
-            style={{ alignItems: "center", padding: "100px 0" }}
+      <main className="home-main">
+        <div
+          className="post-detail-main"
+          style={{ alignItems: "center", padding: "100px 0" }}
+        >
+          <div
+            className="error-card"
+            style={{ textAlign: "center", maxWidth: "500px" }}
           >
-            <div
-              className="error-card"
-              style={{ textAlign: "center", maxWidth: "500px" }}
+            <div style={{ fontSize: "64px", marginBottom: "20px" }}>🔍</div>
+            <h2
+              style={{
+                fontSize: "24px",
+                marginBottom: "16px",
+                color: "var(--text-color)",
+              }}
             >
-              <div style={{ fontSize: "64px", marginBottom: "20px" }}>🔍</div>
-              <h2
-                style={{
-                  fontSize: "24px",
-                  marginBottom: "16px",
-                  color: "var(--text-color)",
-                }}
-              >
-                {error || "Không tìm thấy bài viết"}
-              </h2>
-              <button className="btn-primary" onClick={() => navigate("/")}>
-                Quay lại Trang chủ
-              </button>
-            </div>
-          </main>
+              {error || "Không tìm thấy bài viết"}
+            </h2>
+            <button className="btn-primary" onClick={() => navigate("/")}>
+              Quay lại Trang chủ
+            </button>
+          </div>
         </div>
-        <Footer />
-      </div>
+      </main>
     );
 
   const contentBlocks = (() => {
@@ -180,10 +183,9 @@ const PostDetail = () => {
   };
 
   return (
-    <div className="post-detail-layout">
-      <Header />
-      <div className="post-detail-container">
-        <main className="post-detail-main">
+    <>
+      <main className="home-main">
+        <div className="post-detail-main">
           <article className="post-detail-card-premium">
             <header className="post-header-premium">
               <Link
@@ -204,25 +206,43 @@ const PostDetail = () => {
                   >
                     {post.userName}
                   </Link>
-                  <button
-                    className={`follow-btn-premium ${isFollowed ? "followed" : ""}`}
-                    onClick={() => setIsFollowed(!isFollowed)}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
+                  {userProfile && post.userId !== userProfile.userId && (
+                    <button
+                      className={`follow-btn-premium ${isFollowed ? "followed" : ""}`}
+                      onClick={async () => {
+                        const prev = isFollowed;
+                        setIsFollowed(!prev);
+                        try {
+                          if (prev) {
+                            await followService.unfollow(post.userId);
+                          } else {
+                            const result = await followService.follow(
+                              post.userId,
+                            );
+                            if (result?.alreadyFollowing) setIsFollowed(true);
+                          }
+                        } catch (err) {
+                          setIsFollowed(prev);
+                          console.error("Follow toggle failed:", err);
+                        }
+                      }}
                     >
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="8.5" cy="7" r="4"></circle>
-                      <line x1="20" y1="8" x2="20" y2="14"></line>
-                      <line x1="23" y1="11" x2="17" y2="11"></line>
-                    </svg>
-                    {isFollowed ? "Đang theo dõi" : "Theo dõi"}
-                  </button>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                      </svg>
+                      {isFollowed ? "Đang theo dõi" : "Theo dõi"}
+                    </button>
+                  )}
                 </div>
                 <span className="post-time-premium">
                   {timeAgo(post.createdAt)}
@@ -415,14 +435,14 @@ const PostDetail = () => {
               ))}
             </div>
           </section>
-        </main>
-      </div>
+        </div>
+      </main>
       <ShareModal
         post={post}
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
       />
-    </div>
+    </>
   );
 };
 

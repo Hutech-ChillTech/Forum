@@ -134,8 +134,7 @@ const Home = () => {
       if (activeTab === "saved") {
         data = await savedPostService.getMyBookmarks(pageNum, size);
       } else if (activeTab === "following") {
-        // TODO: Replace with real following API when available
-        data = await postService.getPublishedPosts(pageNum, size);
+        data = await postService.getFollowingPosts(pageNum, size);
       } else {
         data = await postService.getPublishedPosts(pageNum, size);
       }

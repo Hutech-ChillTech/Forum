@@ -104,8 +104,6 @@ function App() {
           <Route path="/chat" element={<Chat />} />
         </Route>
 
-        <Route path="/posts/:id" element={<PostDetail />} />
-
         <Route
           path="/admin"
           element={

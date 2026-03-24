@@ -72,10 +72,10 @@ const Header = ({ hideAuth = false }) => {
       .then((data) => setUnreadCount(Number(data?.unread ?? data ?? 0)))
       .catch(() => {});
     notificationService
-      .getMyNotifications(0, 10)
+      .getMyNotifications(0, 5)
       .then((data) => {
         const list = data?.notifications || (Array.isArray(data) ? data : []);
-        setNotifications(list);
+        setNotifications(list.slice(0, 5));
       })
       .catch(() => {});
 
@@ -94,7 +94,7 @@ const Header = ({ hideAuth = false }) => {
         client.subscribe("/user/queue/notifications", (frame) => {
           const notif = JSON.parse(frame.body);
           setUnreadCount((prev) => prev + 1);
-          setNotifications((prev) => [notif, ...prev]);
+          setNotifications((prev) => [notif, ...prev].slice(0, 5));
         });
       },
       onStompError: () => {},
@@ -546,6 +546,17 @@ const Header = ({ hideAuth = false }) => {
                             <div
                               key={notif.notificationId}
                               className={`notification-item ${notif.status !== "READ" ? "unread" : ""}`}
+                              onClick={() => {
+                                closeNotifications();
+                                if (notif.type === "FOLLOW" && notif.actorId) {
+                                  navigate(`/profile?id=${notif.actorId}`);
+                                } else if (notif.postId) {
+                                  navigate(`/posts/${notif.postId}`);
+                                } else {
+                                  navigate("/notifications");
+                                }
+                              }}
+                              style={{ cursor: "pointer" }}
                             >
                               <div className="notification-avatar">
                                 <svg

@@ -55,6 +55,10 @@ public class Notification {
     @Column(nullable = false)
     private NotificationStatus status;
 
+    /** ID of the user who triggered this notification (e.g. the follower, commenter) */
+    @Column(name = "actor_id")
+    private UUID actorId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

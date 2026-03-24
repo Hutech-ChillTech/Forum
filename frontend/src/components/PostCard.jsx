@@ -4,6 +4,7 @@ import ImageGrid from "./ImageGrid";
 import postService from "../service/postService";
 import commentService from "../service/commentService";
 import authService from "../service/authService";
+import followService from "../service/followService";
 import { API_BASE_URL } from "../utils/apiFetch.js";
 
 const PostCard = ({
@@ -111,6 +112,34 @@ const PostCard = ({
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const userProfile = authService.getUser();
+  const isOwnPost = userProfile?.userId === post.userId;
+
+  // Check follow status on mount
+  useEffect(() => {
+    if (!userProfile?.userId || !post.userId || isOwnPost) return;
+    followService
+      .getFollowStatus(post.userId)
+      .then((status) => setIsFollowed(status.isFollowing))
+      .catch(() => {});
+  }, [post.userId, userProfile?.userId]);
+
+  const handleFollowToggle = async (e) => {
+    e.stopPropagation();
+    if (!userProfile?.userId) return;
+    const prev = isFollowed;
+    setIsFollowed(!prev);
+    try {
+      if (prev) {
+        await followService.unfollow(post.userId);
+      } else {
+        const result = await followService.follow(post.userId);
+        if (result?.alreadyFollowing) setIsFollowed(true);
+      }
+    } catch (err) {
+      setIsFollowed(prev);
+      console.error("Follow toggle failed:", err);
+    }
+  };
 
   // Listen for comments added anywhere (especially in the Pop-up modal)
   useEffect(() => {
@@ -358,12 +387,9 @@ const PostCard = ({
             >
               {author}
             </span>
-            {!hideFollowButton && (
+            {!hideFollowButton && !isOwnPost && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFollowed(!isFollowed);
-                }}
+                onClick={handleFollowToggle}
                 style={{
                   background: "none",
                   border: "none",

@@ -112,6 +112,16 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
+    @GetMapping(Routes.Post.FOLLOWING)
+    public ResponseEntity<Map<String, Object>> getFollowingPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<PostResponse> postsPage = postService.getFollowingPosts(pageable);
+        return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
+    }
+
     @PutMapping(Routes.Post.UPDATE)
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable UUID id,

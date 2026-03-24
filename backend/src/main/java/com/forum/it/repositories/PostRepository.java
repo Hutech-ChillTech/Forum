@@ -1,6 +1,7 @@
 package com.forum.it.repositories;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,4 +44,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     long countByStatus(@Param("status") PostStatus status);
 
     boolean existsByTitleAndUserUserId(String title, UUID userId);
+
+    @Query("SELECT p FROM Post p WHERE p.status = 'PUBLISHED' AND p.user.userId IN :userIds ORDER BY p.createdAt DESC")
+    Page<Post> findPublishedPostsByUserIds(@Param("userIds") List<UUID> userIds, Pageable pageable);
 }

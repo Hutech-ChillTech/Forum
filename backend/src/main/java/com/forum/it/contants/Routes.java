@@ -45,6 +45,7 @@ public final class Routes {
         public static final String GET_BY_STATUS = "/status/{status}";
         public static final String SEARCH = "/search";
         public static final String RECENT = "/recent";
+        public static final String FOLLOWING = "/following";
         public static final String CREATE = "";
         public static final String UPDATE = "/{id}";
         public static final String UPDATE_STATUS = "/{id}/status";

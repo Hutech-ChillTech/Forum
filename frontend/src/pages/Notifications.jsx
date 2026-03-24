@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import notificationService from "../service/notificationService";
 import "../styles/Notifications.css";
 
@@ -72,6 +73,7 @@ const typeIcon = (type) => {
 };
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -164,6 +166,14 @@ const Notifications = () => {
               <div
                 key={notif.notificationId}
                 className={`notif-item ${notif.status !== "READ" ? "unread" : ""}`}
+                onClick={() => {
+                  if (notif.type === "FOLLOW" && notif.actorId) {
+                    navigate(`/profile?id=${notif.actorId}`);
+                  } else if (notif.postId) {
+                    navigate(`/posts/${notif.postId}`);
+                  }
+                }}
+                style={{ cursor: "pointer" }}
               >
                 <div className="notif-icon">{typeIcon(notif.type)}</div>
                 <div className="notif-content">

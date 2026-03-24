@@ -1,0 +1,9 @@
+/* Saved Posts Grid Layout */
+.saved-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.saved-posts-grid .user-post-card {
+}

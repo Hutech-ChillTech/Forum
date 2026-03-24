@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PostCard from "../components/PostCard";
 import savedPostService from "../service/savedPostService";
-import "../styles/Home.css"; // Reusing Home styles for consistency
+import "../styles/Home.css";
+import "../styles/Saved.css";
 
 const Saved = () => {
   const [savedPosts, setSavedPosts] = useState([]);
@@ -44,7 +45,7 @@ const Saved = () => {
           </p>
         </div>
 
-        <div className="posts-container">
+        <div className="saved-posts-grid">
           {loading ? (
             <div
               style={{

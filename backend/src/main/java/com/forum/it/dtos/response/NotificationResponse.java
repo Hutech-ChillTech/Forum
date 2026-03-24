@@ -15,6 +15,7 @@ public class NotificationResponse {
     private final UUID notificationId;
     private final UUID userId;
     private final UUID postId;
+    private final UUID actorId;
     private final NotificationType type;
     private final String message;
     private final NotificationStatus status;
@@ -26,6 +27,7 @@ public class NotificationResponse {
         this.notificationId = n.getNotificationId();
         this.userId         = n.getUser().getUserId();
         this.postId         = n.getPost() != null ? n.getPost().getPostId() : null;
+        this.actorId        = n.getActorId();
         this.type           = n.getType();
         this.message        = n.getMessage();
         this.status         = n.getStatus();

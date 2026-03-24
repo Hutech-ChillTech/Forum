@@ -81,6 +81,7 @@ public class FollowService {
         // This ensures: (1) the follow is always persisted even if notification fails,
         // (2) the notification is visible in DB before the WebSocket push reaches the client.
         final String followerName = follower.getUserName();
+        final UUID   followerId   = follower.getUserId();
         final UUID   followingId  = following.getUserId();
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -95,6 +96,7 @@ public class FollowService {
                         notification.setType(NotificationType.FOLLOW);
                         notification.setStatus(NotificationStatus.UNREAD);
                         notification.setMessage(followerName + " đã theo dõi bạn");
+                        notification.setActorId(followerId);
                         Notification savedNotif = notificationRepository.save(notification);
                         return new NotificationResponse(savedNotif);
                     });
