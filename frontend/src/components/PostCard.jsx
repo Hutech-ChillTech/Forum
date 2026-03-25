@@ -140,8 +140,18 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                 setLocalCommentCount(prev => prev + 1);
             }
         };
+        const onLikeToggled = (e) => {
+            if (String(e.detail.postId) === String(id)) {
+                setIsLiked(e.detail.isLiked);
+                setLikeCount(e.detail.likeCount);
+            }
+        };
         window.addEventListener('commentCreated', onCommentCreated);
-        return () => window.removeEventListener('commentCreated', onCommentCreated);
+        window.addEventListener('likeToggled', onLikeToggled);
+        return () => {
+            window.removeEventListener('commentCreated', onCommentCreated);
+            window.removeEventListener('likeToggled', onLikeToggled);
+        };
     }, [id]);
 
     const handleCommentSubmit = async (e, parentId = null) => {
@@ -192,7 +202,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
     };
 
     const handleToggleLike = async (e) => {
-        e.stopPropagation();
+        if (e && e.stopPropagation) e.stopPropagation();
         if (!userProfile) {
             alert("Vui lòng đăng nhập để thích bài viết!");
             return;
@@ -201,8 +211,15 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
         try {
             // Optimistic update
             const newIsLiked = !isLiked;
+            const newLikeCount = newIsLiked ? likeCount + 1 : Math.max(0, likeCount - 1);
+
             setIsLiked(newIsLiked);
-            setLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+            setLikeCount(newLikeCount);
+
+            // Dispatch event for synchronization
+            window.dispatchEvent(new CustomEvent('likeToggled', {
+                detail: { postId: id, isLiked: newIsLiked, likeCount: newLikeCount }
+            }));
 
             await likeService.toggleLike(id);
         } catch (err) {
@@ -210,6 +227,9 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
             // Revert on error
             setIsLiked(isLiked);
             setLikeCount(likeCount);
+            window.dispatchEvent(new CustomEvent('likeToggled', {
+                detail: { postId: id, isLiked: isLiked, likeCount: likeCount }
+            }));
         }
     };
 
@@ -236,7 +256,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
     if (isDeleted) return null;
 
     const handleToggleSave = async (e) => {
-        e.stopPropagation();
+        if (e && e.stopPropagation) e.stopPropagation();
         if (!authService.isLoggedIn()) {
             navigate('/login');
             return;
@@ -368,7 +388,7 @@ const PostCard = ({ post, hideFollowButton = false, onOpenModal, reviewMode = fa
                         >
                             {author}
                         </span>
-                        {!hideFollowButton && (
+                        {!hideFollowButton && userProfile?.userId !== post.userId && (
                             <button onClick={(e) => { e.stopPropagation(); setIsFollowed(!isFollowed); }} style={{ background: 'none', border: 'none', color: isFollowed ? 'var(--text-secondary)' : 'var(--primary-color)', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px', zIndex: 2 }}>
                                 {isFollowed ? (
                                     <>

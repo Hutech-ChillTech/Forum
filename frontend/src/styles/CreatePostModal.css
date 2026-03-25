@@ -92,7 +92,8 @@
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    padding: 0; /* Move padding to inner elements */
+    padding: 0;
+    /* Move padding to inner elements */
 }
 
 .post-user-info {
@@ -178,7 +179,8 @@
     font-family: inherit;
     color: var(--text-color);
     background: var(--input-bg);
-    resize: none; /* Changed from vertical to let container handle scroll */
+    resize: none;
+    /* Changed from vertical to let container handle scroll */
     transition: all 0.2s ease;
     margin-bottom: 12px;
 }
@@ -213,6 +215,39 @@
     outline: none;
     border-color: var(--primary-color);
 }
+
+.remove-block-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    border-radius: 50%;
+    color: #ff4d4f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.remove-block-btn:hover {
+    background: #ff4d4f;
+    color: white;
+    transform: scale(1.1);
+    border-color: #ff4d4f;
+}
+
+.remove-block-btn:active {
+    transform: scale(0.95);
+}
+
 
 /* Submit Footer Area */
 .post-form-footer {

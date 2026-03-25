@@ -13,6 +13,7 @@ const Search = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [sortBy, setSortBy] = useState('newest');
 
     useEffect(() => {
         if (query) {
@@ -66,17 +67,46 @@ const Search = () => {
 
     const isEmpty = !results.users.length && !results.tags.length && !results.posts.length;
 
+    const sortedPosts = [...results.posts].sort((a, b) => {
+        if (sortBy === 'likes') {
+            return (b.countLike || 0) - (a.countLike || 0);
+        }
+        if (sortBy === 'comments') {
+            return (b.commentCount || 0) - (a.commentCount || 0);
+        }
+        // newest (default or explicit)
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+    });
+
     return (
-        <div className="search-results-wrapper">
-            <div className="search-main-content">
+        <>
+            <div className="home-main search-main-content">
                 <div className="search-header">
                     <div className="search-header-top">
                         <h1 className="search-title">Kết quả tìm kiếm</h1>
-                        <Link to="/posts" className="btn-primary">Đặt câu hỏi</Link>
                     </div>
-                    <p className="search-subtitle">
-                        {query ? `Kết quả cho "${query}"` : 'Vui lòng nhập từ khóa để tìm kiếm'}
-                    </p>
+                    <div className="search-header-bottom">
+                        <p className="search-subtitle">
+                            {query ? `Kết quả cho "${query}"` : 'Vui lòng nhập từ khóa để tìm kiếm'}
+                        </p>
+                        {!isEmpty && results.posts.length > 0 && (
+                            <div className="search-sort">
+                                <label htmlFor="search-sort-select">Sắp xếp theo:</label>
+                                <select
+                                    id="search-sort-select"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="sort-select"
+                                >
+                                    <option value="newest">Mới nhất</option>
+                                    <option value="likes">Lượt thích cao nhất</option>
+                                    <option value="comments">Bình luận cao nhất</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {loading ? (
@@ -137,7 +167,7 @@ const Search = () => {
                             <section className="results-section">
                                 <h2 className="section-title">Bài viết ({results.posts.length})</h2>
                                 <div className="questions-list">
-                                    {results.posts.map((post, idx) => (
+                                    {sortedPosts.map((post, idx) => (
                                         <PostCard
                                             key={post.postId || post.id || idx}
                                             post={post}
@@ -151,7 +181,7 @@ const Search = () => {
                 )}
             </div>
 
-            <aside className="search-right-sidebar">
+            <aside className="home-right-sidebar search-right-sidebar">
                 <div className="sidebar-widget">
                     <div className="widget-header">
                         <h3 className="widget-title">Lịch sử tìm kiếm</h3>
@@ -184,7 +214,7 @@ const Search = () => {
                     </div>
                 </div>
             </aside>
-        </div>
+        </>
     );
 };
 

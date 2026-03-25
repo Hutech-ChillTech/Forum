@@ -224,7 +224,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
                         <div className="post-avatar">
                             {user.avatar ? <img src={user.avatar} alt="" /> : <span className="post-avatar-initials">{getInitials(user.fullName)}</span>}
                         </div>
-                        <span className="post-username">{user.fullName || "Người dùng"}</span>
+                        <span className="post-username">{user.username || user.username || "Người dùng"}</span>
 
                         <div className="post-action-buttons">
                             <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleFileChange} />
@@ -264,7 +264,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
                                             rows={blocks.length > 1 ? 2 : 6}
                                         />
                                         {blocks.length > 1 && (
-                                            <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕ Gỡ chữ</button>
+                                            <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕</button>
                                         )}
                                     </div>
                                 );
@@ -278,7 +278,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
                                             onChange={(e) => handleBlockChange(block.id, e.target.value)}
                                             spellCheck={false}
                                         />
-                                        <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕ Gỡ code</button>
+                                        <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕</button>
                                     </div>
                                 );
                             } else if (block.type === 'image') {
@@ -286,7 +286,7 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated, postToEdit = null }) 
                                     <div key={block.id} className="image-block-container" style={{ position: 'relative', marginBottom: '12px', opacity: block.uploading ? 0.6 : 1 }}>
                                         <img src={block.content.startsWith('/uploads/') ? `${API_BASE_URL}${block.content}` : block.content} alt="Preview" style={{ width: '100%', borderRadius: '12px', objectFit: 'contain', maxHeight: '400px', background: '#2d2d2d' }} />
                                         {block.uploading && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white' }}>Đang tải lên...</div>}
-                                        <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕ Gỡ ảnh</button>
+                                        <button type="button" className="remove-block-btn" onClick={() => handleRemoveBlock(block.id)}>✕</button>
                                     </div>
                                 );
                             }

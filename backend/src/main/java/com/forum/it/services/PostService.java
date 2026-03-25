@@ -32,6 +32,7 @@ import com.forum.it.exceptions.ErrorCode;
 import com.forum.it.exceptions.ForbiddenException;
 import com.forum.it.exceptions.ResourceNotFoundException;
 import com.forum.it.repositories.CommentRepository;
+import com.forum.it.repositories.LikeRepository;
 import com.forum.it.repositories.NotificationRepository;
 import com.forum.it.repositories.PostRepository;
 import com.forum.it.repositories.PostTagRepository;
@@ -55,6 +56,7 @@ public class PostService {
     private final PostTagRepository postTagRepository;
     private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
+    private final LikeRepository likeRepository;
     private final SavedPostRepository savedPostRepository;
     private final ShareRepository shareRepository;
     private final NotificationRepository notificationRepository;
@@ -244,6 +246,7 @@ public class PostService {
         postTagRepository.deleteByPostPostId(postId);
         commentRepository.deleteByPostPostId(postId);
         reactionRepository.deleteByPostPostId(postId);
+        likeRepository.deleteByPostPostId(postId);
         savedPostRepository.deleteByPostPostId(postId);
         shareRepository.deleteByPostPostId(postId);
         notificationRepository.deleteByPostPostId(postId);
@@ -256,6 +259,7 @@ public class PostService {
         postTagRepository.deleteByPostPostId(postId);
         commentRepository.deleteByPostPostId(postId);
         reactionRepository.deleteByPostPostId(postId);
+        likeRepository.deleteByPostPostId(postId);
         savedPostRepository.deleteByPostPostId(postId);
         shareRepository.deleteByPostPostId(postId);
         notificationRepository.deleteByPostPostId(postId);

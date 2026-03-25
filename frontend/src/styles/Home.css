@@ -160,6 +160,8 @@
     display: flex;
     flex-direction: column;
     padding: 0 20px 40px;
+    min-width: 0;
+    /* Fix flexbox overflow */
 }
 
 /* Greeting Card */
@@ -573,4 +575,30 @@
         flex-wrap: wrap;
         gap: 8px;
     }
+}
+
+/* Fix for long code blocks and large images */
+.home-main,
+.user-post-card {
+    min-width: 0;
+}
+
+.post-content-blocks {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    width: 100%;
+}
+
+.post-content-blocks img,
+.media-preview img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+.post-content-blocks pre {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
 }

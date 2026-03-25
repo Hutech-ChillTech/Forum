@@ -4,6 +4,8 @@ import postService from '../service/postService';
 import commentService from '../service/commentService';
 import authService from '../service/authService';
 import shareService from '../service/shareService';
+import likeService from '../service/likeService';
+import savedPostService from '../service/savedPostService';
 import { API_BASE_URL } from '../utils/apiFetch.js';
 import '../styles/PostDetailModal.css';
 
@@ -21,6 +23,8 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
     const [replyContent, setReplyContent] = useState('');
     const [isLiked, setIsLiked] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [localCommentCount, setLocalCommentCount] = useState(0);
 
     const userProfile = authService.getUser();
 
@@ -39,6 +43,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                 const postData = await postService.getPostById(postId);
                 setPost(postData);
                 setIsSaved(postData.isSaved || false);
+                setLikesCount(postData.countLike || postData.likes || 0);
 
                 // Set like status - in a real app you might need a separate API call 
                 // but checking postData initial state for now
@@ -50,6 +55,10 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                 const commentData = await commentService.getCommentsByPost(postId);
                 const fetchedComments = commentData.content || commentData.comments || (Array.isArray(commentData) ? commentData : []);
                 setComments(fetchedComments);
+
+                // Calculate total comments for initialization
+                const initialCommentCount = fetchedComments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
+                setLocalCommentCount(initialCommentCount);
             } catch (err) {
                 console.error('Failed to fetch post modal data:', err);
             } finally {
@@ -59,6 +68,32 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
         };
 
         if (postId) fetchData();
+    }, [postId]);
+
+    // Handle synchronization from background
+    useEffect(() => {
+        const onLikeToggled = (e) => {
+            if (String(e.detail.postId) === String(postId)) {
+                setIsLiked(e.detail.isLiked);
+                setLikesCount(e.detail.likeCount);
+            }
+        };
+
+        const onCommentCreatedExternal = (e) => {
+            // Check if it's the same post but from external dispatch
+            // If it's already handled locally in handleCommentSubmit, we don't want to double count
+            // but usually events are for other components.
+            // Let's just update local count if the event came from outside this component's handleCommentSubmit.
+            if (String(e.detail.postId) === String(postId)) {
+                // If it's a new comment being added to the list, we might already have updated localCommentCount
+                // However, PostCard listens to this. We mainly want to synchronize Home -> Modal.
+                // Let's check if the comment matches any in our list if needed? 
+                // Simple version: refresh total count
+            }
+        };
+
+        window.addEventListener('likeToggled', onLikeToggled);
+        return () => window.removeEventListener('likeToggled', onLikeToggled);
     }, [postId]);
 
     const handleCommentSubmit = async (e, parentId = null) => {
@@ -94,9 +129,13 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                 setNewComment('');
             }
 
+            // Increment local comment count
+            const newTotalCount = localCommentCount + 1;
+            setLocalCommentCount(newTotalCount);
+
             // Notify other components
             window.dispatchEvent(new CustomEvent('commentCreated', {
-                detail: { postId: postId, comment: createdComment }
+                detail: { postId: postId, comment: createdComment, totalCount: newTotalCount }
             }));
         } catch (err) {
             console.error('Comment failed:', err);
@@ -128,13 +167,29 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
 
     const handleToggleLike = async () => {
         if (!userProfile) return;
+        const previousLiked = isLiked;
+        const previousCount = likesCount;
+
         try {
             const newLiked = !isLiked;
+            const newCount = newLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
+
             setIsLiked(newLiked);
+            setLikesCount(newCount);
+
+            // Dispatch for synchronization
+            window.dispatchEvent(new CustomEvent('likeToggled', {
+                detail: { postId: postId, isLiked: newLiked, likeCount: newCount }
+            }));
+
             await likeService.toggleLike(postId);
         } catch (err) {
             console.error('Failed to toggle like:', err);
-            setIsLiked(isLiked);
+            setIsLiked(previousLiked);
+            setLikesCount(previousCount);
+            window.dispatchEvent(new CustomEvent('likeToggled', {
+                detail: { postId: postId, isLiked: previousLiked, likeCount: previousCount }
+            }));
         }
     };
 
@@ -153,7 +208,7 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
         }
     };
 
-    const totalCommentsCount = (comments || []).reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
+    const totalCommentsCount = localCommentCount;
 
     const handleDeletePost = async () => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
@@ -468,9 +523,9 @@ const PostDetailModal = ({ postId, onClose, isFullPage = false }) => {
                         <div className="post-modal-actions" style={{ display: 'flex', gap: '20px', alignItems: 'center', width: '100%' }}>
                             <button className="post-modal-action-btn" onClick={handleToggleLike} style={{ color: isLiked ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                                 </svg>
-                                <span>{(post?.likes || 0) + (isLiked ? (post.isLiked ? 0 : 1) : (post.isLiked ? -1 : 0))}</span>
+                                <span>{likesCount}</span>
                             </button>
                             <button className="post-action-btn-p btn-animate" style={{ cursor: 'default' }}>
                                 <svg width="20" height="20" viewBox="0 0 18 18" fill="currentColor">
