@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import java.util.List;
 
 import com.forum.it.dtos.request.ChangePasswordRequest;
 import com.forum.it.dtos.request.CreateUserRequest;
@@ -266,8 +267,16 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public String resolveRole(Account account) {
-        return accountRoleRepository.findByAccount_AccountId(account.getAccountId())
-                .stream().findFirst()
+        List<AccountRole> accountRoles = accountRoleRepository.findByAccount_AccountId(account.getAccountId());
+        if (accountRoles.stream().anyMatch(ar -> ar.getRole().getName().equals("ADMIN"))) {
+            return "ADMIN";
+        }
+
+        if (accountRoles.stream().anyMatch(ar -> ar.getRole().getName().equals("MODERATOR"))) {
+            return "MODERATOR";
+        }
+        return accountRoles.stream()
+                .findFirst()
                 .map(ar -> ar.getRole().getName())
                 .orElse("USER");
     }
