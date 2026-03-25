@@ -95,6 +95,12 @@ public class PostController {
         return ResponseEntity.ok(buildPageResponse(postsPage, "posts"));
     }
 
+    @GetMapping(Routes.Post.GET_BY_ID_POST)
+    public ResponseEntity<PostResponse> getPostById(@PathVariable UUID id) {
+        PostResponse response = postService.getPostById(id);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping(Routes.Post.UPDATE)
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable UUID id,

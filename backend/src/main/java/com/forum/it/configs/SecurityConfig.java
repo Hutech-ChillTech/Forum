@@ -59,7 +59,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // WebSocket handshake
                         .requestMatchers("/ws/**").permitAll()
-                        // Public read endpoints
+                        // Public read endpoints — /following requires auth (needs current user)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/following").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/**").permitAll()
