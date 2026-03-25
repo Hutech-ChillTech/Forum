@@ -46,6 +46,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u WHERE u.verifyStatus = 'ACTIVE' AND u.status != 'BANNED'")
     Page<User> findActiveUsers(Pageable pageable);
 
+    @Query("SELECT u FROM User u WHERE u.userId NOT IN " +
+            "(SELECT ar.account.user.userId FROM AccountRole ar WHERE ar.role.name = 'ADMIN')")
+    Page<User> findNonAdminUsers(Pageable pageable);
+
     @Query(value = "SELECT COUNT(*) FROM users WHERE status = :status", nativeQuery = true)
     long countByStatus(@Param("status") String status);
 

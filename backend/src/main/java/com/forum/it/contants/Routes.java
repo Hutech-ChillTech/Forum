@@ -93,6 +93,7 @@ public final class Routes {
         public static final String DELETE = "/{id}";
         public static final String UPDATE_STATUS = "/{id}/status";
         public static final String BOOKMARK = "/{postId}/bookmarks";
+        public static final String BOOKMARK_STATUS = "/{postId}/bookmarks/status";
         public static final String STATS_TOTAL = "/statistics/total";
         public static final String STATS_STATUS = "/statistics/status/{status}";
         public static final String STATS_USER = "/statistics/user/{userId}";

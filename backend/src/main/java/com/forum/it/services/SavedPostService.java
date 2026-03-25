@@ -57,4 +57,9 @@ public class SavedPostService {
                 .post(new PostResponse(savedPost.getPost()))
                 .build());
     }
+
+    @Transactional(readOnly = true)
+    public boolean isBookmarked(UUID userId, UUID postId) {
+        return savedPostRepository.existsByUserUserIdAndPostPostId(userId, postId);
+    }
 }

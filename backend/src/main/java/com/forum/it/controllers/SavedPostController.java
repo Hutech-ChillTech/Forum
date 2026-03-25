@@ -46,4 +46,17 @@ public class SavedPostController {
         Page<SavedPostResponse> result = savedPostService.getMySavedPosts(currentUserId, pageable);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping(Routes.Post.BASE + Routes.Post.BOOKMARK_STATUS)
+    public ResponseEntity<Boolean> isBookmarked(@PathVariable UUID postId) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()
+                || !(auth.getPrincipal() instanceof com.forum.it.sercurites.UserPrincipal)) {
+            return ResponseEntity.ok(false);
+        }
+        UUID currentUserId = securityContextHelper.getCurrentUserId();
+        boolean exists = savedPostService.isBookmarked(currentUserId, postId);
+        return ResponseEntity.ok(exists);
+    }
 }

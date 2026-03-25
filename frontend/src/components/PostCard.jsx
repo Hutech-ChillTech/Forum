@@ -5,6 +5,8 @@ import postService from "../service/postService";
 import commentService from "../service/commentService";
 import authService from "../service/authService";
 import followService from "../service/followService";
+import likeService from "../service/likeService";
+import savedPostService from "../service/savedPostService";
 import { API_BASE_URL } from "../utils/apiFetch.js";
 
 const PostCard = ({
@@ -17,7 +19,7 @@ const PostCard = ({
 }) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
-  const [_likeCount, _setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -122,6 +124,59 @@ const PostCard = ({
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.userId, userProfile?.userId]);
+
+  // Fetch like status, count, and bookmark status on mount
+  useEffect(() => {
+    if (!id) return;
+    // Initialize like count from post data
+    setLikeCount(post.countLike ?? post.likes ?? 0);
+    if (!userProfile?.userId) return;
+    likeService
+      .getLikeStatus(id)
+      .then(setIsLiked)
+      .catch(() => {});
+    likeService
+      .getLikeCount(id)
+      .then(setLikeCount)
+      .catch(() => {});
+    savedPostService
+      .isBookmarked(id)
+      .then(setIsSaved)
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, userProfile?.userId]);
+
+  const handleLikeToggle = async (e) => {
+    e.stopPropagation();
+    if (!userProfile?.userId) return;
+    const prevLiked = isLiked;
+    const prevCount = likeCount;
+    setIsLiked(!prevLiked);
+    setLikeCount(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+    try {
+      const result = await likeService.toggleLike(id);
+      setIsLiked(result.isLiked ?? result.liked ?? !prevLiked);
+    } catch {
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
+    }
+  };
+
+  const handleSaveToggle = async (e) => {
+    e.stopPropagation();
+    if (!userProfile?.userId) return;
+    const prevSaved = isSaved;
+    setIsSaved(!prevSaved);
+    try {
+      if (prevSaved) {
+        await savedPostService.unbookmarkPost(id);
+      } else {
+        await savedPostService.bookmarkPost(id);
+      }
+    } catch {
+      setIsSaved(prevSaved);
+    }
+  };
 
   const handleFollowToggle = async (e) => {
     e.stopPropagation();
@@ -810,10 +865,7 @@ const PostCard = ({
         >
           <button
             className="post-action-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsLiked(!isLiked);
-            }}
+            onClick={handleLikeToggle}
             style={{
               color: isLiked ? "var(--primary-color)" : "var(--text-secondary)",
               border: "none",
@@ -829,7 +881,7 @@ const PostCard = ({
             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
               <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
             </svg>
-            <span>{(post.likes || 0) + (isLiked ? 1 : 0)}</span>
+            <span>{likeCount}</span>
           </button>
           <button
             className="post-action-btn"
@@ -893,10 +945,7 @@ const PostCard = ({
           </button>
           <button
             className="post-action-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsSaved(!isSaved);
-            }}
+            onClick={handleSaveToggle}
             style={{
               marginLeft: "auto",
               color: isSaved ? "var(--primary-color)" : "var(--text-secondary)",

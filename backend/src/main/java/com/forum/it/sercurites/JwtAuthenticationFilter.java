@@ -102,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         // Chỉ bỏ qua GET cho các đầu route công khai
         if ("GET".equalsIgnoreCase(method)) {
-            if (path.startsWith("/api/v1/posts/") ||
+            if ((path.startsWith("/api/v1/posts/") && !path.contains("/bookmarks")) ||
                     path.startsWith("/api/v1/comments/") ||
                     path.startsWith("/api/v1/tags/")) {
                 return true;

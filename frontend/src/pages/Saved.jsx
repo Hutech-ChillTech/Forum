@@ -12,10 +12,11 @@ const Saved = () => {
     const fetchBookmarks = async () => {
       try {
         const data = await savedPostService.getMyBookmarks(0, 50);
-        // API may return array directly or wrapped in posts/items field
-        setSavedPosts(
-          Array.isArray(data) ? data : (data.posts ?? data.items ?? []),
-        );
+        // Spring Page returns { content: [...] }, each item is SavedPostResponse with .post field
+        const items = Array.isArray(data)
+          ? data
+          : (data.content ?? data.posts ?? data.items ?? []);
+        setSavedPosts(items.map((item) => item.post ?? item));
       } catch (err) {
         console.error("Failed to load bookmarks", err);
         setSavedPosts([]);

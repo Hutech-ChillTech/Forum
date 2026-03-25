@@ -264,7 +264,7 @@ public class AccountService {
 
     // ── private ───────────────────────────────────────────────────────────────
 
-    @Transactional
+    @Transactional(readOnly = true)
     public String resolveRole(Account account) {
         return accountRoleRepository.findByAccount_AccountId(account.getAccountId())
                 .stream().findFirst()
@@ -272,7 +272,7 @@ public class AccountService {
                 .orElse("USER");
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public String resolveRoleByEmail(String email) {
         String cacheKey = "ROLE_CACHE:" + email;
         String cacheRole = redisService.getValue(cacheKey);

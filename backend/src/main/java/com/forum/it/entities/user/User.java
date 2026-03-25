@@ -22,7 +22,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -86,4 +85,8 @@ public class User {
 
         @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
         private List<Comment> comments;
+
+    public void setUserName(String userName) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

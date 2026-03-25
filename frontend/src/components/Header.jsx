@@ -33,6 +33,7 @@ const Header = ({ hideAuth = false }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [conversations, setConversations] = useState([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
   const chatRef = useRef(null);
@@ -95,6 +96,21 @@ const Header = ({ hideAuth = false }) => {
           const notif = JSON.parse(frame.body);
           setUnreadCount((prev) => prev + 1);
           setNotifications((prev) => [notif, ...prev].slice(0, 5));
+        });
+        client.subscribe("/user/queue/messages", (frame) => {
+          const msg = JSON.parse(frame.body);
+          const currentUserId = JSON.parse(
+            localStorage.getItem("user") || "{}",
+          )?.userId;
+          // Only count messages from others (not echo of own messages)
+          if (msg.senderId !== currentUserId) {
+            setUnreadMessages((prev) => prev + 1);
+          }
+          // Refresh conversations list for the dropdown
+          chatService
+            .getConversations()
+            .then((data) => setConversations(Array.isArray(data) ? data : []))
+            .catch(() => {});
         });
       },
       onStompError: () => {},
@@ -293,6 +309,7 @@ const Header = ({ hideAuth = false }) => {
       setShowNotifications(false);
       setShowDropdown(false);
       setShowSearchHistory(false);
+      setUnreadMessages(0);
     }
   };
 
@@ -610,6 +627,9 @@ const Header = ({ hideAuth = false }) => {
                     >
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
+                    {unreadMessages > 0 && (
+                      <span className="badge">{unreadMessages}</span>
+                    )}
                   </button>
 
                   {(showChat || isChatClosing) && (

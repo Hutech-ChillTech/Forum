@@ -36,7 +36,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<UserResponse> getAll(Pageable pageable) {
-        return userRepository.findAll(pageable).map(user -> {
+        return userRepository.findNonAdminUsers(pageable).map(user -> {
             Account account = accountRepository.findByUser_UserId(user.getUserId());
             if (account != null) {
                 return new UserResponse(user, account.getAccountId(), accountService.resolveRole(account));
