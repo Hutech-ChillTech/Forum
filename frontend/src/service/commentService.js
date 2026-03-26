@@ -87,7 +87,7 @@ const commentService = {
   },
 
   async deleteCommentByAdmin(commentId) {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/comments/${commentId}/admin`, { method: "DELETE" });
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/internal-mng/comments/${commentId}`, { method: "DELETE" });
     if (!response.ok) { const data = await response.json(); throw new Error(data.message || "Failed to delete comment"); }
   },
 

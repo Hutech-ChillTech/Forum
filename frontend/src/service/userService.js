@@ -1,6 +1,7 @@
 import { apiFetch, API_BASE_URL } from "../utils/apiFetch.js";
 
 class UserService {
+  // ─── Public endpoints (UserController /api/v1/users) ─────────────
   async getAllUsers(page = 0, size = 20, sort = "createdAt,desc") {
     const response = await apiFetch(
       `${API_BASE_URL}/api/v1/users?page=${page}&size=${size}&sort=${sort}`,
@@ -11,10 +12,11 @@ class UserService {
 
   async getUserById(userId) {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/internal-mng/users/${userId}`,
+      `${API_BASE_URL}/api/v1/users/${userId}`,
     );
     if (!response.ok) throw new Error("User not found");
-    return await response.json();
+    const data = await response.json();
+    return data.result ?? data;
   }
 
   async getUserByEmail(email) {
@@ -35,9 +37,18 @@ class UserService {
     return await response.json();
   }
 
+  // ─── Admin endpoints (AdminController /api/v1/internal-mng) ──────
+  async adminGetAllUsers(page = 0, size = 20, sort = "createdAt,desc") {
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/internal-mng/users?page=${page}&size=${size}&sort=${sort}`,
+    );
+    if (!response.ok) throw new Error("Failed to fetch users");
+    return await response.json();
+  }
+
   async deleteUser(userId) {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/internal-mng/users/${userId}`,
+      `${API_BASE_URL}/api/v1/internal-mng/${userId}`,
       {
         method: "DELETE",
       },
@@ -64,10 +75,13 @@ class UserService {
 
   async searchUsers(keyword, page = 0, size = 20) {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/users/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`,
+      `${API_BASE_URL}/api/v1/search?keyword=${encodeURIComponent(keyword)}`,
     );
     if (!response.ok) throw new Error("Failed to search users");
-    return await response.json();
+    const data = await response.json();
+    const result = data.result ?? data;
+    const users = result.users || [];
+    return { users, totalPages: 1, totalItems: users.length };
   }
 
   async getActiveUsers(page = 0, size = 20) {

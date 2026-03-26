@@ -95,7 +95,7 @@ const postService = {
   },
   async getAllPostsAdmin(page = 0, size = 20, sort = "createdAt,desc") {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/posts/all?page=${page}&size=${size}&sort=${sort}`,
+      `${API_BASE_URL}/api/v1/internal-mng/posts?page=${page}&size=${size}&sort=${sort}`,
       {},
     );
     if (!response.ok) throw new Error("Failed to fetch all posts");
@@ -105,7 +105,7 @@ const postService = {
 
   async getPostsByStatus(status, page = 0, size = 20, sort = "createdAt,desc") {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`,
+      `${API_BASE_URL}/api/v1/internal-mng/posts/status/${status}?page=${page}&size=${size}&sort=${sort}`,
       {},
     );
     if (!response.ok) throw new Error("Failed to fetch posts by status");
@@ -133,7 +133,7 @@ const postService = {
 
   async deletePostByAdmin(postId) {
     const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/posts/${postId}/admin`,
+      `${API_BASE_URL}/api/v1/internal-mng/posts/${postId}`,
       { method: "DELETE" },
     );
     if (!response.ok) {
